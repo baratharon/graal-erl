@@ -77,6 +77,11 @@ parse_and_extract_form(Form) ->
 			erlang:throw(parse_error)
 	end.
 
+preprocess_and_parse(RevAcc, [[{'-', _} | [{atom, _, spec} | _]=RestOfForm] | Tail], State) ->
+	% we found a '-' symbol, followed by 'spec' atom; read the attribute unchanged
+	{ok, [Active|_]} = maps:find(active, State),
+	{ok, ReadAttributes, Remaining} = read_attribute(RestOfForm, Tail, Active, State),
+	continue_preprocess_and_parse(RevAcc, Remaining, ReadAttributes, State);
 preprocess_and_parse(RevAcc, [[{'-', _} | RestOfForm] | Tail], State) ->
 	% we found a '-' symbol, which is a directive, try to read it
 	{ok, [Active|_]} = maps:find(active, State),
