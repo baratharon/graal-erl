@@ -47,7 +47,7 @@ parse(FileName) when is_atom(FileName) ->
 parse(FileName) ->
 	Forms = scan_forms(FileName),
 	%file:write_file("/tmp/forms", io_lib:format("~p~n", [Forms])),
-	preprocess_and_parse([], Forms, #{}).
+	preprocess_and_parse([], Forms, #{active => [true]}).
 
 parse_and_extract_form(Form) ->
 	% io:format("form: ~p~n", [Form]),
@@ -59,13 +59,18 @@ parse_and_extract_form(Form) ->
 			erlang:throw(parse_error)
 	end.
 
-preprocess_and_parse(RevAcc, [[{'-',_} | RestOfForm] | Tail], State) ->
+preprocess_and_parse(RevAcc, [[{'-', _} | RestOfForm] | Tail], State) ->
 	% we found a '-' symbol, which is a directive, try to read it
-	{ok, ReadAttributes, Remaining} = read_attribute(preprocess([], RestOfForm, State, soft), Tail, State),
+	{ok, [Active|_]} = maps:find(active, State),
+	{ok, ReadAttributes, Remaining} = read_attribute(preprocess([], RestOfForm, State, soft), Tail, Active, State),
 	continue_preprocess_and_parse(RevAcc, Remaining, ReadAttributes, State);
 preprocess_and_parse(RevAcc, [Head | Tail], State) ->
 	% we found a form, preprocess, and parse it
-	preprocess_and_parse([parse_and_extract_form(preprocess([], Head, State, hard)) | RevAcc], Tail, State);
+	{ok, [Active|_]} = maps:find(active, State),
+	case Active of
+		true  -> preprocess_and_parse([parse_and_extract_form(preprocess([], Head, State, hard)) | RevAcc], Tail, State);
+		false -> preprocess_and_parse(RevAcc, Tail, State)
+	end;
 preprocess_and_parse(RevAcc, [], State) ->
 	{lists:reverse(RevAcc), State}.
 
@@ -132,6 +137,16 @@ continue_preprocess_and_parse(RevAcc, Forms, [{record, RecordName, RecordInfo} |
 	% record attribute found
 	Records = maps:get(records, State, #{}),
 	continue_preprocess_and_parse(RevAcc, Forms, Tail, State#{records => Records#{RecordName => RecordInfo}});
+continue_preprocess_and_parse(RevAcc, Forms, [{ifdef, Active} | Tail], State) ->
+	% control flow attribute found
+	{ok, ActiveStack} = maps:find(active, State),
+	continue_preprocess_and_parse(RevAcc, Forms, Tail, State#{active => [Active | ActiveStack]});
+continue_preprocess_and_parse(RevAcc, Forms, [{else} | Tail], State) ->
+	{ok, [H1,H2|ActiveTail]} = maps:find(active, State),
+	continue_preprocess_and_parse(RevAcc, Forms, Tail, State#{active => [(H2 and not H1),H2|ActiveTail]});
+continue_preprocess_and_parse(RevAcc, Forms, [{endif} | Tail], State) ->
+	{ok, [_|ActiveTail]} = maps:find(active, State),
+	continue_preprocess_and_parse(RevAcc, Forms, Tail, State#{active => ActiveTail});
 continue_preprocess_and_parse(RevAcc, Forms, [], State) ->
 	% no unprocessed attribute left
 	preprocess_and_parse(RevAcc, Forms, State).
@@ -282,52 +297,71 @@ build_actual_macro_params([], Actuals) ->
 build_actual_macro_params(Acc, Actuals) ->
 	lists:reverse([Acc | Actuals]).
 
-read_attribute([{atom, _, file}, {'(', _} | _], Forms, _State) ->
+read_attribute([{atom, _, file}, {'(', _} | _], Forms, _Active, _State) ->
 	{ok, [], Forms};
-read_attribute([{atom, _, module}, {'(', _}, {atom, _, ModuleName}, {')', _}, {dot, _} | []], Forms, _State) ->
+read_attribute([{atom, _, module}, {'(', _}, {atom, _, ModuleName}, {')', _}, {dot, _} | []], Forms, _Active, _State) ->
 	% module name has a strict syntax (we do not match the module name and the file name)
 	{ok, [{macro, 'MODULE', [{atom, -1, ModuleName}]}, {macro, 'MODULE_STRING', [{string, -1, atom_to_list(ModuleName)}]}], Forms};
-read_attribute([{atom, Line, define}, {'(', _}, {Type, _, DefName}, {',', _} | DefTail], Forms, _State) when atom==Type; var==Type ->
+read_attribute([{atom, Line, define}, {'(', _}, {Type, _, DefName}, {',', _} | DefTail], Forms, Active, _State) when atom==Type; var==Type ->
 	% defining simple macros
-	parse_simple_macro(DefName, Line, DefTail, Forms);
-read_attribute([{atom, Line, define}, {'(', _}, {Type, _, DefName}, {'(', _} | DefTail], Forms, _State) when atom==Type; var==Type ->
+	case Active of
+		true  -> parse_simple_macro(DefName, Line, DefTail, Forms);
+		false -> {ok, [], Forms}
+	end;
+read_attribute([{atom, Line, define}, {'(', _}, {Type, _, DefName}, {'(', _} | DefTail], Forms, Active, _State) when atom==Type; var==Type ->
 	% defining parametric macros
-	parse_parametric_macro(DefName, Line, DefTail, Forms);
-read_attribute([{atom, _, record}, {'(', _}, {atom, _, RecName}, {',', _}, {'{', _} | Tail], Forms, _State) ->
+	case Active of
+		true  -> parse_parametric_macro(DefName, Line, DefTail, Forms);
+		false -> {ok, [], Forms}
+	end;
+read_attribute([{atom, _, record}, {'(', _}, {atom, _, RecName}, {',', _}, {'{', _} | Tail], Forms, Active, _State) ->
 	% defining record (will be translated)
-	parse_record(RecName, Tail, Forms);
-read_attribute([{atom, _, export} | _], Forms, _State) ->
+	case Active of
+		true  -> parse_record(RecName, Tail, Forms);
+		false -> {ok, [], Forms}
+	end;
+read_attribute([{atom, _, export} | _], Forms, _Active, _State) ->
 	% drop the 'export' now, we don't need it yet
 	{ok, [], Forms};
-read_attribute([{atom, _, export_type} | _], Forms, _State) ->
+read_attribute([{atom, _, export_type} | _], Forms, _Active, _State) ->
 	% drop the 'export_type' now, we don't need it yet
 	{ok, [], Forms};
-read_attribute([{atom, _, type} | _], Forms, _State) ->
+read_attribute([{atom, _, type} | _], Forms, _Active, _State) ->
 	% drop the 'type' now, we don't need it yet
 	{ok, [], Forms};
-read_attribute([{atom, _, opaque} | _], Forms, _State) ->
+read_attribute([{atom, _, opaque} | _], Forms, _Active, _State) ->
 	% drop the 'opaque' now, we don't need it yet
 	{ok, [], Forms};
-read_attribute([{atom, _, import} | Rest], Forms, _State) ->
+read_attribute([{atom, _, import} | Rest], Forms, Active, _State) ->
 	% parse the import attribute
-	parse_imports(Rest, Forms);
-read_attribute([{atom, _, compile} | _], Forms, _State) ->
+	case Active of
+		true  -> parse_imports(Rest, Forms);
+		false -> {ok, [], Forms}
+	end;
+read_attribute([{atom, _, compile} | _], Forms, _Active, _State) ->
 	% drop the 'compile' now, we don't need it yet
 	{ok, [], Forms};
-read_attribute([{atom, _, spec} | _], Forms, _State) ->
+read_attribute([{atom, _, spec} | _], Forms, _Active, _State) ->
 	% drop the 'spec' now, we don't need it yet
 	{ok, [], Forms};
-read_attribute([{atom, _, deprecated} | _], Forms, _State) ->
+read_attribute([{atom, _, deprecated} | _], Forms, _Active, _State) ->
 	% drop the 'deprecated' now, we don't need it yet
 	{ok, [], Forms};
-read_attribute([{atom, _, ifdef} | _], Forms, _State) ->
-	% drop the 'deprecated' now, we don't need it yet
-	{ok, [], Forms};
-read_attribute([{atom, Line, AtomName} | _Rest], _Forms, _State) ->
+read_attribute([{atom, _, ifdef}, {'(', _}, {Type, _, MacroName}, {')', _}, {dot, _}], Forms, Active, State) when atom==Type; var==Type ->
+	Defined = is_macro_defined(State, MacroName),
+	{ok, [{ifdef, Active and Defined}], Forms};
+read_attribute([{atom, _, ifndef}, {'(', _}, {Type, _, MacroName}, {')', _}, {dot, _}], Forms, Active, State) when atom==Type; var==Type ->
+	Defined = is_macro_defined(State, MacroName),
+	{ok, [{ifdef, Active and not Defined}], Forms};
+read_attribute([{atom, _, else} | _], Forms, _Active, _State) ->
+	{ok, [{else}], Forms};
+read_attribute([{atom, _, endif} | _], Forms, _Active, _State) ->
+	{ok, [{endif}], Forms};
+read_attribute([{atom, Line, AtomName} | _Rest], _Forms, _Active, _State) ->
 	% not supported feature
 	io:format("rest: ~p~n", [_Rest]),
 	{error, {unknown_attribute, Line, AtomName}};
-read_attribute(_, _Forms, _State) ->
+read_attribute(_, _Forms, _Active, _State) ->
 	% we expect at least an atom here
 	{error, {expected_an_atom}}.
 
@@ -420,6 +454,24 @@ parse_record_drop_type_spec(RecName, FieldMap, FieldList, NextFieldId, Depth, [_
 
 build_record_info(RecName, FieldMap, FieldList, Size, [{')', _}, {dot, _}], Forms) ->
 	{ok, [{record, RecName, {RecName, Size, FieldMap, FieldList}}], Forms}.
+
+is_macro_defined(State, MacroName) ->
+	is_macro_defined_in(
+		[
+			maps:find(macros, State),
+			maps:find(parametrics, State)
+		],
+		MacroName).
+
+is_macro_defined_in([{ok, Map} | Tail], MacroName) ->
+	case maps:is_key(MacroName, Map) of
+		true  -> true;
+		false -> is_macro_defined_in(Tail, MacroName)
+	end;
+is_macro_defined_in([_ | Tail], MacroName) ->
+	is_macro_defined_in(Tail, MacroName);
+is_macro_defined_in([], _MacroName) ->
+	false.
 
 resolve_record_update(RecName, Expr, Line, MoreTokens, State) ->
 	{ok, Records} = maps:find(records, State),
