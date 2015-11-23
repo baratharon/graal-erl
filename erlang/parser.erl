@@ -60,6 +60,14 @@ parse(FileName) ->
 	end,
 	InitialState =
 	#{
+		macros  =>
+		#{
+			erlang_daemon_port => [{integer, -1, 4369}],
+			epmd_dist_high     => [{integer, -1, 5}],
+			epmd_dist_low      => [{integer, -1, 5}],
+			epmd_node_type     => [{integer, -1, 110}],
+			epmd_port_no       => [{integer, -1, 4369}]
+		},
 		active  => [true],
 		lib_dir => LibDir,
 		include => [".", DirName, DirName ++ "/../include/" | ArgInclude] ++ KernelDirs
