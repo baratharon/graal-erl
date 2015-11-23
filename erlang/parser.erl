@@ -3,7 +3,8 @@
 
 scan(FileName) ->
 	{ok, File} = file:read_file(FileName),
-	{ok, Tokens, _} = erl_scan:string(binary_to_list(File)),
+	{ok, Tokens, _} = erl_scan:string(unicode:characters_to_list(File, utf8)),
+	%{ok, Tokens, _} = erl_scan:string(binary_to_list(File)),
 	Tokens.
 
 scan_forms(FileName) ->
@@ -38,7 +39,7 @@ ast(ModuleName, AstFileName) ->
 ast(ModuleName, AstFileName, SourceFileName) when is_atom(ModuleName) ->
 	{AST, State} = parse(SourceFileName),
 	Imports = maps:get(imports, State, []),
-	file:write_file(AstFileName, io_lib:format("~w\n~w\n~p\n", [ModuleName, Imports, AST]));
+	file:write_file(AstFileName, io_lib:format("~w\n~w\n~p\n", [ModuleName, Imports, AST]), [{encoding, utf8}]);
 ast(ModuleName, AstFileName, SourceFileName) ->
 	ast(list_to_atom(ModuleName), AstFileName, SourceFileName).
 
@@ -781,8 +782,8 @@ parse_include_impl(Filename, Forms, [Dir|Dirs]) ->
 	catch
 		_:_ -> parse_include_impl(Filename, Forms, Dirs)
 	end;
-parse_include_impl(_Filename, _Forms, []) ->
-	{error, no_such_include}.
+parse_include_impl(Filename, _Forms, []) ->
+	{error, no_such_include, Filename}.
 
 parse_include_lib(Filename, Forms, State) ->
 	Tokenized = string:tokens(Filename, "/\\"),
