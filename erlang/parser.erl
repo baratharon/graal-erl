@@ -72,7 +72,7 @@ preprocess_and_parse(RevAcc, [], State) ->
 preprocess(RevAcc, Tokens, State, Mode) ->
 	preprocess_impl(RevAcc, Tokens, State, lk_initial(), Mode).
 
-preprocess_impl(RevAcc, [{'?', _}, {var, Line, Name} | MoreTokens], State, LocKind, Mode) ->
+preprocess_impl(RevAcc, [{'?', _}, {Type, Line, Name} | MoreTokens], State, LocKind, Mode) when atom==Type; var==Type ->
 	{ok,  Resolved, RestTokens} = resolve(Name, Line, MoreTokens, State, Mode),
 	case Mode of
 		hard -> preprocess_impl(RevAcc, lists:append(lists:reverse(Resolved), RestTokens), State, LocKind, Mode);
@@ -229,35 +229,32 @@ resolve_parametric(NameToResolve, RestTokens, State) ->
 	case maps:find(parametrics, State) of
 		{ok, Parametrics} ->
 			case maps:find(NameToResolve, Parametrics) of
-				{ok, Overloads} -> collect_parametric_params(Overloads, RestTokens);
+				{ok, Overloads} -> collect_parametric_params(NameToResolve, Overloads, RestTokens);
 				_ -> {error, RestTokens}
 			end;
 		error ->
 			{error, RestTokens}
 	end.
 
-collect_parametric_params(Overloads, [{'(', _} | RestTokens]) ->
-	collect_parametric_params(Overloads, [], [], 0, RestTokens).
+collect_parametric_params(MacroName, Overloads, [{'(', _} | RestTokens]) ->
+	collect_parametric_params(MacroName, Overloads, [], [], 0, RestTokens).
 
-collect_parametric_params(Overloads, Actuals, Acc, 0=_Level, [{',', _} | RestTokens]) ->
-	collect_parametric_params(Overloads, [Acc | Actuals], [], 0, RestTokens);
-collect_parametric_params(Overloads, Actuals, Acc, 0=_Level, [{')', _} | RestTokens]) ->
+collect_parametric_params(MacroName, Overloads, Actuals, Acc, 0=_Level, [{',', _} | RestTokens]) ->
+	collect_parametric_params(MacroName, Overloads, [Acc | Actuals], [], 0, RestTokens);
+collect_parametric_params(MacroName, Overloads, Actuals, Acc, 0=_Level, [{')', _} | RestTokens]) ->
 	NewActuals = build_actual_macro_params(Acc, Actuals),
 	ActualArity = length(NewActuals),
 	case maps:find(ActualArity, Overloads) of
 		{ok, {MacroParamNames, MacroReplacement}} ->
 			ParamMap = build_param_map(MacroParamNames, NewActuals),
 			replace_parametric_macro(ParamMap, [], MacroReplacement, RestTokens);
-		_ -> {error, no_overload_found, ActualArity}
+		_ -> {error, no_overload_found, MacroName, ActualArity}
 	end;
-collect_parametric_params(Overloads, Actuals, Acc, Level, [Token={',', _} | RestTokens]) ->
-	collect_parametric_params(Overloads, Actuals, [Token | Acc], Level, RestTokens);
-collect_parametric_params(Overloads, Actuals, Acc, Level, [Token={')', _} | RestTokens]) ->
-	collect_parametric_params(Overloads, Actuals, [Token | Acc], Level-1, RestTokens);
-collect_parametric_params(Overloads, Actuals, Acc, Level, [Token={'(', _} | RestTokens]) ->
-	collect_parametric_params(Overloads, Actuals, [Token | Acc], Level+1, RestTokens);
-collect_parametric_params(Overloads, Actuals, Acc, Level, [Token | RestTokens]) ->
-	collect_parametric_params(Overloads, Actuals, [Token | Acc], Level, RestTokens).
+collect_parametric_params(MacroName, Overloads, Actuals, Acc, Level, [Token={Tok, _} | RestTokens]) ->
+	NewLevel = new_level(Level, Tok),
+	collect_parametric_params(MacroName, Overloads, Actuals, [Token | Acc], NewLevel, RestTokens);
+collect_parametric_params(MacroName, Overloads, Actuals, Acc, Level, [Token | RestTokens]) ->
+	collect_parametric_params(MacroName, Overloads, Actuals, [Token | Acc], Level, RestTokens).
 
 replace_parametric_macro(ParamMap, Acc, [Tok={var, _, Var} | RepTokens], RestTokens) ->
 	case maps:find(Var, ParamMap) of
@@ -290,10 +287,10 @@ read_attribute([{atom, _, file}, {'(', _} | _], Forms) ->
 read_attribute([{atom, _, module}, {'(', _}, {atom, _, ModuleName}, {')', _}, {dot, _} | []], Forms) ->
 	% module name has a strict syntax (we do not match the module name and the file name)
 	{ok, [{macro, 'MODULE', [{atom, -1, ModuleName}]}, {macro, 'MODULE_STRING', [{string, -1, atom_to_list(ModuleName)}]}], Forms};
-read_attribute([{atom, Line, define}, {'(', _}, {var, _, DefName}, {',', _} | DefTail], Forms) ->
+read_attribute([{atom, Line, define}, {'(', _}, {Type, _, DefName}, {',', _} | DefTail], Forms) when atom==Type; var==Type ->
 	% defining simple macros
-	validate_def_tail(DefName, Line, lists:reverse(DefTail), Forms);
-read_attribute([{atom, Line, define}, {'(', _}, {var, _, DefName}, {'(', _} | DefTail], Forms) ->
+	parse_simple_macro(DefName, Line, DefTail, Forms);
+read_attribute([{atom, Line, define}, {'(', _}, {Type, _, DefName}, {'(', _} | DefTail], Forms) when atom==Type; var==Type ->
 	% defining parametric macros
 	parse_parametric_macro(DefName, Line, DefTail, Forms);
 read_attribute([{atom, _, record}, {'(', _}, {atom, _, RecName}, {',', _}, {'{', _} | Tail], Forms) ->
@@ -331,23 +328,42 @@ read_attribute(_, _) ->
 	% we expect at least an atom here
 	{error, {expected_an_atom}}.
 
-validate_def_tail(DefName, _, [{dot, _}, {')', _} | ReversedReplacement], Forms) ->
-	{ok, [{macro, DefName, [{')',-1}] ++ ReversedReplacement ++ [{'(',-1}]}], Forms};
-validate_def_tail(_, Line, _, _) ->
-	{error, {illformed_define, Line}}.
+parse_simple_macro(DefName, Line, Tail, Forms) ->
+	parse_simple_macro(DefName, Line, 0, [{'(', Line}], Tail, Forms).
+
+parse_simple_macro(DefName, Line, 0, Acc, [Head={',', _} | Tail], Forms) ->
+	parse_simple_macro(DefName, Line, 0, [{'(', Line}, Head, {')', Line} | Acc], Tail, Forms);
+parse_simple_macro(DefName, _Line, 0, Acc, [Head={')', _}, {dot, _}], Forms) ->
+	{ok, [{macro, DefName, [Head | Acc]}], Forms};
+parse_simple_macro(DefName, Line, Depth, Acc, [Head={Tok, _} | Tail], Forms) ->
+	NewDepth = new_level(Depth, Tok),
+	parse_simple_macro(DefName, Line, NewDepth, [Head | Acc], Tail, Forms);
+parse_simple_macro(DefName, Line, Depth, Acc, [Head | Tail], Forms) ->
+	parse_simple_macro(DefName, Line, Depth, [Head | Acc], Tail, Forms);
+parse_simple_macro(DefName, Line, _Depth, _Acc, _Tail, _Forms) ->
+	{error, {illformed_simple_macro, DefName, line, Line}}.
 
 parse_parametric_macro(DefName, Line, DefTail, Forms) ->
 	parse_parametric_macro(DefName, [], Line, DefTail, Forms).
 
 parse_parametric_macro(DefName, RevArgs, Line, [{var, _, ArgName}, {',', _} | DefTail], Forms) ->
 	parse_parametric_macro(DefName, [ArgName | RevArgs], Line, DefTail, Forms);
-parse_parametric_macro(DefName, RevArgs, _Line, [{var, _, ArgName}, {')', _}, {',', _} | DefTail], Forms) ->
-	parse_parametric_macro_tail(DefName, lists:reverse([ArgName | RevArgs]), lists:reverse(DefTail), Forms).
+parse_parametric_macro(DefName, RevArgs, Line, [{var, _, ArgName}, {')', _}, {',', _} | DefTail], Forms) ->
+	parse_parametric_macro_tail(DefName, lists:reverse([ArgName | RevArgs]), Line, 0, [{'(', Line}], DefTail, Forms).
 
-parse_parametric_macro_tail(DefName, Args, [{dot, _}, {')', _} | ReversedReplacement], Forms) ->
-	{ok, [{parametric, DefName, Args, [{'(',-1} | lists:reverse([{')',-1} | ReversedReplacement])]}], Forms};
-parse_parametric_macro_tail(DefName, _, _, _) ->
-	{error, {illformed_define, xxx_TODO_Line, DefName}}. % TODO
+parse_parametric_macro_tail(DefName, Args, Line, 0, Acc, [Head={',', _} | Tail], Forms) ->
+	parse_parametric_macro_tail(DefName, Args, Line, 0, [{'(', Line}, Head, {')', Line} | Acc], Tail, Forms);
+parse_parametric_macro_tail(DefName, Args, _Line, 0, Acc, [Head={')', _}, {dot, _}], Forms) ->
+	{ok, [{parametric, DefName, Args, lists:reverse([Head | Acc])}], Forms};
+parse_parametric_macro_tail(DefName, Args, Line, Depth, Acc, [Head={Tok, _} | Tail], Forms) ->
+	NewDepth = new_level(Depth, Tok),
+	parse_parametric_macro_tail(DefName, Args, Line, NewDepth, [Head | Acc], Tail, Forms);
+parse_parametric_macro_tail(DefName, Args, Line, Depth, Acc, [Head={var, _, _} | Tail], Forms) ->
+	parse_parametric_macro_tail(DefName, Args, Line, Depth, [{')', Line}, Head, {'(', Line} | Acc], Tail, Forms);
+parse_parametric_macro_tail(DefName, Args, Line, Depth, Acc, [Head | Tail], Forms) ->
+	parse_parametric_macro_tail(DefName, Args, Line, Depth, [Head | Acc], Tail, Forms);
+parse_parametric_macro_tail(DefName, _Args, Line, _Depth, _Acc, _Tail, _Forms) ->
+	{error, {illformed_parametric_macro, DefName, line, Line}}.
 
 parse_imports([{'(', _}, {atom, _, ModuleName}, {',', _}, {'[', _} | Rest], Forms) ->
 	parse_imports(ModuleName, Rest, [], Forms).
@@ -366,6 +382,8 @@ parse_record(RecName, FieldMap, FieldList, NextFieldId, [{atom, _, Field}, {',',
 	parse_record(RecName, FieldMap#{Field => {NextFieldId, undefined}}, [Field | FieldList], NextFieldId+1, Tail, Forms);
 parse_record(RecName, FieldMap, FieldList, NextFieldId, [{atom, _, Field}, {'=', _} | Tail], Forms) ->
 	parse_record_with_initial(RecName, FieldMap, FieldList, NextFieldId, Field, Tail, Forms);
+parse_record(RecName, FieldMap, FieldList, NextFieldId, [{atom, _, Field}, {'::', _} | Tail], Forms) ->
+	parse_record_drop_type_spec(RecName, FieldMap#{Field => {NextFieldId, undefined}}, [Field | FieldList], NextFieldId+1, Tail, Forms);
 parse_record(RecName, FieldMap, FieldList, NextFieldId, [{atom, _, Field}, {'}', _} | Tail], Forms) ->
 	build_record_info(RecName, FieldMap#{Field => {NextFieldId, undefined}}, [Field | FieldList], NextFieldId, Tail, Forms).
 
@@ -374,25 +392,31 @@ parse_record_with_initial(RecName, FieldMap, FieldList, NextFieldId, Field, Tail
 
 parse_record_with_initial(RecName, FieldMap, FieldList, NextFieldId, Field, 0, Initial, [{',', _} | Tail], Forms) ->
 	parse_record(RecName, FieldMap#{Field => {NextFieldId, [{')', -1} | Initial]}}, [Field | FieldList], NextFieldId+1, Tail, Forms);
+parse_record_with_initial(RecName, FieldMap, FieldList, NextFieldId, Field, 0, Initial, [{'::', _} | Tail], Forms) ->
+	parse_record_drop_type_spec(RecName, FieldMap#{Field => {NextFieldId, [{')', -1} | Initial]}}, [Field | FieldList], NextFieldId+1, Tail, Forms);
 parse_record_with_initial(RecName, FieldMap, FieldList, NextFieldId, Field, 0, Initial, [{'}', _} | Tail], Forms) ->
 	build_record_info(RecName, FieldMap#{Field => {NextFieldId, [{')', -1} | Initial]}}, [Field | FieldList], NextFieldId, Tail, Forms);
 parse_record_with_initial(RecName, FieldMap, FieldList, NextFieldId, Field, Depth, Initial, [Head={Tok, _} | Tail], Forms) ->
-	case Tok of
-		'(' -> NewDepth = Depth + 1;
-		'[' -> NewDepth = Depth + 1;
-		'{' -> NewDepth = Depth + 1;
-		')' -> NewDepth = Depth - 1;
-		']' -> NewDepth = Depth - 1;
-		'}' -> NewDepth = Depth - 1;
-		_   -> NewDepth = Depth
-	end,
+	NewDepth = new_level(Depth, Tok),
 	parse_record_with_initial(RecName, FieldMap, FieldList, NextFieldId, Field, NewDepth, [Head | Initial], Tail, Forms);
 parse_record_with_initial(RecName, FieldMap, FieldList, NextFieldId, Field, Depth, Initial, [Head | Tail], Forms) ->
 	parse_record_with_initial(RecName, FieldMap, FieldList, NextFieldId, Field, Depth, [Head | Initial], Tail, Forms).
 
+parse_record_drop_type_spec(RecName, FieldMap, FieldList, NextFieldId, Tail, Forms) ->
+	parse_record_drop_type_spec(RecName, FieldMap, FieldList, NextFieldId, 0, Tail, Forms).
+
+parse_record_drop_type_spec(RecName, FieldMap, FieldList, NextFieldId, 0, [{',', _} | Tail], Forms) ->
+	parse_record(RecName, FieldMap, FieldList, NextFieldId, Tail, Forms);
+parse_record_drop_type_spec(RecName, FieldMap, FieldList, NextFieldId, 0, [{'}', _} | Tail], Forms) ->
+	build_record_info(RecName, FieldMap, FieldList, NextFieldId, Tail, Forms);
+parse_record_drop_type_spec(RecName, FieldMap, FieldList, NextFieldId, Depth, [{Tok, _} | Tail], Forms) ->
+	NewDepth = new_level(Depth, Tok),
+	parse_record_drop_type_spec(RecName, FieldMap, FieldList, NextFieldId, NewDepth, Tail, Forms);
+parse_record_drop_type_spec(RecName, FieldMap, FieldList, NextFieldId, Depth, [_Head | Tail], Forms) ->
+	parse_record_drop_type_spec(RecName, FieldMap, FieldList, NextFieldId, Depth, Tail, Forms).
+
 build_record_info(RecName, FieldMap, FieldList, Size, [{')', _}, {dot, _}], Forms) ->
 	{ok, [{record, RecName, {RecName, Size, FieldMap, FieldList}}], Forms}.
-
 
 resolve_record_update(RecName, Expr, Line, MoreTokens, State) ->
 	{ok, Records} = maps:find(records, State),
@@ -580,3 +604,14 @@ find_next_mapped_token([_Head | Tail], Map, Default) ->
 	find_next_mapped_token(Tail, Map, Default);
 find_next_mapped_token([], _Map, Default) ->
 	Default.
+
+new_level(Level, Tok) ->
+	case Tok of
+		'(' -> Level + 1;
+		'[' -> Level + 1;
+		'{' -> Level + 1;
+		')' -> Level - 1;
+		']' -> Level - 1;
+		'}' -> Level - 1;
+		_   -> Level
+	end.
