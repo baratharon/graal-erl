@@ -395,8 +395,12 @@ parse_parametric_macro_tail(DefName, Args, _Line, 0, Acc, [Head={')', _}, {dot, 
 parse_parametric_macro_tail(DefName, Args, Line, Depth, Acc, [Head={Tok, _} | Tail], Forms) ->
 	NewDepth = new_level(Depth, Tok),
 	parse_parametric_macro_tail(DefName, Args, Line, NewDepth, [Head | Acc], Tail, Forms);
-parse_parametric_macro_tail(DefName, Args, Line, Depth, Acc, [Head={var, _, _} | Tail], Forms) ->
-	parse_parametric_macro_tail(DefName, Args, Line, Depth, [{')', Line}, Head, {'(', Line} | Acc], Tail, Forms);
+parse_parametric_macro_tail(DefName, Args, Line, Depth, Acc, [Head={var, _, VarName} | Tail], Forms) ->
+	case list_contains(Args, VarName) of
+		true  -> NewAcc = [{')', Line}, Head, {'(', Line} | Acc];
+		false -> NewAcc = [Head | Acc]
+	end,
+	parse_parametric_macro_tail(DefName, Args, Line, Depth, NewAcc, Tail, Forms);
 parse_parametric_macro_tail(DefName, Args, Line, Depth, Acc, [Head | Tail], Forms) ->
 	parse_parametric_macro_tail(DefName, Args, Line, Depth, [Head | Acc], Tail, Forms);
 parse_parametric_macro_tail(DefName, _Args, Line, _Depth, _Acc, _Tail, _Forms) ->
@@ -670,3 +674,10 @@ new_level(Level, Tok) ->
 		'}' -> Level - 1;
 		_   -> Level
 	end.
+
+list_contains([Term|_], Term) ->
+	true;
+list_contains([_|Tail], Term) ->
+	list_contains(Tail, Term);
+list_contains([], _Term) ->
+	false.
