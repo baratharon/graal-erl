@@ -126,6 +126,9 @@ preprocess_impl(RevAcc, [{'#', _}, {atom, Line, RecName}, {'.', _}, {atom, _, Fi
 			Expr = resolve_record_fieldid(RecName, Line, Field, State),
 			preprocess_impl(lists:append(Expr, RevAcc), MoreTokens, State, LocKind, Mode)
 	end;
+preprocess_impl(RevAcc, [{'::', _} | MoreTokens], State, LocKind, Mode) ->
+	RestTokens = drop_type_spec(MoreTokens),
+	preprocess_impl(RevAcc, RestTokens, State, LocKind, Mode);
 preprocess_impl(RevAcc, [T1={Type, _, _}, T2={'(', _} | MoreTokens], State, LocKind, Mode) ->
 	case Type of
 		var  -> NewLocKind = lk_call(LocKind);
@@ -490,8 +493,6 @@ parse_record(RecName, FieldMap, FieldList, NextFieldId, [{atom, _, Field}, {',',
 	parse_record(RecName, FieldMap#{Field => {NextFieldId, undefined}}, [Field | FieldList], NextFieldId+1, Tail, Forms);
 parse_record(RecName, FieldMap, FieldList, NextFieldId, [{atom, _, Field}, {'=', _} | Tail], Forms) ->
 	parse_record_with_initial(RecName, FieldMap, FieldList, NextFieldId, Field, Tail, Forms);
-parse_record(RecName, FieldMap, FieldList, NextFieldId, [{atom, _, Field}, {'::', _} | Tail], Forms) ->
-	parse_record_drop_type_spec(RecName, FieldMap#{Field => {NextFieldId, undefined}}, [Field | FieldList], NextFieldId+1, Tail, Forms);
 parse_record(RecName, FieldMap, FieldList, NextFieldId, [{atom, _, Field}, {'}', _} | Tail], Forms) ->
 	build_record_info(RecName, FieldMap#{Field => {NextFieldId, undefined}}, [Field | FieldList], NextFieldId, Tail, Forms).
 
@@ -500,8 +501,6 @@ parse_record_with_initial(RecName, FieldMap, FieldList, NextFieldId, Field, Tail
 
 parse_record_with_initial(RecName, FieldMap, FieldList, NextFieldId, Field, 0, Initial, [{',', _} | Tail], Forms) ->
 	parse_record(RecName, FieldMap#{Field => {NextFieldId, [{')', -1} | Initial]}}, [Field | FieldList], NextFieldId+1, Tail, Forms);
-parse_record_with_initial(RecName, FieldMap, FieldList, NextFieldId, Field, 0, Initial, [{'::', _} | Tail], Forms) ->
-	parse_record_drop_type_spec(RecName, FieldMap#{Field => {NextFieldId, [{')', -1} | Initial]}}, [Field | FieldList], NextFieldId+1, Tail, Forms);
 parse_record_with_initial(RecName, FieldMap, FieldList, NextFieldId, Field, 0, Initial, [{'}', _} | Tail], Forms) ->
 	build_record_info(RecName, FieldMap#{Field => {NextFieldId, [{')', -1} | Initial]}}, [Field | FieldList], NextFieldId, Tail, Forms);
 parse_record_with_initial(RecName, FieldMap, FieldList, NextFieldId, Field, Depth, Initial, [Head={Tok, _} | Tail], Forms) ->
@@ -510,21 +509,25 @@ parse_record_with_initial(RecName, FieldMap, FieldList, NextFieldId, Field, Dept
 parse_record_with_initial(RecName, FieldMap, FieldList, NextFieldId, Field, Depth, Initial, [Head | Tail], Forms) ->
 	parse_record_with_initial(RecName, FieldMap, FieldList, NextFieldId, Field, Depth, [Head | Initial], Tail, Forms).
 
-parse_record_drop_type_spec(RecName, FieldMap, FieldList, NextFieldId, Tail, Forms) ->
-	parse_record_drop_type_spec(RecName, FieldMap, FieldList, NextFieldId, 0, Tail, Forms).
-
-parse_record_drop_type_spec(RecName, FieldMap, FieldList, NextFieldId, 0, [{',', _} | Tail], Forms) ->
-	parse_record(RecName, FieldMap, FieldList, NextFieldId, Tail, Forms);
-parse_record_drop_type_spec(RecName, FieldMap, FieldList, NextFieldId, 0, [{'}', _} | Tail], Forms) ->
-	build_record_info(RecName, FieldMap, FieldList, NextFieldId, Tail, Forms);
-parse_record_drop_type_spec(RecName, FieldMap, FieldList, NextFieldId, Depth, [{Tok, _} | Tail], Forms) ->
-	NewDepth = new_level(Depth, Tok),
-	parse_record_drop_type_spec(RecName, FieldMap, FieldList, NextFieldId, NewDepth, Tail, Forms);
-parse_record_drop_type_spec(RecName, FieldMap, FieldList, NextFieldId, Depth, [_Head | Tail], Forms) ->
-	parse_record_drop_type_spec(RecName, FieldMap, FieldList, NextFieldId, Depth, Tail, Forms).
-
 build_record_info(RecName, FieldMap, FieldList, Size, [{')', _}, {dot, _}], Forms) ->
 	{ok, [{record, RecName, {RecName, Size, FieldMap, FieldList}}], Forms}.
+
+drop_type_spec([]) ->
+	[];
+drop_type_spec(Tokens) ->
+	drop_type_spec(0, Tokens).
+
+drop_type_spec(0, Tokens=[{dot, _} | _]) ->
+	Tokens;
+drop_type_spec(0, Tokens=[{',', _} | _]) ->
+	Tokens;
+drop_type_spec(0, Tokens=[{'}', _} | _]) ->
+	Tokens;
+drop_type_spec(Depth, [{Tok, _} | Tail]) ->
+	NewDepth = new_level(Depth, Tok),
+	drop_type_spec(NewDepth, Tail);
+drop_type_spec(Depth, [_Head | Tail]) ->
+	drop_type_spec(Depth, Tail).
 
 is_macro_defined(State, MacroName) ->
 	is_macro_defined_in(
