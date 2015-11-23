@@ -1,0 +1,6 @@
+"mx2" should be visible
+
+$ # checkout
+$ mx spull
+$ mx build
+$ mx erl

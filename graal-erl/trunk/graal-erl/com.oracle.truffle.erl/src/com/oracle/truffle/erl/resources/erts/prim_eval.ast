@@ -1,0 +1,10 @@
+prim_eval
+[]
+[]
+[{function,28,'receive',2,
+           [{clause,28,
+                    [{var,28,'_'},{var,28,'_'}],
+                    [],
+                    [{call,29,
+                           {remote,29,{atom,29,erlang},{atom,29,nif_error}},
+                           [{atom,29,stub}]}]}]}]

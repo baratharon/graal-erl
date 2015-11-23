@@ -1,0 +1,11 @@
+-module(dict04).
+-export([main/0]).
+
+main() ->
+	erase(),
+	put(key1, world1),
+	put(key2, world2),
+	put(key3, world3),
+	put(key2, world4),
+	X = erase(key1),
+	{X, get()}.

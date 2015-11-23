@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir="." default="default" name="com.oracle.truffle.erl.test">
+	<description>Builds, tests, and runs the project com.oracle.truffle.erl.test.</description>
+	<import file="nbproject/build-impl.xml"/>
+	<target name="-post-init">
+		<pathconvert pathsep="," property="comma.javac.classpath">
+			<path path="${javac.classpath}"/>
+		</pathconvert>
+		<restrict id="missing.javac.classpath">
+			<filelist dir="${basedir}" files="${comma.javac.classpath}"/>
+			<not>
+				<exists/>
+			</not>
+		</restrict>
+		<property name="missing.javac.classpath" refid="missing.javac.classpath"/>
+		<condition property="no.dependencies" value="true">
+			<equals arg1="${missing.javac.classpath}" arg2=""/>
+		</condition>
+		<property name="no.dependencies" value="false"/>
+		<condition property="no.deps">
+			<equals arg1="${no.dependencies}" arg2="true"/>
+		</condition>
+	</target>
+	<target name="clean">
+		<exec executable="/usr/bin/python2.7" failonerror="true">
+			<env key="JAVA_HOME" value="/usr/lib/jvm/java-8-openjdk"/>
+			<arg value="/home/aron/jku/work/mx/mx.py"/>
+			<arg value="clean"/>
+			<arg value="--projects"/>
+			<arg value="com.oracle.truffle.erl.test"/>
+		</exec>
+	</target>
+	<target name="compile">
+		<exec executable="/usr/bin/python2.7" failonerror="true">
+			<env key="JAVA_HOME" value="/usr/lib/jvm/java-8-openjdk"/>
+			<arg value="/home/aron/jku/work/mx/mx.py"/>
+			<arg value="build"/>
+			<arg value="--only"/>
+			<arg value="com.oracle.truffle.erl.test"/>
+			<arg value="--force-javac"/>
+			<arg value="--no-native"/>
+		</exec>
+	</target>
+	<target depends="compile" name="jar"/>
+	<target depends="run" name="test"/>
+	<target depends="run" name="test-single"/>
+	<target depends="compile" name="run">
+		<property name="test.class" value="com.oracle.truffle.erl.test"/>
+		<exec executable="/usr/bin/python2.7" failonerror="true">
+			<env key="JAVA_HOME" value="/usr/lib/jvm/java-8-openjdk"/>
+			<arg value="/home/aron/jku/work/mx/mx.py"/>
+			<arg value="unittest"/>
+			<arg value="${test.class}"/>
+		</exec>
+	</target>
+	<target depends="debug" name="debug-test"/>
+	<target depends="init,compile" name="debug">
+		<property name="test.class" value="com.oracle.truffle.erl.test"/>
+		<nbjpdastart addressproperty="jpda.address" name="com.oracle.truffle.erl.test">
+			<classpath>
+				<fileset dir="..">
+					<include name="*/bin/"/>
+				</fileset>
+			</classpath>
+			<sourcepath>
+				<pathelement location="src"/>
+			</sourcepath>
+		</nbjpdastart>
+		<exec executable="/usr/bin/python2.7" failonerror="true">
+			<env key="JAVA_HOME" value="/usr/lib/jvm/java-8-openjdk"/>
+			<arg value="/home/aron/jku/work/mx/mx.py"/>
+			<arg value="-d"/>
+			<arg value="--attach"/>
+			<arg value="${jpda.address}"/>
+			<arg value="unittest"/>
+			<arg value="${test.class}"/>
+		</exec>
+	</target>
+	<target name="javadoc">
+		<exec executable="/usr/bin/python2.7" failonerror="true">
+			<env key="JAVA_HOME" value="/usr/lib/jvm/java-8-openjdk"/>
+			<arg value="/home/aron/jku/work/mx/mx.py"/>
+			<arg value="javadoc"/>
+			<arg value="--projects"/>
+			<arg value="com.oracle.truffle.erl.test"/>
+			<arg value="--force"/>
+		</exec>
+		<nbbrowse file="javadoc/index.html"/>
+	</target>
+</project>
