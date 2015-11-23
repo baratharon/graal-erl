@@ -77,8 +77,9 @@ parse_and_extract_form(Form) ->
 			erlang:throw(parse_error)
 	end.
 
-preprocess_and_parse(RevAcc, [[{'-', _} | [{atom, _, spec} | _]=RestOfForm] | Tail], State) ->
-	% we found a '-' symbol, followed by 'spec' atom; read the attribute unchanged
+preprocess_and_parse(RevAcc, [[{'-', _} | [{atom, _, Atom} | _]=RestOfForm] | Tail], State)
+	when spec == Atom; callback == Atom; type == Atom; opaque == Atom ->
+	% read the attribute unchanged
 	{ok, [Active|_]} = maps:find(active, State),
 	{ok, ReadAttributes, Remaining} = read_attribute(RestOfForm, Tail, Active, State),
 	continue_preprocess_and_parse(RevAcc, Remaining, ReadAttributes, State);
@@ -377,6 +378,9 @@ read_attribute([{atom, _, behavior} | _], Forms, _Active, _State) ->
 	{ok, [], Forms};
 read_attribute([{atom, _, behaviour} | _], Forms, _Active, _State) ->
 	% drop the 'behaviour' now, we don't need it yet
+	{ok, [], Forms};
+read_attribute([{atom, _, dialyzer} | _], Forms, _Active, _State) ->
+	% drop the 'dialyzer' now, we don't need it yet
 	{ok, [], Forms};
 read_attribute([{atom, _, import} | Rest], Forms, Active, _State) ->
 	% parse the import attribute
@@ -825,9 +829,15 @@ parse_include_lib(Filename, Forms, State) ->
 parse_include_lib(CWD, Filename, Forms, State) ->
 	Tokenized = string:tokens(Filename, "/\\"),
 	LibDir = maps:get(lib_dir, State),
-	case get_module_dir(hd(Tokenized), LibDir) of
-		error      -> {error, no_such_module, hd(Tokenized)};
-		ModuleName -> parse_include_impl(CWD, filename:join([ModuleName | tl(Tokenized)]), Forms, [LibDir])
+	ModuleName = hd(Tokenized),
+	case string:chr(ModuleName, $-) of
+		0 ->
+			case get_module_dir(ModuleName, LibDir) of
+				error   -> {error, no_such_module, ModuleName};
+				DirName -> parse_include_impl(CWD, filename:join([DirName | tl(Tokenized)]), Forms, [LibDir])
+			end;
+		_ ->
+			parse_include_impl(CWD, Filename, Forms, [LibDir])
 	end.
 
 get_module_dir(AbstractModule, LibDir) ->
