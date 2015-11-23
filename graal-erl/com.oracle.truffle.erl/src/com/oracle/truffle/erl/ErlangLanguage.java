@@ -172,19 +172,6 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
             list.add(ErlContext.stringToBinary(arg, ErlContext.LATIN1_CHARSET));
         }
 
-        // "-init_debug"
-
-        // list.add(ErlContext.stringToBinary("-pa", ErlContext.LATIN1_CHARSET));
-        // list.add(ErlContext.stringToBinary("/home/aron/jku/erlang", ErlContext.LATIN1_CHARSET));
-        // list.add(ErlContext.stringToBinary("-run", ErlContext.LATIN1_CHARSET));
-        // list.add(ErlContext.stringToBinary("erlparse01", ErlContext.LATIN1_CHARSET));
-        // list.add(ErlContext.stringToBinary("main", ErlContext.LATIN1_CHARSET));
-
-        // list.add(ErlContext.stringToBinary("-run", ErlContext.LATIN1_CHARSET));
-        // list.add(ErlContext.stringToBinary("init", ErlContext.LATIN1_CHARSET));
-        // list.add(ErlContext.stringToBinary("stop", ErlContext.LATIN1_CHARSET));
-        // list.add(ErlContext.stringToBinary("-noshell", ErlContext.LATIN1_CHARSET));
-
         return ErlList.fromList(list);
     }
 
@@ -192,11 +179,6 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
     protected void disposeContext(ErlContext erlContext) {
         erlContext.close();
     }
-
-    /* Small tools that can be installed for demonstration */
-    // private static NodeExecCounter nodeExecCounter = null;
-    // private static NodeExecCounter statementExecCounter = null;
-    // private static CoverageTracker coverageTracker = null;
 
     /**
      * The main entry point. Use the mx command "mx erl" to run it with the correct class path
