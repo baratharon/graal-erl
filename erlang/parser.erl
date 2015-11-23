@@ -88,7 +88,9 @@ continue_preprocess_and_parse(RevAcc, Forms, [{macro, MacroName, MacroDef} | Tai
 continue_preprocess_and_parse(RevAcc, Forms, [{parametric, MacroName, MacroArgs, MacroDef} | Tail], State) ->
 	% parametric macro attribute found
 	Parametrics = maps:get(parametrics, State, #{}),
-	continue_preprocess_and_parse(RevAcc, Forms, Tail, State#{parametrics => Parametrics#{MacroName => {MacroArgs, MacroDef}}});
+	Overloads = maps:get(MacroName, Parametrics, #{}),
+	Arity = length(MacroArgs),
+	continue_preprocess_and_parse(RevAcc, Forms, Tail, State#{parametrics => Parametrics#{MacroName => Overloads#{Arity => {MacroArgs, MacroDef}}}});
 continue_preprocess_and_parse(RevAcc, Forms, [{import, ImportModuleName, ImportFAs} | Tail], State) ->
 	% import attribute found
 	Imports = maps:get(imports, State, []),
@@ -136,24 +138,35 @@ resolve_parametric(NameToResolve, RestTokens, State) ->
 	case maps:find(parametrics, State) of
 		{ok, Parametrics} ->
 			case maps:find(NameToResolve, Parametrics) of
-				{ok, {Args, Replacement}} -> collect_parametric_params(Args, Replacement, RestTokens);
+				{ok, Overloads} -> collect_parametric_params(Overloads, RestTokens);
 				_ -> {error, RestTokens}
 			end;
 		error ->
 			{error, RestTokens}
 	end.
 
-collect_parametric_params(Args, Replacement, [{'(', _} | RestTokens]) ->
-	collect_parametric_params(#{}, [], Args, Replacement, RestTokens).
+collect_parametric_params(Overloads, [{'(', _} | RestTokens]) ->
+	collect_parametric_params(Overloads, [], [], 0, RestTokens).
 
-collect_parametric_params(ParamMap, [], [], Replacement, RestTokens) ->
-	replace_parametric_macro(ParamMap, [], Replacement, RestTokens);
-collect_parametric_params(ParamMap, Acc, [Arg|Args], Replacement, [{',', _} | RestTokens]) ->
-	collect_parametric_params(ParamMap#{Arg => Acc}, [], Args, Replacement, RestTokens);
-collect_parametric_params(ParamMap, Acc, [Arg|Args], Replacement, [{')', _} | RestTokens]) ->
-	collect_parametric_params(ParamMap#{Arg => Acc}, [], Args, Replacement, RestTokens);
-collect_parametric_params(ParamMap, Acc, Args, Replacement, [Token | RestTokens]) ->
-	collect_parametric_params(ParamMap, [Token | Acc], Args, Replacement, RestTokens).
+collect_parametric_params(Overloads, Actuals, Acc, 0=_Level, [{',', _} | RestTokens]) ->
+	collect_parametric_params(Overloads, [Acc | Actuals], [], 0, RestTokens);
+collect_parametric_params(Overloads, Actuals, Acc, 0=_Level, [{')', _} | RestTokens]) ->
+	NewActuals = build_actual_macro_params(Acc, Actuals),
+	ActualArity = length(NewActuals),
+	case maps:find(ActualArity, Overloads) of
+		{ok, {MacroParamNames, MacroReplacement}} ->
+			ParamMap = build_param_map(MacroParamNames, NewActuals),
+			replace_parametric_macro(ParamMap, [], MacroReplacement, RestTokens);
+		_ -> {error, no_overload_found, ActualArity}
+	end;
+collect_parametric_params(Overloads, Actuals, Acc, Level, [Token={',', _} | RestTokens]) ->
+	collect_parametric_params(Overloads, Actuals, [Token | Acc], Level, RestTokens);
+collect_parametric_params(Overloads, Actuals, Acc, Level, [Token={')', _} | RestTokens]) ->
+	collect_parametric_params(Overloads, Actuals, [Token | Acc], Level-1, RestTokens);
+collect_parametric_params(Overloads, Actuals, Acc, Level, [Token={'(', _} | RestTokens]) ->
+	collect_parametric_params(Overloads, Actuals, [Token | Acc], Level+1, RestTokens);
+collect_parametric_params(Overloads, Actuals, Acc, Level, [Token | RestTokens]) ->
+	collect_parametric_params(Overloads, Actuals, [Token | Acc], Level, RestTokens).
 
 replace_parametric_macro(ParamMap, Acc, [Tok={var, _, Var} | RepTokens], RestTokens) ->
 	case maps:find(Var, ParamMap) of
@@ -163,7 +176,23 @@ replace_parametric_macro(ParamMap, Acc, [Tok={var, _, Var} | RepTokens], RestTok
 replace_parametric_macro(ParamMap, Acc, [RepToken | RepTokens], RestTokens) ->
 	replace_parametric_macro(ParamMap, [RepToken | Acc], RepTokens, RestTokens);
 replace_parametric_macro(_ParamMap, Acc, [], RestTokens) ->
+	%io:format("RPM: ~p, ~p~n", [Acc, RestTokens]),
 	{ok, {ok, Acc, RestTokens}}.
+
+build_param_map(Names, Values) ->
+	build_param_map(#{}, Names, Values).
+
+build_param_map(Map, [Name|Names], [Value|Values]) ->
+	build_param_map(Map#{Name => Value}, Names, Values);
+build_param_map(Map, [], []) ->
+	Map.
+
+build_actual_macro_params([], []) ->
+	[];
+build_actual_macro_params([], Actuals) ->
+	lists:reverse(Actuals);
+build_actual_macro_params(Acc, Actuals) ->
+	lists:reverse([Acc | Actuals]).
 
 read_attribute([{atom, _, file}, {'(', _} | _], Forms) ->
 	{ok, [], Forms};
@@ -202,8 +231,8 @@ read_attribute([{atom, _, deprecated} | _], Forms) ->
 	{ok, [], Forms};
 read_attribute([{atom, Line, AtomName} | _Rest], _) ->
 	% not supported feature
-	%io:format("rest: ~p~n", [_Rest]),
-	{error, {unknown_atom, Line, AtomName}};
+	io:format("rest: ~p~n", [_Rest]),
+	{error, {unknown_attribute, Line, AtomName}};
 read_attribute(_, _) ->
 	% we expect at least an atom here
 	{error, {expected_an_atom}}.
