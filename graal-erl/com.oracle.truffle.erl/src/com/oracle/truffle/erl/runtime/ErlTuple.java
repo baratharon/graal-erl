@@ -192,6 +192,11 @@ public final class ErlTuple implements TruffleObject {
     }
 
     @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
     public boolean equals(Object rhs) {
         if (rhs instanceof ErlTuple) {
             return 0 == compare((ErlTuple) rhs, true);
