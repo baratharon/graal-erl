@@ -52,11 +52,16 @@ parse(FileName) ->
 		error                    -> ArgInclude = []
 	end,
 	DirName = filename:dirname(FileName),
+	LibDir = code:lib_dir(),
+	case get_module_dir("kernel", LibDir) of
+		error -> KernelDirs = [];
+		Dir   -> KernelDirs = [filename:join([LibDir, Dir]), filename:join([LibDir, Dir, "src"]), filename:join([LibDir, Dir, "include"])]
+	end,
 	InitialState =
 	#{
 		active  => [true],
-		lib_dir => code:lib_dir(),
-		include => [".", DirName, DirName ++ "/../include/" | ArgInclude]
+		lib_dir => LibDir,
+		include => [".", DirName, DirName ++ "/../include/" | ArgInclude] ++ KernelDirs
 	},
 	%io:format("InitialState = ~p~n", [InitialState]),
 	preprocess_and_parse([], Forms, InitialState).
@@ -745,7 +750,7 @@ parse_include(Filename, Forms, State) ->
 
 parse_include_impl(Filename, Forms, [Dir|Dirs]) ->
 	Filename2 = filename:join(Dir, Filename),
-	%io:format("INCLUDE ~p~n", [Filename2]),
+	%io:format("TRY include ~p~n", [Filename2]),
 	try {ok, [], scan_forms(Filename2) ++ Forms}
 	catch
 		_:_ -> parse_include_impl(Filename, Forms, Dirs)
@@ -756,10 +761,15 @@ parse_include_impl(_Filename, _Forms, []) ->
 parse_include_lib(Filename, Forms, State) ->
 	Tokenized = string:tokens(Filename, "/\\"),
 	LibDir = maps:get(lib_dir, State),
-	{ok, ModuleList} = file:list_dir(LibDir),
-	AbstractModule = hd(Tokenized),
+	case get_module_dir(hd(Tokenized), LibDir) of
+		error      -> {error, no_such_module, hd(Tokenized)};
+		ModuleName -> parse_include_impl(filename:join([ModuleName | tl(Tokenized)]), Forms, [LibDir])
+	end.
+
+get_module_dir(AbstractModule, LibDir) ->
 	Prefix = AbstractModule ++ "-",
+	{ok, ModuleList} = file:list_dir(LibDir),
 	case list_find(fun(S) -> 1 =:= string:str(S, Prefix) end, ModuleList) of
-		{ok, ConcreteModule} -> parse_include_impl(filename:join([ConcreteModule | tl(Tokenized)]), Forms, [LibDir]);
-		error                -> {error, no_such_module, AbstractModule}
+		{ok, ConcreteModule} -> ConcreteModule;
+		error                -> error
 	end.
