@@ -444,7 +444,11 @@ parse_parametric_macro(DefName, RevArgs, Line, [{var, _, ArgName}, {',', _} | De
 parse_parametric_macro(DefName, RevArgs, Line, [{var, _, ArgName}, {')', _}, {',', _} | DefTail], Forms) ->
 	%InitialAcc = [{'(', Line}],
 	InitialAcc = [],
-	parse_parametric_macro_tail(DefName, lists:reverse([ArgName | RevArgs]), Line, 0, InitialAcc, DefTail, Forms).
+	parse_parametric_macro_tail(DefName, lists:reverse([ArgName | RevArgs]), Line, 0, InitialAcc, DefTail, Forms);
+parse_parametric_macro(DefName, RevArgs, Line, [{')', _}, {',', _} | DefTail], Forms) ->
+	%InitialAcc = [{'(', Line}],
+	InitialAcc = [],
+	parse_parametric_macro_tail(DefName, lists:reverse(RevArgs), Line, 0, InitialAcc, DefTail, Forms).
 
 parse_parametric_macro_tail(DefName, Args, Line, 0, Acc, [Head={',', _} | Tail], Forms) ->
 	%NewAcc = [{'(', Line}, Head, {')', Line} | Acc],
@@ -773,24 +777,49 @@ list_find(_Fun, []) ->
 	error.
 
 parse_include(Filename, Forms, State) ->
-	parse_include_impl(Filename, Forms, maps:get(include, State, ["."])).
+	{ok, CWD} = file:get_cwd(),
+	case maps:find(lib_dir, State) of
+		{ok, LibDir} ->
+			AbsFilename = join_and_simplify(CWD, Filename),
+			case lists:prefix(tl(LibDir), tl(AbsFilename)) of
+				true ->
+					Tail0 = lists:nthtail(length(LibDir), AbsFilename),
+					case hd(Tail0) of
+						$/ -> Tail = tl(Tail0);
+						$\ -> Tail = tl(Tail0);
+						_  -> Tail = Tail0
+					end;
+				false ->
+					Tail = {}
+			end;
+		error ->
+			Tail = {}
+	end,
+	case Tail of
+		{} -> parse_include_impl(CWD, Filename, Forms, maps:get(include, State, ["."]));
+		_  -> parse_include_lib(CWD, Tail, Forms, State)
+	end.
 
-parse_include_impl(Filename, Forms, [Dir|Dirs]) ->
+parse_include_impl(CWD, Filename, Forms, [Dir|Dirs]) ->
 	Filename2 = filename:join(Dir, Filename),
 	%io:format("TRY include ~p~n", [Filename2]),
 	try {ok, [], scan_forms(Filename2) ++ Forms}
 	catch
-		_:_ -> parse_include_impl(Filename, Forms, Dirs)
+		_:_ -> parse_include_impl(CWD, Filename, Forms, Dirs)
 	end;
-parse_include_impl(Filename, _Forms, []) ->
+parse_include_impl(_CWD, Filename, _Forms, []) ->
 	{error, no_such_include, Filename}.
 
 parse_include_lib(Filename, Forms, State) ->
+	{ok, CWD} = file:get_cwd(),
+	parse_include_lib(CWD, Filename, Forms, State).
+
+parse_include_lib(CWD, Filename, Forms, State) ->
 	Tokenized = string:tokens(Filename, "/\\"),
 	LibDir = maps:get(lib_dir, State),
 	case get_module_dir(hd(Tokenized), LibDir) of
 		error      -> {error, no_such_module, hd(Tokenized)};
-		ModuleName -> parse_include_impl(filename:join([ModuleName | tl(Tokenized)]), Forms, [LibDir])
+		ModuleName -> parse_include_impl(CWD, filename:join([ModuleName | tl(Tokenized)]), Forms, [LibDir])
 	end.
 
 get_module_dir(AbstractModule, LibDir) ->
@@ -800,3 +829,23 @@ get_module_dir(AbstractModule, LibDir) ->
 		{ok, ConcreteModule} -> ConcreteModule;
 		error                -> error
 	end.
+
+join_and_simplify(Dir=[D1 | _], File=[$., $., C3 | _]) when ($/ == D1 orelse ($\\) == D1), ($/ == C3 orelse ($\\) == C3) ->
+	List1 = string:tokens(Dir,  "/\\"),
+	List2 = string:tokens(File, "/\\"),
+	[$/ | string:join(do_simplify(List1, List2), "/")];
+join_and_simplify([D1, $: | Dir], File=[$., $., C3 | _]) when $/ == C3; ($\\) == C3 ->
+	List1 = string:tokens(Dir,  "/\\"),
+	List2 = string:tokens(File, "/\\"),
+	[D1, $:, $\ | string:join(do_simplify(List1, List2), "/")];
+join_and_simplify(_Dir, File) ->
+	File.
+
+do_simplify(List1, List2) ->
+	{Simple1, Simple2} = simplify_simplify_step(lists:reverse(List1), List2),
+	lists:reverse(Simple1, Simple2).
+
+simplify_simplify_step([_RevHead | RevTail], [".." | Tail]) ->
+	simplify_simplify_step(RevTail, Tail);
+simplify_simplify_step(Rev, List) ->
+	{Rev, List}.
