@@ -103,16 +103,6 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
     private static List<NodeFactory<? extends ErlBuiltinNode>> builtins = Collections.emptyList();
     private static Visualizer visualizer = new ErlDefaultVisualizer();
 
-    private static final boolean BOOT;
-    private static final boolean USER;
-
-    static {
-        BOOT = true;
-        USER = false;
-        // BOOT = false;
-        // USER = true;
-    }
-
     private ErlangLanguage() {
     }
 
@@ -121,54 +111,9 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
     private static final String RESOURCES_PATH = "resources/";
     private static final String INTERNAL_AST_FILE_NAME_PREFIX = "internal:";
 
-    // private static final String[] internalSourceFiles = new String[]{
-    //
-    // "stdlib/erl_anno.ast", "stdlib/erl_bits.ast", "stdlib/erl_eval.ast", "stdlib/erl_scan.ast",
-    // "stdlib/io.ast", "stdlib/io_lib.ast", "stdlib/io_lib_format.ast",
-    // "stdlib/io_lib_fread.ast", "stdlib/io_lib_pretty.ast", "stdlib/lists.ast", "stdlib/maps.ast",
-    // "stdlib/proplists.ast", "stdlib/string.ast", "stdlib/unicode.ast",
-    // "stdlib/binary.ast", "stdlib/calendar.ast", "stdlib/c.ast", "stdlib/digraph.ast",
-    // "stdlib/edlin.ast", "stdlib/edlin_expand.ast", "stdlib/filelib.ast", "stdlib/filename.ast",
-    // "stdlib/file_sorter.ast", "stdlib/lib.ast", "stdlib/math.ast", "stdlib/orddict.ast",
-    // "stdlib/ordsets.ast", "stdlib/queue.ast", "stdlib/rand.ast", "stdlib/random.ast",
-    // "stdlib/re.ast", "stdlib/sys.ast", "stdlib/shell.ast", "stdlib/shell_default.ast",
-    // "stdlib/ets.ast", "stdlib/gb_sets.ast", "stdlib/gb_trees.ast", "stdlib/gen.ast",
-    // "stdlib/gen_event.ast", "stdlib/gen_fsm.ast", "stdlib/gen_server.ast",
-    // "stdlib/otp_internal.ast",
-    // "stdlib/pool.ast", "stdlib/proc_lib.ast", "stdlib/qlc.ast", "stdlib/slave.ast",
-    // "stdlib/sofs.ast", "stdlib/supervisor.ast", "stdlib/supervisor_bridge.ast",
-    // "stdlib/timer.ast",
-    // "stdlib/zip.ast",
-    //
-    // "kernel/code.ast", "kernel/file.ast", "kernel/os.ast", "kernel/application.ast",
-    // "kernel/application_controller.ast", "kernel/application_master.ast",
-    // "kernel/application_starter.ast", "kernel/auth.ast", "kernel/code_server.ast",
-    // "kernel/file_io_server.ast", "kernel/file_server.ast", "kernel/global.ast",
-    // "kernel/global_group.ast", "kernel/global_search.ast", "kernel/group.ast",
-    // "kernel/heart.ast",
-    // "kernel/kernel.ast", "kernel/kernel_config.ast", "kernel/ram_file.ast",
-    // "kernel/user.ast", "kernel/user_drv.ast", "kernel/user_sup.ast",
-    //
-    // "erts/init.ast", "erts/zlib.ast", "erts/erl_prim_loader.ast", "erts/erlang.ast",
-    // "erts/erts_internal.ast", "erts/otp_ring0.ast", "erts/prim_eval.ast", "erts/prim_file.ast",
-    // "erts/prim_inet.ast", "erts/prim_zip.ast"
-    //
-    // };
-
     private static final List<Source> internalSources;
 
     static {
-        // internalSources = new HashMap<>();
-        // for (String fileName : internalSourceFiles) {
-        // URL url = ErlangLanguage.class.getResource(RESOURCES_PATH + fileName);
-        // try {
-        // internalSources.put(fileName, Source.fromReader(new InputStreamReader(url.openStream()),
-        // INTERNAL_AST_FILE_NAME_PREFIX + fileName));
-        // } catch (IOException ex) {
-        // throw new IllegalArgumentException(ex);
-        // }
-        // }
-
         internalSources = new ArrayList<>();
 
         try {
@@ -201,47 +146,46 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
             erlContext.installBuiltin(builtin, true);
         }
 
-        // for (String internalSourceFile : internalSourceFiles) {
-        // erlContext.evalPreprocessed(internalSources.get(internalSourceFile));
-        // }
-
         for (Source source : internalSources) {
             erlContext.evalPreprocessed(source, true);
-        }
-
-        ErlFunction func;
-
-        if (BOOT) {
-            final MFA mfa = new MFA("otp_ring0", "start", 2);
-            func = erlContext.getFunctionRegistry().lookup(mfa.getModule(), mfa.getFunction(), mfa.getArity());
-            if (null == func) {
-                throw new RuntimeException("" + mfa + " not found");
-            }
-            ErlProcess.spawn(erlContext, func, new Object[]{ErlList.NIL, buildInitArgs()});
         }
 
         return erlContext;
     }
 
-    private static ErlList buildInitArgs() {
-        ArrayList<Object> args = new ArrayList<>();
+    private static void startOTPRing0(ErlContext erlContext, String[] args) {
+        final MFA mfa = new MFA("otp_ring0", "start", 2);
+        final ErlFunction func = erlContext.getFunctionRegistry().lookup(mfa.getModule(), mfa.getFunction(), mfa.getArity());
+        if (null == func) {
+            throw new RuntimeException("" + mfa + " not found");
+        }
+        ErlProcess.spawn(erlContext, func, new Object[]{ErlList.NIL, buildInitArgs(args)});
+    }
 
-        args.add(ErlContext.stringToBinary("-init_debug", ErlContext.LATIN1_CHARSET));
-        args.add(ErlContext.stringToBinary("-root", ErlContext.LATIN1_CHARSET));
-        args.add(ErlContext.stringToBinary("/usr/lib/erlang", ErlContext.LATIN1_CHARSET));
+    private static ErlList buildInitArgs(String[] args) {
+        ArrayList<Object> list = new ArrayList<>();
 
-        args.add(ErlContext.stringToBinary("-pa", ErlContext.LATIN1_CHARSET));
-        args.add(ErlContext.stringToBinary("/home/aron/jku/erlang", ErlContext.LATIN1_CHARSET));
-        args.add(ErlContext.stringToBinary("-run", ErlContext.LATIN1_CHARSET));
-        args.add(ErlContext.stringToBinary("erlparse01", ErlContext.LATIN1_CHARSET));
-        args.add(ErlContext.stringToBinary("main", ErlContext.LATIN1_CHARSET));
+        list.add(ErlContext.stringToBinary("-root", ErlContext.LATIN1_CHARSET));
+        list.add(ErlContext.stringToBinary("/usr/lib/erlang", ErlContext.LATIN1_CHARSET));
 
-        args.add(ErlContext.stringToBinary("-run", ErlContext.LATIN1_CHARSET));
-        args.add(ErlContext.stringToBinary("init", ErlContext.LATIN1_CHARSET));
-        args.add(ErlContext.stringToBinary("stop", ErlContext.LATIN1_CHARSET));
-        args.add(ErlContext.stringToBinary("-noshell", ErlContext.LATIN1_CHARSET));
+        for (String arg : args) {
+            list.add(ErlContext.stringToBinary(arg, ErlContext.LATIN1_CHARSET));
+        }
 
-        return ErlList.fromList(args);
+        // "-init_debug"
+
+        // list.add(ErlContext.stringToBinary("-pa", ErlContext.LATIN1_CHARSET));
+        // list.add(ErlContext.stringToBinary("/home/aron/jku/erlang", ErlContext.LATIN1_CHARSET));
+        // list.add(ErlContext.stringToBinary("-run", ErlContext.LATIN1_CHARSET));
+        // list.add(ErlContext.stringToBinary("erlparse01", ErlContext.LATIN1_CHARSET));
+        // list.add(ErlContext.stringToBinary("main", ErlContext.LATIN1_CHARSET));
+
+        // list.add(ErlContext.stringToBinary("-run", ErlContext.LATIN1_CHARSET));
+        // list.add(ErlContext.stringToBinary("init", ErlContext.LATIN1_CHARSET));
+        // list.add(ErlContext.stringToBinary("stop", ErlContext.LATIN1_CHARSET));
+        // list.add(ErlContext.stringToBinary("-noshell", ErlContext.LATIN1_CHARSET));
+
+        return ErlList.fromList(list);
     }
 
     @Override
@@ -262,38 +206,60 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
         PolyglotEngine vm = PolyglotEngine.buildNew().build();
         assert vm.getLanguages().containsKey("text/x-erlang");
 
-        String functionName = "main";
+        if (args.length > 0 && "-independent".equals(args[0])) {
+            boolean gotFile = false;
+            int index = 1;
+            String moduleName = null;
+            String functionName = null;
 
-        if (args.length > 1) {
-            functionName = args[1];
-        }
+            while (index < args.length && !"--".equals(args[index])) {
+                if ("-file".equals(args[index])) {
+                    final String filename = args[index + 1];
+                    index += 2;
 
-        Source source;
-        if (args.length == 0) {
-            source = Source.fromReader(new InputStreamReader(System.in), "<stdin>").withMimeType("text/x-erlang");
-        } else {
-            source = Source.fromFileName(args[0]);
-        }
-        vm.eval(source);
+                    final Source source = Source.fromFileName(filename);
+                    vm.eval(source);
 
-        Value func = vm.findGlobalSymbol(functionName);
-        if (func == null) {
-            throw new ErlException("Function " + functionName + " was not defined in Erlang source file.");
-        }
+                    gotFile = true;
 
-        ErlContext context = vm.findGlobalSymbol(ERL_CONTEXT_NAME).as(ErlContext.class);
+                } else if ("-mf".equals(args[index])) {
+                    moduleName = args[index + 1];
+                    functionName = args[index + 2];
+                    index += 3;
 
-        if (USER) {
-            ErlFunction fun = func.as(ErlFunction.class);
-            ErlProcess proc = ErlProcess.spawn(context, fun, new Object[0]);
-            Future<Object> result = proc.getFuture();
+                } else {
+                    throw new ErlException("Unknown switch: " + args[index] + ".");
+                }
+            }
+
+            if (!gotFile) {
+                final Source source = Source.fromReader(new InputStreamReader(System.in), "<stdin>").withMimeType("text/x-erlang");
+                vm.eval(source);
+            }
+
+            final ErlContext context = vm.findGlobalSymbol(ERL_CONTEXT_NAME).as(ErlContext.class);
+
+            if (index != args.length) {
+                // TODO
+                throw new ErlException("Argument passing is not implemented yet.");
+            }
+
+            final MFA mfa = new MFA(moduleName, functionName, 0);
+            final ErlFunction func = context.getFunctionRegistry().lookup(mfa);
+
+            if (null == func) {
+                throw new ErlException("Function " + mfa + " is not defined.");
+            }
+
+            final ErlProcess proc = ErlProcess.spawn(context, func, new Object[0]);
+            final Future<Object> result = proc.getFuture();
 
             System.out.println(stringifyResult(result));
-        }
 
-        if (BOOT) {
+        } else {
+            final ErlContext context = vm.findGlobalSymbol(ERL_CONTEXT_NAME).as(ErlContext.class);
+            startOTPRing0(context, args);
             context.waitForTerminateAll();
-            System.err.println(">>> EXIT <<<");
         }
 
         vm.dispose();

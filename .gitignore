@@ -11,3 +11,7 @@ mx.graal-erl/eclipse-config.zip
 mx.graal-erl/eclipse-launches
 mx.graal-erl/netbeans-config.zip
 workingsets.xml
+.metadata
+.recommenders
+bin
+src_gen

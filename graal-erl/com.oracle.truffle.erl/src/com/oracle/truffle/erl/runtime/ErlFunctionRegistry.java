@@ -65,6 +65,13 @@ public final class ErlFunctionRegistry {
     /**
      * Returns the canonical {@link ErlFunction} object for the given name.
      */
+    public synchronized ErlFunction lookup(MFA mfa) {
+        return functions.get(mfa);
+    }
+
+    /**
+     * Same as lookup(MFA).
+     */
     public synchronized ErlFunction lookup(String module, String func, int arity) {
         return functions.get(new MFA(module, func, arity));
     }
