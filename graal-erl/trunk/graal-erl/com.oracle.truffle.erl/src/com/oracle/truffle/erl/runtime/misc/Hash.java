@@ -50,7 +50,6 @@ import com.oracle.truffle.erl.runtime.ErlFunction;
 import com.oracle.truffle.erl.runtime.ErlList;
 import com.oracle.truffle.erl.runtime.ErlRef;
 import com.oracle.truffle.erl.runtime.ErlTuple;
-import com.oracle.truffle.erl.runtime.ErlContext.TermRank;
 
 /**
  * Erlang hash functions.

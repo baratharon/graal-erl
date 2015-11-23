@@ -59,8 +59,7 @@ public class ErlStandardASTProber implements ASTProber {
     /**
      * {@inheritDoc}
      * <p>
-     * Instruments and tags all relevant {@link SLStatementNode}s and {@link SLExpressionNode}s.
-     * Currently, only SLStatementNodes that are not SLExpressionNodes are tagged as statements.
+     * Instruments and tags all relevant {@link ErlExpressionNode}s.
      */
     public void probeAST(final Instrumenter instrumenter, RootNode startNode) {
 

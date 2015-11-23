@@ -46,19 +46,20 @@ import com.oracle.truffle.api.dsl.NodeField;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.erl.nodes.ErlExpressionNode;
 import com.oracle.truffle.erl.runtime.ErlContext;
+import com.oracle.truffle.erl.runtime.ErlFunctionRegistry;
 import com.oracle.truffle.erl.runtime.MFA;
 
 /**
- * Base class for all builtin functions. It contains the Truffle DSL annotation {@link NodeChild}
+ * Base class for all built-in functions. It contains the Truffle DSL annotation {@link NodeChild}
  * that defines the function arguments.<br>
- * Builtin functions need access to the {@link SLContext}. Instead of defining a Java field manually
- * and setting it in a constructor, we use the Truffle DSL annotation {@link NodeField} that
- * generates the field and constructor automatically.
+ * Built-in functions need access to the {@link ErlContext}. Instead of defining a Java field
+ * manually and setting it in a constructor, we use the Truffle DSL annotation {@link NodeField}
+ * that generates the field and constructor automatically.
  * <p>
- * The builtin functions are registered in {@link SLContext#installBuiltins}. Every builtin node
+ * The built-in functions are registered in {@link ErlContext#installBuiltins}. Every builtin node
  * subclass is instantiated there, wrapped into a function, and added to the
- * {@link ErlFunctionRegistry}. This ensures that builtin functions can be called like user-defined
- * functions; there is no special function lookup or call node for builtin functions.
+ * {@link ErlFunctionRegistry}. This ensures that built-in functions can be called like user-defined
+ * functions; there is no special function lookup or call node for built-in functions.
  */
 @NodeChild(value = "arguments", type = ErlExpressionNode[].class)
 @NodeField(name = "context", type = ErlContext.class)

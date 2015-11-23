@@ -48,7 +48,9 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.BinaryConditionProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import com.oracle.truffle.api.utilities.CountingConditionProfile;
 import com.oracle.truffle.erl.nodes.ErlExpressionNode;
 
 /**
@@ -98,8 +100,8 @@ public final class ErlClauseNode extends ErlExpressionNode {
 
     /**
      * Execute all child statements. The annotation {@link ExplodeLoop} triggers full unrolling of
-     * the loop during compilation. This allows the {@link ErlExpressionNode#executeTerm} method of
-     * all children to be inlined.
+     * the loop during compilation. This allows the {@link ErlExpressionNode#executeGeneric} method
+     * of all children to be inlined.
      */
     @Override
     public Object executeGeneric(VirtualFrame frame) {

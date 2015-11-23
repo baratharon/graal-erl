@@ -78,9 +78,7 @@ import com.oracle.truffle.erl.runtime.builtins.UnicodeBuiltins;
 
 /**
  * The run-time state of Erlang during execution. One context is instantiated before any source code
- * is parsed, and this context is passed around to all methods that need access to it. For example,
- * the context is used during {@link ErlNodeFactory parsing} and by
- * {@link ErlBuiltinNode#getContext() builtin functions}.
+ * is parsed, and this context is passed around to all methods that need access to it.
  * <p>
  * It would be an error to have two different context instances during the execution of one script.
  * However, if two separate scripts run in one Java VM at the same time, they have a different
@@ -123,18 +121,10 @@ public final class ErlContext extends ExecutionContext {
         return processManager;
     }
 
-    /**
-     * Returns the default input, i.e., the source for the {@link SLReadlnBuiltin}. To allow unit
-     * testing, we do not use {@link System#in} directly.
-     */
     public BufferedReader getInput() {
         return input;
     }
 
-    /**
-     * The default default, i.e., the output for the {@link SLPrintlnBuiltin}. To allow unit
-     * testing, we do not use {@link System#out} directly.
-     */
     public PrintWriter getOutput() {
         return output;
     }

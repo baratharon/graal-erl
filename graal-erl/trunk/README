@@ -1,6 +1,5 @@
 "mx2" should be visible
 
-$ # checkout
-$ mx spull
+$ # checkout graal-erl and truffle (and optionally graal + jvmci)
 $ mx build
 $ mx erl

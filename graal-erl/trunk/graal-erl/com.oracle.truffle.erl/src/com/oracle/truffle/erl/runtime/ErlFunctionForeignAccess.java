@@ -54,7 +54,7 @@ import static com.oracle.truffle.erl.runtime.ErlContext.fromForeignValue;
 import java.util.List;
 
 /**
- * Implementation of foreign access for {@link SLFunction}.
+ * Implementation of foreign access for {@link ErlFunction}.
  */
 final class ErlFunctionForeignAccess implements ForeignAccess.Factory {
     public static ForeignAccess create() {
