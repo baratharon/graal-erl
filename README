@@ -1,5 +1,18 @@
-"mx2" should be visible
-
-$ # checkout graal-erl and truffle (and optionally graal + jvmci)
+$ mkdir work
+$ cd work
+$ hg clone https://bitbucket.org/allr/mx
+$ export PATH=$PWD/mx:$PATH
+$ mkdir graal-compiler-workspace
+$ cd graal-compiler-workspace
+$ mx sclone http://hg.openjdk.java.net/graal/graal-compiler graal
+$ git clone https://github.com/baratharon/graal-erl
+$ ls -1
+graal
+graal-erl
+jvmci
+truffle
+$ cd graal-erl
+$ mx spull
 $ mx build
 $ mx erl
+$ mx --jdk jvmci --dynamicimport graal erl
