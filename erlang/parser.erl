@@ -556,14 +556,17 @@ resolve_record_expr(RecName, RecordInfo, Line, FieldAssigns, [{var, _, '_'}, {'=
 	resolve_record_expr(RecName, RecordInfo, Line, NewFieldAssigns, MoreTokens2, PatternHint).
 
 parse_record_field_assign(Tokens) ->
-	parse_record_field_assign([], Tokens).
+	parse_record_field_assign([], 0, Tokens).
 
-parse_record_field_assign(Acc, [{',', _} | RestTokens]) ->
+parse_record_field_assign(Acc, 0, [{',', _} | RestTokens]) ->
 	{Acc, RestTokens};
-parse_record_field_assign(Acc, [{'}', _} | _] = RestTokens) ->
+parse_record_field_assign(Acc, 0, [{'}', _} | _] = RestTokens) ->
 	{Acc, RestTokens};
-parse_record_field_assign(Acc, [Token | Tokens]) ->
-	parse_record_field_assign([Token | Acc], Tokens).
+parse_record_field_assign(Acc, Level, [Token={Tok, _} | Tokens]) ->
+	NewLevel = new_level(Level, Tok),
+	parse_record_field_assign([Token | Acc], NewLevel, Tokens);
+parse_record_field_assign(Acc, Level, [Token | Tokens]) ->
+	parse_record_field_assign([Token | Acc], Level, Tokens).
 
 fill_remaining_field_assigns(Assigns, [], _Expr) ->
 	Assigns;
