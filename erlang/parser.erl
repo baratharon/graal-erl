@@ -503,6 +503,9 @@ parse_imports(ModuleName, [{',', _} | Rest], FAs, Forms) ->
 parse_imports(ModuleName, [{']', _}, {')', _}, {dot, _}], FAs, Forms) ->
 	{ok, [{import, ModuleName, FAs}], Forms}.
 
+parse_record(RecName, [{'}', _} | Tail], Forms) ->
+	% handle empty record
+	build_record_info(RecName, #{}, [], 2, Tail, Forms);
 parse_record(RecName, Tail, Forms) ->
 	parse_record(RecName, #{}, [], 2, Tail, Forms).
 
