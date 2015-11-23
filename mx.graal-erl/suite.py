@@ -28,7 +28,7 @@ suite = {
       "dependencies" : [
         "truffle:TRUFFLE_API",
       ],
-      "javaCompliance" : "1.7",
+      "javaCompliance" : "1.8",
       "annotationProcessors" : ["truffle:TRUFFLE_DSL_PROCESSOR"],
       "workingSets" : "Truffle,Erlang",
       "license" : "UPL",
@@ -42,7 +42,7 @@ suite = {
         "com.oracle.truffle.erl",
       ],
       "checkstyle" : "com.oracle.truffle.erl",
-      "javaCompliance" : "1.7",
+      "javaCompliance" : "1.8",
       "workingSets" : "Truffle,Erlang,Test",
       "license" : "UPL",
     },

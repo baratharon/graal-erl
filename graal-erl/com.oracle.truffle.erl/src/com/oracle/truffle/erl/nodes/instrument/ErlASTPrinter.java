@@ -51,8 +51,8 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 
 /**
- * SLASTPrinter is used to print for SL's internal Truffle AST. This is used by
- * {@link SLDefaultVisualizer} to provide a means of displaying the internal Truffle AST
+ * ErlASTPrinter is used to print for SL's internal Truffle AST. This is used by
+ * {@link ErlDefaultVisualizer} to provide a means of displaying the internal Truffle AST
  */
 public final class ErlASTPrinter extends DefaultASTPrinter {
 

@@ -48,7 +48,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.erl.nodes.ErlBinaryNode;
 
 /**
- * This class declares specializations similar to the extensively documented {@link AddNode}. It
+ * This class declares specializations similar to the extensively documented {@link ErlAddNode}. It
  * uses one additional feature of the Truffle DSL: {@link ShortCircuit}.
  * <p>
  * Logical operations in SL use short circuit evaluation: if the evaluation of the left operand

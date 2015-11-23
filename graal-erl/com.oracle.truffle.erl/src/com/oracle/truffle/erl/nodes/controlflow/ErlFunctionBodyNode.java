@@ -49,6 +49,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.erl.nodes.ErlExpressionNode;
+import com.oracle.truffle.erl.nodes.ErlRootNode;
 
 /**
  * The body of a user-defined Erlang function. This is the node referenced by a {@link ErlRootNode}

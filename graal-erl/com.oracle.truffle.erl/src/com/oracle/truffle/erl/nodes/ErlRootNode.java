@@ -46,6 +46,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.erl.ErlangLanguage;
+import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
 import com.oracle.truffle.erl.runtime.ErlContext;
 import com.oracle.truffle.erl.runtime.MFA;
 import com.oracle.truffle.erl.runtime.ErlProcess;
@@ -53,8 +54,7 @@ import com.oracle.truffle.erl.runtime.ErlProcess;
 /**
  * The root of all Erlang execution trees. It is a Truffle requirement that the tree root extends
  * the class {@link RootNode}. This class is used for both builtin and user-defined functions. For
- * builtin functions, the {@link #bodyNode} is a subclass of {@link ErlBuiltinNode}. For
- * user-defined functions, the {@link #bodyNode} is a {@link ErlFunctionBodyNode}.
+ * builtin functions, the {@link #bodyNode} is a subclass of {@link ErlBuiltinNode}.
  */
 @NodeInfo(language = "Erlang", description = "The root of all Erlang execution trees")
 public final class ErlRootNode extends RootNode {
