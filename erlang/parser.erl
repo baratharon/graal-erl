@@ -46,7 +46,7 @@ parse(FileName) when is_atom(FileName) ->
 	parse(atom_to_list(FileName) ++ ".erl");
 parse(FileName) ->
 	Forms = scan_forms(FileName),
-	file:write_file("/tmp/forms", io_lib:format("~p~n", [Forms])),
+	%file:write_file("/tmp/forms", io_lib:format("~p~n", [Forms])),
 	preprocess_and_parse([], Forms, #{}).
 
 parse_and_extract_form(Form) ->
@@ -61,7 +61,7 @@ parse_and_extract_form(Form) ->
 
 preprocess_and_parse(RevAcc, [[{'-',_} | RestOfForm] | Tail], State) ->
 	% we found a '-' symbol, which is a directive, try to read it
-	{ok, ReadAttributes, Remaining} = read_attribute(preprocess([], RestOfForm, State, soft), Tail),
+	{ok, ReadAttributes, Remaining} = read_attribute(preprocess([], RestOfForm, State, soft), Tail, State),
 	continue_preprocess_and_parse(RevAcc, Remaining, ReadAttributes, State);
 preprocess_and_parse(RevAcc, [Head | Tail], State) ->
 	% we found a form, preprocess, and parse it
@@ -282,49 +282,52 @@ build_actual_macro_params([], Actuals) ->
 build_actual_macro_params(Acc, Actuals) ->
 	lists:reverse([Acc | Actuals]).
 
-read_attribute([{atom, _, file}, {'(', _} | _], Forms) ->
+read_attribute([{atom, _, file}, {'(', _} | _], Forms, _State) ->
 	{ok, [], Forms};
-read_attribute([{atom, _, module}, {'(', _}, {atom, _, ModuleName}, {')', _}, {dot, _} | []], Forms) ->
+read_attribute([{atom, _, module}, {'(', _}, {atom, _, ModuleName}, {')', _}, {dot, _} | []], Forms, _State) ->
 	% module name has a strict syntax (we do not match the module name and the file name)
 	{ok, [{macro, 'MODULE', [{atom, -1, ModuleName}]}, {macro, 'MODULE_STRING', [{string, -1, atom_to_list(ModuleName)}]}], Forms};
-read_attribute([{atom, Line, define}, {'(', _}, {Type, _, DefName}, {',', _} | DefTail], Forms) when atom==Type; var==Type ->
+read_attribute([{atom, Line, define}, {'(', _}, {Type, _, DefName}, {',', _} | DefTail], Forms, _State) when atom==Type; var==Type ->
 	% defining simple macros
 	parse_simple_macro(DefName, Line, DefTail, Forms);
-read_attribute([{atom, Line, define}, {'(', _}, {Type, _, DefName}, {'(', _} | DefTail], Forms) when atom==Type; var==Type ->
+read_attribute([{atom, Line, define}, {'(', _}, {Type, _, DefName}, {'(', _} | DefTail], Forms, _State) when atom==Type; var==Type ->
 	% defining parametric macros
 	parse_parametric_macro(DefName, Line, DefTail, Forms);
-read_attribute([{atom, _, record}, {'(', _}, {atom, _, RecName}, {',', _}, {'{', _} | Tail], Forms) ->
+read_attribute([{atom, _, record}, {'(', _}, {atom, _, RecName}, {',', _}, {'{', _} | Tail], Forms, _State) ->
 	% defining record (will be translated)
 	parse_record(RecName, Tail, Forms);
-read_attribute([{atom, _, export} | _], Forms) ->
+read_attribute([{atom, _, export} | _], Forms, _State) ->
 	% drop the 'export' now, we don't need it yet
 	{ok, [], Forms};
-read_attribute([{atom, _, export_type} | _], Forms) ->
+read_attribute([{atom, _, export_type} | _], Forms, _State) ->
 	% drop the 'export_type' now, we don't need it yet
 	{ok, [], Forms};
-read_attribute([{atom, _, type} | _], Forms) ->
+read_attribute([{atom, _, type} | _], Forms, _State) ->
 	% drop the 'type' now, we don't need it yet
 	{ok, [], Forms};
-read_attribute([{atom, _, opaque} | _], Forms) ->
+read_attribute([{atom, _, opaque} | _], Forms, _State) ->
 	% drop the 'opaque' now, we don't need it yet
 	{ok, [], Forms};
-read_attribute([{atom, _, import} | Rest], Forms) ->
+read_attribute([{atom, _, import} | Rest], Forms, _State) ->
 	% parse the import attribute
 	parse_imports(Rest, Forms);
-read_attribute([{atom, _, compile} | _], Forms) ->
+read_attribute([{atom, _, compile} | _], Forms, _State) ->
 	% drop the 'compile' now, we don't need it yet
 	{ok, [], Forms};
-read_attribute([{atom, _, spec} | _], Forms) ->
+read_attribute([{atom, _, spec} | _], Forms, _State) ->
 	% drop the 'spec' now, we don't need it yet
 	{ok, [], Forms};
-read_attribute([{atom, _, deprecated} | _], Forms) ->
+read_attribute([{atom, _, deprecated} | _], Forms, _State) ->
 	% drop the 'deprecated' now, we don't need it yet
 	{ok, [], Forms};
-read_attribute([{atom, Line, AtomName} | _Rest], _) ->
+read_attribute([{atom, _, ifdef} | _], Forms, _State) ->
+	% drop the 'deprecated' now, we don't need it yet
+	{ok, [], Forms};
+read_attribute([{atom, Line, AtomName} | _Rest], _Forms, _State) ->
 	% not supported feature
 	io:format("rest: ~p~n", [_Rest]),
 	{error, {unknown_attribute, Line, AtomName}};
-read_attribute(_, _) ->
+read_attribute(_, _Forms, _State) ->
 	% we expect at least an atom here
 	{error, {expected_an_atom}}.
 
