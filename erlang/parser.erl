@@ -98,7 +98,7 @@ preprocess(RevAcc, Tokens, State, Mode) ->
 preprocess_impl(RevAcc, [{'?', _}, {Type, Line, Name} | MoreTokens], State, LocKind, Mode) when atom==Type; var==Type ->
 	{ok,  Resolved, RestTokens} = resolve(Name, Line, MoreTokens, State, Mode),
 	case Mode of
-		hard -> preprocess_impl(RevAcc, lists:append(lists:reverse(Resolved), RestTokens), State, LocKind, Mode);
+		hard -> preprocess_impl([], lists:append(lists:reverse(RevAcc), lists:append(lists:reverse(Resolved), RestTokens)), State, LocKind, Mode);
 		soft -> preprocess_impl(lists:append(Resolved, RevAcc), RestTokens, State, LocKind, Mode);
 		_    -> {error, unknown_mode, Mode}
 	end;
