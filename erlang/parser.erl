@@ -47,7 +47,19 @@ parse(FileName) when is_atom(FileName) ->
 parse(FileName) ->
 	Forms = scan_forms(FileName),
 	%file:write_file("/tmp/forms", io_lib:format("~p~n", [Forms])),
-	preprocess_and_parse([], Forms, #{active => [true]}).
+	case init:get_argument(include) of
+		{ok, ListOfListOfString} -> ArgInclude = pack1(ListOfListOfString);
+		error                    -> ArgInclude = []
+	end,
+	DirName = filename:dirname(FileName),
+	InitialState =
+	#{
+		active  => [true],
+		lib_dir => code:lib_dir(),
+		include => [".", DirName, DirName ++ "/../include/" | ArgInclude]
+	},
+	%io:format("InitialState = ~p~n", [InitialState]),
+	preprocess_and_parse([], Forms, InitialState).
 
 parse_and_extract_form(Form) ->
 	% io:format("form: ~p~n", [Form]),
@@ -338,6 +350,18 @@ read_attribute([{atom, _, import} | Rest], Forms, Active, _State) ->
 		true  -> parse_imports(Rest, Forms);
 		false -> {ok, [], Forms}
 	end;
+read_attribute([{atom, _, include}, {'(', _}, {string, _, Filename}, {')', _}, {dot, _}], Forms, Active, State) ->
+	% parse the include attribute
+	case Active of
+		true  -> parse_include(Filename, Forms, State);
+		false -> {ok, [], Forms}
+	end;
+read_attribute([{atom, _, include_lib}, {'(', _}, {string, _, Filename}, {')', _}, {dot, _}], Forms, Active, State) ->
+	% parse the include attribute
+	case Active of
+		true  -> parse_include_lib(Filename, Forms, State);
+		false -> {ok, [], Forms}
+	end;
 read_attribute([{atom, _, compile} | _], Forms, _Active, _State) ->
 	% drop the 'compile' now, we don't need it yet
 	{ok, [], Forms};
@@ -366,12 +390,18 @@ read_attribute(_, _Forms, _Active, _State) ->
 	{error, {expected_an_atom}}.
 
 parse_simple_macro(DefName, Line, Tail, Forms) ->
-	parse_simple_macro(DefName, Line, 0, [{'(', Line}], Tail, Forms).
+	%InitialAcc = [{'(', Line}],
+	InitialAcc = [],
+	parse_simple_macro(DefName, Line, 0, InitialAcc, Tail, Forms).
 
 parse_simple_macro(DefName, Line, 0, Acc, [Head={',', _} | Tail], Forms) ->
-	parse_simple_macro(DefName, Line, 0, [{'(', Line}, Head, {')', Line} | Acc], Tail, Forms);
-parse_simple_macro(DefName, _Line, 0, Acc, [Head={')', _}, {dot, _}], Forms) ->
-	{ok, [{macro, DefName, [Head | Acc]}], Forms};
+	%NewAcc = [{'(', Line}, Head, {')', Line} | Acc],
+	NewAcc = [Head | Acc],
+	parse_simple_macro(DefName, Line, 0, NewAcc, Tail, Forms);
+parse_simple_macro(DefName, _Line, 0, Acc, [_Head={')', _}, {dot, _}], Forms) ->
+	%NewAcc = [Head | Acc],
+	NewAcc = Acc,
+	{ok, [{macro, DefName, NewAcc}], Forms};
 parse_simple_macro(DefName, Line, Depth, Acc, [Head={Tok, _} | Tail], Forms) ->
 	NewDepth = new_level(Depth, Tok),
 	parse_simple_macro(DefName, Line, NewDepth, [Head | Acc], Tail, Forms);
@@ -386,12 +416,18 @@ parse_parametric_macro(DefName, Line, DefTail, Forms) ->
 parse_parametric_macro(DefName, RevArgs, Line, [{var, _, ArgName}, {',', _} | DefTail], Forms) ->
 	parse_parametric_macro(DefName, [ArgName | RevArgs], Line, DefTail, Forms);
 parse_parametric_macro(DefName, RevArgs, Line, [{var, _, ArgName}, {')', _}, {',', _} | DefTail], Forms) ->
-	parse_parametric_macro_tail(DefName, lists:reverse([ArgName | RevArgs]), Line, 0, [{'(', Line}], DefTail, Forms).
+	%InitialAcc = [{'(', Line}],
+	InitialAcc = [],
+	parse_parametric_macro_tail(DefName, lists:reverse([ArgName | RevArgs]), Line, 0, InitialAcc, DefTail, Forms).
 
 parse_parametric_macro_tail(DefName, Args, Line, 0, Acc, [Head={',', _} | Tail], Forms) ->
-	parse_parametric_macro_tail(DefName, Args, Line, 0, [{'(', Line}, Head, {')', Line} | Acc], Tail, Forms);
-parse_parametric_macro_tail(DefName, Args, _Line, 0, Acc, [Head={')', _}, {dot, _}], Forms) ->
-	{ok, [{parametric, DefName, Args, lists:reverse([Head | Acc])}], Forms};
+	%NewAcc = [{'(', Line}, Head, {')', Line} | Acc],
+	NewAcc = [Head | Acc],
+	parse_parametric_macro_tail(DefName, Args, Line, 0, NewAcc, Tail, Forms);
+parse_parametric_macro_tail(DefName, Args, _Line, 0, Acc, [_Head={')', _}, {dot, _}], Forms) ->
+	%NewAcc = [Head | Acc],
+	NewAcc = Acc,
+	{ok, [{parametric, DefName, Args, lists:reverse(NewAcc)}], Forms};
 parse_parametric_macro_tail(DefName, Args, Line, Depth, Acc, [Head={Tok, _} | Tail], Forms) ->
 	NewDepth = new_level(Depth, Tok),
 	parse_parametric_macro_tail(DefName, Args, Line, NewDepth, [Head | Acc], Tail, Forms);
@@ -676,9 +712,49 @@ new_level(Level, Tok) ->
 		_   -> Level
 	end.
 
+pack1(ListOfLists) ->
+	pack1([], ListOfLists).
+
+pack1(Acc, [Head | Tail]) ->
+	pack1(Acc++Head, Tail);
+pack1(Acc, []) ->
+	Acc.
+
 %list_contains([Term|_], Term) ->
 %	true;
 %list_contains([_|Tail], Term) ->
 %	list_contains(Tail, Term);
 %list_contains([], _Term) ->
 %	false.
+
+list_find(Fun, [Head|Tail]) ->
+	case Fun(Head) of
+		true  -> {ok, Head};
+		false -> list_find(Fun, Tail)
+	end;
+list_find(_Fun, []) ->
+	error.
+
+parse_include(Filename, Forms, State) ->
+	parse_include_impl(Filename, Forms, maps:get(include, State, ["."])).
+
+parse_include_impl(Filename, Forms, [Dir|Dirs]) ->
+	Filename2 = filename:join(Dir, Filename),
+	%io:format("INCLUDE ~p~n", [Filename2]),
+	try {ok, [], scan_forms(Filename2) ++ Forms}
+	catch
+		_:_ -> parse_include_impl(Filename, Forms, Dirs)
+	end;
+parse_include_impl(_Filename, _Forms, []) ->
+	{error, no_such_include}.
+
+parse_include_lib(Filename, Forms, State) ->
+	Tokenized = string:tokens(Filename, "/\\"),
+	LibDir = maps:get(lib_dir, State),
+	{ok, ModuleList} = file:list_dir(LibDir),
+	AbstractModule = hd(Tokenized),
+	Prefix = AbstractModule ++ "-",
+	case list_find(fun(S) -> 1 =:= string:str(S, Prefix) end, ModuleList) of
+		{ok, ConcreteModule} -> parse_include_impl(filename:join([ConcreteModule | tl(Tokenized)]), Forms, [LibDir]);
+		error                -> {error, no_such_module, AbstractModule}
+	end.
