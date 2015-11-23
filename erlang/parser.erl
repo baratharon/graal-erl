@@ -517,15 +517,15 @@ is_macro_defined_in([], _MacroName) ->
 resolve_record_update(RecName, Expr, Line, MoreTokens, State) ->
 	{ok, Records} = maps:find(records, State),
 	{ok, {RecName, _Size, FieldMap, _FieldList}} = maps:find(RecName, Records),
-	resolve_record_update_impl(Expr, Line, [], FieldMap, MoreTokens).
+	resolve_record_update_impl(Expr, Line, [], FieldMap, MoreTokens, State).
 
-resolve_record_update_impl(Expr, _Line, _ModifiedFields, _FieldMap, [{'}', _} | RestTokens]) ->
+resolve_record_update_impl(Expr, _Line, _ModifiedFields, _FieldMap, [{'}', _} | RestTokens], _State) ->
 	{ok, Expr, RestTokens};
-resolve_record_update_impl(Expr, Line, ModifiedFields, FieldMap, [{atom, _, Field}, {'=', _} | MoreTokens]) ->
-	{ValueExpr, MoreTokens2} = parse_record_field_assign(MoreTokens),
+resolve_record_update_impl(Expr, Line, ModifiedFields, FieldMap, [{atom, _, Field}, {'=', _} | MoreTokens], State) ->
+	{ValueExpr, MoreTokens2} = parse_record_field_assign(MoreTokens, State),
 	{ok, {FieldId, _Initial}} = maps:find(Field, FieldMap),
 	SetElementExpr = make_setelement_expr(FieldId, Expr, ValueExpr, Line),
-	resolve_record_update_impl(SetElementExpr, Line, [Field | ModifiedFields], FieldMap, MoreTokens2).
+	resolve_record_update_impl(SetElementExpr, Line, [Field | ModifiedFields], FieldMap, MoreTokens2, State).
 
 resolve_record_fieldaccess(RecName, Expr, Line, Field, State) ->
 	{ok, Records} = maps:find(records, State),
@@ -536,9 +536,9 @@ resolve_record_fieldaccess(RecName, Expr, Line, Field, State) ->
 resolve_record_expr(RecName, Line, MoreTokens, PatternHint, State) ->
 	Records = maps:get(records, State, #{}),
 	{ok, RecordInfo={RecName, _Size, _FieldMap, _FieldList}} = maps:find(RecName, Records),
-	resolve_record_expr(RecName, RecordInfo, Line, #{}, MoreTokens, PatternHint).
+	resolve_record_expr(RecName, RecordInfo, Line, #{}, MoreTokens, State, PatternHint).
 
-resolve_record_expr(RecName, RecordInfo, Line, FieldAssigns, [{'}', _} | RestTokens], PatternHint) ->
+resolve_record_expr(RecName, RecordInfo, Line, FieldAssigns, [{'}', _} | RestTokens], _State, PatternHint) ->
 	{RecName, _Size, FieldMap, FieldList} = RecordInfo,
 	IsPattern = lk_update_hint(PatternHint, RestTokens),
 	case IsPattern of
@@ -546,27 +546,29 @@ resolve_record_expr(RecName, RecordInfo, Line, FieldAssigns, [{'}', _} | RestTok
 		false -> FinalAssigns = maps:merge(FieldMap, FieldAssigns)
 	end,
 	{ok, make_tuple_from_record(RecName, FieldList, FinalAssigns, Line, IsPattern), RestTokens};
-resolve_record_expr(RecName, RecordInfo, Line, FieldAssigns, [{atom, _, Field}, {'=', _} | MoreTokens], PatternHint) ->
-	{Expr, MoreTokens2} = parse_record_field_assign(MoreTokens),
-	resolve_record_expr(RecName, RecordInfo, Line, FieldAssigns#{Field => Expr}, MoreTokens2, PatternHint);
-resolve_record_expr(RecName, RecordInfo, Line, FieldAssigns, [{var, _, '_'}, {'=', _} | MoreTokens], PatternHint) ->
-	{Expr, MoreTokens2} = parse_record_field_assign(MoreTokens),
+resolve_record_expr(RecName, RecordInfo, Line, FieldAssigns, [{atom, _, Field}, {'=', _} | MoreTokens], State, PatternHint) ->
+	{Expr, MoreTokens2} = parse_record_field_assign(MoreTokens, State),
+	resolve_record_expr(RecName, RecordInfo, Line, FieldAssigns#{Field => Expr}, MoreTokens2, State, PatternHint);
+resolve_record_expr(RecName, RecordInfo, Line, FieldAssigns, [{var, _, '_'}, {'=', _} | MoreTokens], State, PatternHint) ->
+	{Expr, MoreTokens2} = parse_record_field_assign(MoreTokens, State),
 	{RecName, _Size, _FieldMap, FieldList} = RecordInfo,
 	NewFieldAssigns = fill_remaining_field_assigns(FieldAssigns, FieldList, Expr),
-	resolve_record_expr(RecName, RecordInfo, Line, NewFieldAssigns, MoreTokens2, PatternHint).
+	resolve_record_expr(RecName, RecordInfo, Line, NewFieldAssigns, MoreTokens2, State, PatternHint).
 
-parse_record_field_assign(Tokens) ->
-	parse_record_field_assign([], 0, Tokens).
+parse_record_field_assign(Tokens, State) ->
+	parse_record_field_assign([], 0, Tokens, State).
 
-parse_record_field_assign(Acc, 0, [{',', _} | RestTokens]) ->
-	{Acc, RestTokens};
-parse_record_field_assign(Acc, 0, [{'}', _} | _] = RestTokens) ->
-	{Acc, RestTokens};
-parse_record_field_assign(Acc, Level, [Token={Tok, _} | Tokens]) ->
+parse_record_field_assign(Acc, 0, [{',', _} | RestTokens], State) ->
+	Result = lists:reverse(preprocess([], lists:reverse(Acc), State, hard)),
+	{Result, RestTokens};
+parse_record_field_assign(Acc, 0, [{'}', _} | _] = RestTokens, State) ->
+	Result = lists:reverse(preprocess([], lists:reverse(Acc), State, hard)),
+	{Result, RestTokens};
+parse_record_field_assign(Acc, Level, [Token={Tok, _} | Tokens], State) ->
 	NewLevel = new_level(Level, Tok),
-	parse_record_field_assign([Token | Acc], NewLevel, Tokens);
-parse_record_field_assign(Acc, Level, [Token | Tokens]) ->
-	parse_record_field_assign([Token | Acc], Level, Tokens).
+	parse_record_field_assign([Token | Acc], NewLevel, Tokens, State);
+parse_record_field_assign(Acc, Level, [Token | Tokens], State) ->
+	parse_record_field_assign([Token | Acc], Level, Tokens, State).
 
 fill_remaining_field_assigns(Assigns, [], _Expr) ->
 	Assigns;
