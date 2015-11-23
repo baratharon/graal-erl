@@ -1,5 +1,17 @@
 -module(parser).
--export([parse/1, ast/1, ast/2, ast/3, gen_ast/1, scan/1, scan_forms/1]).
+-export([parse/1, ast/1, ast/2, ast/3, gen_ast/1, scan/1, scan_forms/1, main/0]).
+
+%-define(DEBUG_LK,1).
+%-define(DEBUG_TRACE,1).
+
+-ifdef(DEBUG_TRACE).
+-define(TRACE(Fmt, Args),io:format(Fmt, Args)).
+-else.
+-define(TRACE(Fmt, Args),ok).
+-endif.
+
+main() ->
+	ast(boot01, "/tmp/boot01.ast", "/home/aron/jku/erlang/boot01.erl").
 
 scan(FileName) ->
 	{ok, File} = file:read_file(FileName),
@@ -39,7 +51,8 @@ ast(ModuleName, AstFileName) ->
 ast(ModuleName, AstFileName, SourceFileName) when is_atom(ModuleName) ->
 	{AST, State} = parse(SourceFileName),
 	Imports = maps:get(imports, State, []),
-	file:write_file(AstFileName, io_lib:format("~w\n~w\n~p\n", [ModuleName, Imports, AST]), [{encoding, utf8}]);
+	Onloads = maps:get(onloads, State, []),
+	file:write_file(AstFileName, io_lib:format("~w\n~w\n~w\n~p\n", [ModuleName, Imports, Onloads, AST]), [{encoding, utf8}]);
 ast(ModuleName, AstFileName, SourceFileName) ->
 	ast(list_to_atom(ModuleName), AstFileName, SourceFileName).
 
@@ -109,7 +122,11 @@ preprocess_and_parse(RevAcc, [], State) ->
 preprocess(RevAcc, Tokens, State, Mode) ->
 	preprocess_impl(RevAcc, Tokens, State, lk_initial(), Mode).
 
+preprocess_with_lk(RevAcc, Tokens, State, LocKind, Mode) ->
+	preprocess_impl(RevAcc, Tokens, State, LocKind, Mode).
+
 preprocess_impl(RevAcc, [{'?', _}, {Type, Line, Name} | MoreTokens], State, LocKind, Mode) when atom==Type; var==Type ->
+	?TRACE("macro replace (~p, line ~p)~n", [Name, Line]),
 	{ok,  Resolved, RestTokens} = resolve(Name, Line, MoreTokens, State, Mode),
 	case Mode of
 		hard -> preprocess_impl([], lists:append(lists:reverse(RevAcc), lists:append(lists:reverse(Resolved), RestTokens)), State, LocKind, Mode);
@@ -118,6 +135,7 @@ preprocess_impl(RevAcc, [{'?', _}, {Type, Line, Name} | MoreTokens], State, LocK
 	end;
 preprocess_impl(RevAcc, [{'#', _}, {atom, Line, RecName}, {'{', _} | MoreTokens], State, LocKind, Mode) ->
 	% record expression or record update
+	?TRACE("record expression or record update (~p, line ~p)~n", [RecName, Line]),
 	case head_is_end_of_expr(RevAcc) of
 		true ->
 			{Expr, NewRevAcc} = fetch_last_expr(RevAcc),
@@ -130,6 +148,7 @@ preprocess_impl(RevAcc, [{'#', _}, {atom, Line, RecName}, {'{', _} | MoreTokens]
 	preprocess_impl(lists:append(Replacement, NewRevAcc), RestTokens, State, LocKind, Mode);
 preprocess_impl(RevAcc, [{'#', _}, {atom, Line, RecName}, {'.', _}, {atom, _, Field} | MoreTokens], State, LocKind, Mode) ->
 	% record field access
+	?TRACE("record field access (~p.~p, line ~p)~n", [RecName, Field, Line]),
 	case head_is_end_of_expr(RevAcc) of
 		true ->
 			{Expr, NewRevAcc} = fetch_last_expr(RevAcc),
@@ -174,6 +193,11 @@ continue_preprocess_and_parse(RevAcc, Forms, [{import, ImportModuleName, ImportF
 	Imports = maps:get(imports, State, []),
 	NewImports = register_imports(Imports, ImportModuleName, ImportFAs),
 	continue_preprocess_and_parse(RevAcc, Forms, Tail, State#{imports => NewImports});
+continue_preprocess_and_parse(RevAcc, Forms, [{on_load, OnloadFA} | Tail], State) ->
+	% on_load attribute found
+	Onloads = maps:get(onloads, State, []),
+	NewOnloads = [OnloadFA | Onloads],
+	continue_preprocess_and_parse(RevAcc, Forms, Tail, State#{onloads => NewOnloads});
 continue_preprocess_and_parse(RevAcc, Forms, [{record, RecordName, RecordInfo} | Tail], State) ->
 	% record attribute found
 	Records = maps:get(records, State, #{}),
@@ -396,6 +420,12 @@ read_attribute([{atom, _, import} | Rest], Forms, Active, _State) ->
 		true  -> parse_imports(Rest, Forms);
 		false -> {ok, [], Forms}
 	end;
+read_attribute([{atom, _, on_load} | Rest], Forms, Active, _State) ->
+	% parse the import attribute
+	case Active of
+		true  -> parse_onload(Rest, Forms);
+		false -> {ok, [], Forms}
+	end;
 read_attribute([{atom, _, include}, {'(', _}, {string, _, Filename}, {')', _}, {dot, _}], Forms, Active, State) ->
 	% parse the include attribute
 	case Active of
@@ -493,6 +523,13 @@ parse_parametric_macro_tail(DefName, Args, Line, Depth, Acc, [Head | Tail], Form
 parse_parametric_macro_tail(DefName, _Args, Line, _Depth, _Acc, _Tail, _Forms) ->
 	{error, {illformed_parametric_macro, DefName, line, Line}}.
 
+parse_onload([{'(', _}, {atom, _, FuncName}, {'/', _}, {integer, _, Arity}, {dot, _}], Forms) ->
+	case Arity of
+		0 -> {ok, [{import, {FuncName, Arity}}], Forms};
+		_ -> {error, {"function " ++ atom_to_list(FuncName) ++ "/" ++ integer_to_list(Arity)
+				++ " has wrong arity (must be 0)"}}
+	end.
+
 parse_imports([{'(', _}, {atom, _, ModuleName}, {',', _}, {'[', _} | Rest], Forms) ->
 	parse_imports(ModuleName, Rest, [], Forms).
 
@@ -581,7 +618,7 @@ resolve_record_update(RecName, Expr, Line, MoreTokens, State) ->
 resolve_record_update_impl(Expr, _Line, _ModifiedFields, _FieldMap, [{'}', _} | RestTokens], _State) ->
 	{ok, Expr, RestTokens};
 resolve_record_update_impl(Expr, Line, ModifiedFields, FieldMap, [{atom, _, Field}, {'=', _} | MoreTokens], State) ->
-	{ValueExpr, MoreTokens2} = parse_record_field_assign(MoreTokens, State),
+	{ValueExpr, MoreTokens2} = parse_record_field_assign(MoreTokens, State, lk_initial()),
 	{ok, {FieldId, _Initial}} = maps:find(Field, FieldMap),
 	SetElementExpr = make_setelement_expr(FieldId, Expr, ValueExpr, Line),
 	resolve_record_update_impl(SetElementExpr, Line, [Field | ModifiedFields], FieldMap, MoreTokens2, State).
@@ -606,28 +643,28 @@ resolve_record_expr(RecName, RecordInfo, Line, FieldAssigns, [{'}', _} | RestTok
 	end,
 	{ok, make_tuple_from_record(RecName, FieldList, FinalAssigns, Line, IsPattern), RestTokens};
 resolve_record_expr(RecName, RecordInfo, Line, FieldAssigns, [{atom, _, Field}, {'=', _} | MoreTokens], State, PatternHint) ->
-	{Expr, MoreTokens2} = parse_record_field_assign(MoreTokens, State),
+	{Expr, MoreTokens2} = parse_record_field_assign(MoreTokens, State, PatternHint),
 	resolve_record_expr(RecName, RecordInfo, Line, FieldAssigns#{Field => Expr}, MoreTokens2, State, PatternHint);
 resolve_record_expr(RecName, RecordInfo, Line, FieldAssigns, [{var, _, '_'}, {'=', _} | MoreTokens], State, PatternHint) ->
-	{Expr, MoreTokens2} = parse_record_field_assign(MoreTokens, State),
+	{Expr, MoreTokens2} = parse_record_field_assign(MoreTokens, State, PatternHint),
 	{RecName, _Size, _FieldMap, FieldList} = RecordInfo,
 	NewFieldAssigns = fill_remaining_field_assigns(FieldAssigns, FieldList, Expr),
 	resolve_record_expr(RecName, RecordInfo, Line, NewFieldAssigns, MoreTokens2, State, PatternHint).
 
-parse_record_field_assign(Tokens, State) ->
-	parse_record_field_assign([], 0, Tokens, State).
+parse_record_field_assign(Tokens, State, PatternHint) ->
+	parse_record_field_assign([], 0, Tokens, State, PatternHint).
 
-parse_record_field_assign(Acc, 0, [{',', _} | RestTokens], State) ->
-	Result = lists:reverse(preprocess([], lists:reverse(Acc), State, hard)),
+parse_record_field_assign(Acc, 0, [{',', _} | RestTokens], State, PatternHint) ->
+	Result = lists:reverse(preprocess_with_lk([], lists:reverse(Acc), State, [PatternHint], hard)),
 	{Result, RestTokens};
-parse_record_field_assign(Acc, 0, [{'}', _} | _] = RestTokens, State) ->
-	Result = lists:reverse(preprocess([], lists:reverse(Acc), State, hard)),
+parse_record_field_assign(Acc, 0, [{'}', _} | _] = RestTokens, State, PatternHint) ->
+	Result = lists:reverse(preprocess_with_lk([], lists:reverse(Acc), State, [PatternHint], hard)),
 	{Result, RestTokens};
-parse_record_field_assign(Acc, Level, [Token={Tok, _} | Tokens], State) ->
+parse_record_field_assign(Acc, Level, [Token={Tok, _} | Tokens], State, PatternHint) ->
 	NewLevel = new_level(Level, Tok),
-	parse_record_field_assign([Token | Acc], NewLevel, Tokens, State);
-parse_record_field_assign(Acc, Level, [Token | Tokens], State) ->
-	parse_record_field_assign([Token | Acc], Level, Tokens, State).
+	parse_record_field_assign([Token | Acc], NewLevel, Tokens, State, PatternHint);
+parse_record_field_assign(Acc, Level, [Token | Tokens], State, PatternHint) ->
+	parse_record_field_assign([Token | Acc], Level, Tokens, State, PatternHint).
 
 fill_remaining_field_assigns(Assigns, [], _Expr) ->
 	Assigns;
@@ -702,45 +739,87 @@ make_getelement_expr(FieldId, Expr, Line) ->
 		{atom, Line, erlang}
 	].
 
-lk_initial() ->
-	[head].
+-ifdef(DEBUG_LK).
 
-lk_pattern_position_hint([Head | _]) ->
-	Head.
+lk_initial() ->
+	Result = lk_initial_impl(),
+	io:format("lk_init  ~p~n", [Result]),
+	Result.
 
 lk_call(List) ->
+	Result = lk_call_impl(List),
+	io:format("lk_call  (~p) -> ~p~n", [List, Result]),
+	Result.
+
+lk_token(List, Tok) ->
+	Result = lk_token_impl(List, Tok),
+	io:format("lk_token (~p, ~p) -> ~p~n", [List, Tok, Result]),
+	Result.
+
+lk_update_hint(Head, Tokens) ->
+	Result = lk_update_hint_impl(Head, Tokens),
+	io:format("lk_update_hint(~p, ~p) -> ~p~n", [Head, Tokens, Result]),
+	Result.
+
+-else.
+
+lk_initial() ->
+	lk_initial_impl().
+
+lk_call(List) ->
+	lk_call_impl(List).
+
+lk_token(List, Tok) ->
+	lk_token_impl(List, Tok).
+
+lk_update_hint(Head, Tokens) ->
+	lk_update_hint_impl(Head, Tokens).
+
+-endif.
+
+lk_pattern_position_hint([Head | _]) ->
+	Head;
+lk_pattern_position_hint([]) ->
+	head.
+
+lk_initial_impl() ->
+	[head].
+
+lk_call_impl(List) ->
 	case List of
 		[{fun0} | _] -> List;
-		[head   | _] -> List;
+		[head   | _] -> [pattern | List];
 		_            -> [call | List]
 	end.
 
-lk_token(Tl, 'if') -> [expr | Tl];
-lk_token(Tl, 'case') -> [expr | Tl];
-lk_token(Tl, 'receive') -> [pattern | Tl];
-lk_token([_|Tl], 'of') -> [pattern | Tl];
-lk_token([H|Tl], 'when') -> [{when_, H} | Tl];
-lk_token([{when_, H}|Tl], '->') -> [body, H | Tl];
-lk_token(Tl, '->') -> [body | Tl];
-lk_token([_ | Tl], ';') -> Tl;
-lk_token([_, _ | Tl], 'end') -> Tl;
-lk_token(Tl, 'fun') -> [{fun0} | Tl];
-lk_token([{fun0} | Tl], ':') -> Tl;
-lk_token([{fun0} | Tl], '/') -> Tl;
-lk_token([{fun0} | Tl], '(') -> [head | Tl];
-lk_token(LocKind, _) -> LocKind.
+lk_token_impl(Tl, 'if') -> [expr | Tl];
+lk_token_impl(Tl, 'case') -> [expr | Tl];
+lk_token_impl(Tl, 'receive') -> [pattern | Tl];
+lk_token_impl([_|Tl], 'of') -> [pattern | Tl];
+lk_token_impl([H|Tl], 'when') -> [{when_, H} | Tl];
+lk_token_impl([{when_, H}|Tl], '->') -> [body, H | Tl];
+lk_token_impl(Tl, '->') -> [body | Tl];
+lk_token_impl([_ | Tl], ';') -> Tl;
+lk_token_impl([_, _ | Tl], 'end') -> Tl;
+lk_token_impl(Tl, 'fun') -> [{fun0} | Tl];
+lk_token_impl([{fun0} | Tl], ':') -> Tl;
+lk_token_impl([{fun0} | Tl], '/') -> Tl;
+lk_token_impl([{fun0} | Tl], '(') -> [head | Tl];
+lk_token_impl(Tl, '(') -> [expr | Tl];
+lk_token_impl([_ | Tl], ')') -> Tl;
+lk_token_impl(LocKind, _) -> LocKind.
 
-lk_update_hint(head, _) ->
+lk_update_hint_impl(head, _) ->
 	true;
-lk_update_hint(pattern, _) ->
+lk_update_hint_impl(pattern, _) ->
 	true;
-lk_update_hint(expr, _) ->
+lk_update_hint_impl(expr, _) ->
 	false;
-lk_update_hint(call, _) ->
+lk_update_hint_impl(call, _) ->
 	false;
-lk_update_hint(X, _) when is_tuple(X) ->
+lk_update_hint_impl(X, _) when is_tuple(X) ->
 	false;
-lk_update_hint(body, Tokens) ->
+lk_update_hint_impl(body, Tokens) ->
 	find_next_mapped_token(Tokens,
 		#{
 			'=' => true,
@@ -749,11 +828,8 @@ lk_update_hint(body, Tokens) ->
 			dot => false
 		},
 		false);
-lk_update_hint(Hint, []) ->
-	case Hint of
-		pattern -> true;
-		_       -> false
-	end.
+lk_update_hint_impl(_, []) ->
+	false.
 
 find_next_mapped_token([{Token, _} | Tail], Map, Default) ->
 	case maps:find(Token, Map) of
@@ -852,7 +928,9 @@ parse_include_lib(CWD, Filename, Forms, State) ->
 	end.
 
 get_module_dir(AbstractModule, LibDir) ->
+io:format("get_module_dir(~p, ~p)~n", [AbstractModule, LibDir]),
 	Prefix = AbstractModule ++ "-",
+io:format("list_dir: ~p~n", [(catch file:list_dir(LibDir))]),
 	{ok, ModuleList} = file:list_dir(LibDir),
 	case list_find(fun(S) -> 1 =:= string:str(S, Prefix) end, ModuleList) of
 		{ok, ConcreteModule} -> ConcreteModule;
