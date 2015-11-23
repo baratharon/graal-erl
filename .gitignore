@@ -1,0 +1,13 @@
+*.beam
+.idea
+*.pyc
+.classpath
+.project
+.settings
+nbproject
+.factorypath
+mx.graal-erl/eclipse-config-libs.zip
+mx.graal-erl/eclipse-config.zip
+mx.graal-erl/eclipse-launches
+mx.graal-erl/netbeans-config.zip
+workingsets.xml

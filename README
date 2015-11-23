@@ -12,6 +12,7 @@ graal-erl
 jvmci
 truffle
 $ cd graal-erl
+$ mx ideinit
 $ mx spull
 $ mx build
 $ mx erl
