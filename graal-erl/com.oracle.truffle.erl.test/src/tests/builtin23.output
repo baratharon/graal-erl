@@ -1,0 +1,1 @@
+{{ok,badmap,not_a_map},#{a => 100,b => bb,key => value},#{a => val,b => bb}}
