@@ -364,11 +364,35 @@ parse_record(RecName, Tail, Forms) ->
 
 parse_record(RecName, FieldMap, FieldList, NextFieldId, [{atom, _, Field}, {',', _} | Tail], Forms) ->
 	parse_record(RecName, FieldMap#{Field => {NextFieldId, undefined}}, [Field | FieldList], NextFieldId+1, Tail, Forms);
+parse_record(RecName, FieldMap, FieldList, NextFieldId, [{atom, _, Field}, {'=', _} | Tail], Forms) ->
+	parse_record_with_initial(RecName, FieldMap, FieldList, NextFieldId, Field, Tail, Forms);
 parse_record(RecName, FieldMap, FieldList, NextFieldId, [{atom, _, Field}, {'}', _} | Tail], Forms) ->
 	build_record_info(RecName, FieldMap#{Field => {NextFieldId, undefined}}, [Field | FieldList], NextFieldId, Tail, Forms).
 
+parse_record_with_initial(RecName, FieldMap, FieldList, NextFieldId, Field, Tail, Forms) ->
+	parse_record_with_initial(RecName, FieldMap, FieldList, NextFieldId, Field, 0, [{'(', -1}], Tail, Forms).
+
+parse_record_with_initial(RecName, FieldMap, FieldList, NextFieldId, Field, 0, Initial, [{',', _} | Tail], Forms) ->
+	parse_record(RecName, FieldMap#{Field => {NextFieldId, [{')', -1} | Initial]}}, [Field | FieldList], NextFieldId+1, Tail, Forms);
+parse_record_with_initial(RecName, FieldMap, FieldList, NextFieldId, Field, 0, Initial, [{'}', _} | Tail], Forms) ->
+	build_record_info(RecName, FieldMap#{Field => {NextFieldId, [{')', -1} | Initial]}}, [Field | FieldList], NextFieldId, Tail, Forms);
+parse_record_with_initial(RecName, FieldMap, FieldList, NextFieldId, Field, Depth, Initial, [Head={Tok, _} | Tail], Forms) ->
+	case Tok of
+		'(' -> NewDepth = Depth + 1;
+		'[' -> NewDepth = Depth + 1;
+		'{' -> NewDepth = Depth + 1;
+		')' -> NewDepth = Depth - 1;
+		']' -> NewDepth = Depth - 1;
+		'}' -> NewDepth = Depth - 1;
+		_   -> NewDepth = Depth
+	end,
+	parse_record_with_initial(RecName, FieldMap, FieldList, NextFieldId, Field, NewDepth, [Head | Initial], Tail, Forms);
+parse_record_with_initial(RecName, FieldMap, FieldList, NextFieldId, Field, Depth, Initial, [Head | Tail], Forms) ->
+	parse_record_with_initial(RecName, FieldMap, FieldList, NextFieldId, Field, Depth, [Head | Initial], Tail, Forms).
+
 build_record_info(RecName, FieldMap, FieldList, Size, [{')', _}, {dot, _}], Forms) ->
 	{ok, [{record, RecName, {RecName, Size, FieldMap, FieldList}}], Forms}.
+
 
 resolve_record_update(RecName, Expr, Line, MoreTokens, State) ->
 	{ok, Records} = maps:find(records, State),
@@ -434,16 +458,18 @@ make_tuple_from_record(RecordName, RevFieldList, Assigns, Line, IsPattern) ->
 
 make_tuple_from_record_impl(Replacement, [Field | Fields], Assigns, Line, IsPattern) ->
 	case maps:find(Field, Assigns) of
-		{ok, Value} ->
-			case Value of
-				{_FieldId, undefined} ->
+		{ok, {_FieldId, Initial}} ->
+			case Initial of
+				undefined ->
 					case IsPattern of
-						true  -> ActualValue = [{var, Line, '_'}];
+					true  -> ActualValue = [{var, Line, '_'}];
 						false -> ActualValue = [{atom, Line, undefined}]
 					end;
 				_ ->
-					ActualValue = Value
+					ActualValue = Initial
 			end;
+		{ok, Initial} when is_list(Initial) ->
+			ActualValue = Initial;
 		error ->
 			case IsPattern of
 				true  -> ActualValue = [{var, Line, '_'}];
@@ -531,7 +557,14 @@ lk_update_hint(call, _) ->
 lk_update_hint(X, _) when is_tuple(X) ->
 	false;
 lk_update_hint(body, Tokens) ->
-	find_next_mapped_token(Tokens, #{'=' => true, ',' => false, dot => false, ';' => false}, false);
+	find_next_mapped_token(Tokens,
+		#{
+			'=' => true,
+			',' => false,
+			';' => false,
+			dot => false
+		},
+		false);
 lk_update_hint(Hint, []) ->
 	case Hint of
 		pattern -> true;
