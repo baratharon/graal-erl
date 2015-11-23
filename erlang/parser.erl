@@ -115,10 +115,16 @@ preprocess_impl(RevAcc, [{'#', _}, {atom, Line, RecName}, {'{', _} | MoreTokens]
 	preprocess_impl(lists:append(Replacement, NewRevAcc), RestTokens, State, LocKind, Mode);
 preprocess_impl(RevAcc, [{'#', _}, {atom, Line, RecName}, {'.', _}, {atom, _, Field} | MoreTokens], State, LocKind, Mode) ->
 	% record field access
-	{Expr, NewRevAcc} = fetch_last_expr(RevAcc),
-	RestTokens = MoreTokens,
-	Replacement = resolve_record_fieldaccess(RecName, Expr, Line, Field, State),
-	preprocess_impl(lists:append(Replacement, NewRevAcc), RestTokens, State, LocKind, Mode);
+	case head_is_end_of_expr(RevAcc) of
+		true ->
+			{Expr, NewRevAcc} = fetch_last_expr(RevAcc),
+			RestTokens = MoreTokens,
+			Replacement = resolve_record_fieldaccess(RecName, Expr, Line, Field, State),
+			preprocess_impl(lists:append(Replacement, NewRevAcc), RestTokens, State, LocKind, Mode);
+		false ->
+			Expr = resolve_record_fieldid(RecName, Line, Field, State),
+			preprocess_impl(lists:append(Expr, RevAcc), MoreTokens, State, LocKind, Mode)
+	end;
 preprocess_impl(RevAcc, [T1={Type, _, _}, T2={'(', _} | MoreTokens], State, LocKind, Mode) ->
 	case Type of
 		var  -> NewLocKind = lk_call(LocKind);
@@ -188,11 +194,13 @@ fetch_last_expr(RevExprs) ->
 	{Expr, RevTail} = fetch_last_expr([], RevExprs),
 	{lists:reverse(Expr), RevTail}.
 
-fetch_last_expr(Acc, [Head={Close, _} | Tail]) ->
+fetch_last_expr(Acc, [Head={Close, _} | Tail]=List) ->
 	case Close of
 		')' -> fetch_last_expr_impl([Head | Acc], Tail, 0, '(', ')', fun fetch_paren_head/2);
 		'}' -> fetch_last_expr_impl([Head | Acc], Tail, 0, '{', '}', fun fetch_brace_head/2);
-		']' -> fetch_last_expr_impl([Head | Acc], Tail, 0, '[', ']', undefined)
+		']' -> fetch_last_expr_impl([Head | Acc], Tail, 0, '[', ']', undefined);
+		',' -> io:format("ACC ~p~n", [Acc]), {Acc, List};
+		_   -> io:format("LAST ~p~n", [Head]), {[Head | Acc], Tail}
 	end;
 fetch_last_expr(Acc, [Head={var, _, _} | Tail]) ->
 	{[Head | Acc], Tail}.
@@ -348,6 +356,18 @@ read_attribute([{atom, _, type} | _], Forms, _Active, _State) ->
 	{ok, [], Forms};
 read_attribute([{atom, _, opaque} | _], Forms, _Active, _State) ->
 	% drop the 'opaque' now, we don't need it yet
+	{ok, [], Forms};
+read_attribute([{atom, _, callback} | _], Forms, _Active, _State) ->
+	% drop the 'callback' now, we don't need it yet
+	{ok, [], Forms};
+read_attribute([{atom, _, optional_callbacks} | _], Forms, _Active, _State) ->
+	% drop the 'optional_callbacks' now, we don't need it yet
+	{ok, [], Forms};
+read_attribute([{atom, _, behavior} | _], Forms, _Active, _State) ->
+	% drop the 'behavior' now, we don't need it yet
+	{ok, [], Forms};
+read_attribute([{atom, _, behaviour} | _], Forms, _Active, _State) ->
+	% drop the 'behaviour' now, we don't need it yet
 	{ok, [], Forms};
 read_attribute([{atom, _, import} | Rest], Forms, Active, _State) ->
 	% parse the import attribute
@@ -518,6 +538,12 @@ is_macro_defined_in([_ | Tail], MacroName) ->
 	is_macro_defined_in(Tail, MacroName);
 is_macro_defined_in([], _MacroName) ->
 	false.
+
+resolve_record_fieldid(RecName, Line, Field, State) ->
+	{ok, Records} = maps:find(records, State),
+	{ok, {RecName, _Size, FieldMap, _FieldList}} = maps:find(RecName, Records),
+	{ok, {FieldId, _Initial}} = maps:find(Field, FieldMap),
+	[{integer, Line, FieldId}].
 
 resolve_record_update(RecName, Expr, Line, MoreTokens, State) ->
 	{ok, Records} = maps:find(records, State),
