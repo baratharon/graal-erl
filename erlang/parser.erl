@@ -69,28 +69,48 @@ preprocess_and_parse(RevAcc, [Head | Tail], State) ->
 preprocess_and_parse(RevAcc, [], State) ->
 	{lists:reverse(RevAcc), State}.
 
-preprocess(RevAcc, [{'?', _}, {var, Line, Name} | MoreTokens], State, Mode) ->
+preprocess(RevAcc, Tokens, State, Mode) ->
+	preprocess_impl(RevAcc, Tokens, State, lk_initial(), Mode).
+
+preprocess_impl(RevAcc, [{'?', _}, {var, Line, Name} | MoreTokens], State, LocKind, Mode) ->
 	{ok,  Resolved, RestTokens} = resolve(Name, Line, MoreTokens, State, Mode),
 	case Mode of
-		hard -> preprocess(RevAcc, lists:append(lists:reverse(Resolved), RestTokens), State, Mode);
-		soft -> preprocess(lists:append(Resolved, RevAcc), RestTokens, State, Mode);
+		hard -> preprocess_impl(RevAcc, lists:append(lists:reverse(Resolved), RestTokens), State, LocKind, Mode);
+		soft -> preprocess_impl(lists:append(Resolved, RevAcc), RestTokens, State, LocKind, Mode);
 		_    -> {error, unknown_mode, Mode}
 	end;
-preprocess(RevAcc, [{'#', _}, {atom, Line, RecName}, {'{', _} | MoreTokens], State, Mode) ->
+preprocess_impl(RevAcc, [{'#', _}, {atom, Line, RecName}, {'{', _} | MoreTokens], State, LocKind, Mode) ->
+	% record expression or record update
 	case head_is_end_of_expr(RevAcc) of
 		true ->
 			{Expr, NewRevAcc} = fetch_last_expr(RevAcc),
 			{ok, Replacement, RestTokens} = resolve_record_update(RecName, Expr, Line, MoreTokens, State);
 		false ->
 			NewRevAcc = RevAcc,
-			{ok, Replacement, RestTokens} = resolve_record_expr(RecName, Line, MoreTokens, State)
+			PatternPositionHint = lk_pattern_position_hint(LocKind),
+			{ok, Replacement, RestTokens} = resolve_record_expr(RecName, Line, MoreTokens, PatternPositionHint, State)
 	end,
-	preprocess(lists:append(Replacement, NewRevAcc), RestTokens, State, Mode);
-%% TODO: ha ')', '}' vagy var van elotte, akkor update (mar preprocesszalt, de ez mindegy is)
-%% TODO: ugyanez csak '=' helyett '.' -> member access
-preprocess(RevAcc, [Token | MoreTokens], State, Mode) ->
-	preprocess([Token | RevAcc], MoreTokens, State, Mode);
-preprocess(RevAcc, [], _State, _Mode) ->
+	preprocess_impl(lists:append(Replacement, NewRevAcc), RestTokens, State, LocKind, Mode);
+preprocess_impl(RevAcc, [{'#', _}, {atom, Line, RecName}, {'.', _}, {atom, _, Field} | MoreTokens], State, LocKind, Mode) ->
+	% record field access
+	{Expr, NewRevAcc} = fetch_last_expr(RevAcc),
+	RestTokens = MoreTokens,
+	Replacement = resolve_record_fieldaccess(RecName, Expr, Line, Field, State),
+	preprocess_impl(lists:append(Replacement, NewRevAcc), RestTokens, State, LocKind, Mode);
+preprocess_impl(RevAcc, [T1={Type, _, _}, T2={'(', _} | MoreTokens], State, LocKind, Mode) ->
+	case Type of
+		var  -> NewLocKind = lk_call(LocKind);
+		atom -> NewLocKind = lk_call(LocKind);
+		_    -> NewLocKind = lk_token(LocKind, '(')
+	end,
+	preprocess_impl([T2, T1 | RevAcc], MoreTokens, State, NewLocKind, Mode);
+preprocess_impl(RevAcc, [Token | MoreTokens], State, LocKind, Mode) ->
+	case Token of
+		{T, _} -> NewLocKind = lk_token(LocKind, T);
+		_      -> NewLocKind = LocKind
+	end,
+	preprocess_impl([Token | RevAcc], MoreTokens, State, NewLocKind, Mode);
+preprocess_impl(RevAcc, [], _State, _LocKind, _Mode) ->
 	lists:reverse(RevAcc).
 
 continue_preprocess_and_parse(RevAcc, Forms, [{macro, MacroName, MacroDef} | Tail], State) ->
@@ -363,23 +383,33 @@ resolve_record_update_impl(Expr, Line, ModifiedFields, FieldMap, [{atom, _, Fiel
 	SetElementExpr = make_setelement_expr(FieldId, Expr, ValueExpr, Line),
 	resolve_record_update_impl(SetElementExpr, Line, [Field | ModifiedFields], FieldMap, MoreTokens2).
 
-resolve_record_expr(RecName, Line, MoreTokens, State) ->
+resolve_record_fieldaccess(RecName, Expr, Line, Field, State) ->
+	{ok, Records} = maps:find(records, State),
+	{ok, {RecName, _Size, FieldMap, _FieldList}} = maps:find(RecName, Records),
+	{ok, {FieldId, _Initial}} = maps:find(Field, FieldMap),
+	make_getelement_expr(FieldId, Expr, Line).
+
+resolve_record_expr(RecName, Line, MoreTokens, PatternHint, State) ->
 	Records = maps:get(records, State, #{}),
 	{ok, RecordInfo={RecName, _Size, _FieldMap, _FieldList}} = maps:find(RecName, Records),
-	resolve_record_expr(RecName, RecordInfo, Line, #{}, MoreTokens).
+	resolve_record_expr(RecName, RecordInfo, Line, #{}, MoreTokens, PatternHint).
 
-resolve_record_expr(RecName, RecordInfo, Line, FieldAssigns, [{'}', _} | RestTokens]) ->
+resolve_record_expr(RecName, RecordInfo, Line, FieldAssigns, [{'}', _} | RestTokens], PatternHint) ->
 	{RecName, _Size, FieldMap, FieldList} = RecordInfo,
-	FinalAssigns = maps:merge(FieldMap, FieldAssigns),
-	{ok, make_tuple_from_record(RecName, FieldList, FinalAssigns, Line), RestTokens};
-resolve_record_expr(RecName, RecordInfo, Line, FieldAssigns, [{atom, _, Field}, {'=', _} | MoreTokens]) ->
+	IsPattern = lk_update_hint(PatternHint, RestTokens),
+	case IsPattern of
+		true  -> FinalAssigns = FieldAssigns;
+		false -> FinalAssigns = maps:merge(FieldMap, FieldAssigns)
+	end,
+	{ok, make_tuple_from_record(RecName, FieldList, FinalAssigns, Line, IsPattern), RestTokens};
+resolve_record_expr(RecName, RecordInfo, Line, FieldAssigns, [{atom, _, Field}, {'=', _} | MoreTokens], PatternHint) ->
 	{Expr, MoreTokens2} = parse_record_field_assign(MoreTokens),
-	resolve_record_expr(RecName, RecordInfo, Line, FieldAssigns#{Field => Expr}, MoreTokens2);
-resolve_record_expr(RecName, RecordInfo, Line, FieldAssigns, [{var, _, '_'}, {'=', _} | MoreTokens]) ->
+	resolve_record_expr(RecName, RecordInfo, Line, FieldAssigns#{Field => Expr}, MoreTokens2, PatternHint);
+resolve_record_expr(RecName, RecordInfo, Line, FieldAssigns, [{var, _, '_'}, {'=', _} | MoreTokens], PatternHint) ->
 	{Expr, MoreTokens2} = parse_record_field_assign(MoreTokens),
 	{RecName, _Size, _FieldMap, FieldList} = RecordInfo,
 	NewFieldAssigns = fill_remaining_field_assigns(FieldAssigns, FieldList, Expr),
-	resolve_record_expr(RecName, RecordInfo, Line, NewFieldAssigns, MoreTokens2).
+	resolve_record_expr(RecName, RecordInfo, Line, NewFieldAssigns, MoreTokens2, PatternHint).
 
 parse_record_field_assign(Tokens) ->
 	parse_record_field_assign([], Tokens).
@@ -399,17 +429,29 @@ fill_remaining_field_assigns(Assigns, [Field | Fields], Expr) ->
 		_     -> fill_remaining_field_assigns(Assigns, Fields, Expr)
 	end.
 
-make_tuple_from_record(RecordName, RevFieldList, Assigns, Line) ->
-	make_tuple_from_record_impl([{atom, Line, RecordName}, {'{', Line}], lists:reverse(RevFieldList), Assigns, Line).
+make_tuple_from_record(RecordName, RevFieldList, Assigns, Line, IsPattern) ->
+	make_tuple_from_record_impl([{atom, Line, RecordName}, {'{', Line}], lists:reverse(RevFieldList), Assigns, Line, IsPattern).
 
-make_tuple_from_record_impl(Replacement, [Field | Fields], Assigns, Line) ->
-	{ok, Value} = maps:find(Field, Assigns),
-	case Value of
-		{_FieldId, undefined} -> ActualValue = [{atom, Line, undefined}];
-		_                     -> ActualValue = Value
+make_tuple_from_record_impl(Replacement, [Field | Fields], Assigns, Line, IsPattern) ->
+	case maps:find(Field, Assigns) of
+		{ok, Value} ->
+			case Value of
+				{_FieldId, undefined} ->
+					case IsPattern of
+						true  -> ActualValue = [{var, Line, '_'}];
+						false -> ActualValue = [{atom, Line, undefined}]
+					end;
+				_ ->
+					ActualValue = Value
+			end;
+		error ->
+			case IsPattern of
+				true  -> ActualValue = [{var, Line, '_'}];
+				false -> ActualValue = [{atom, Line, undefined}]
+			end
 	end,
-	make_tuple_from_record_impl(ActualValue ++ [{',', Line}] ++ Replacement, Fields, Assigns, Line);
-make_tuple_from_record_impl(Replacement, [], _Assigns, Line) ->
+	make_tuple_from_record_impl(ActualValue ++ [{',', Line}] ++ Replacement, Fields, Assigns, Line, IsPattern);
+make_tuple_from_record_impl(Replacement, [], _Assigns, Line, _IsPattern) ->
 	[{'}', Line} | Replacement].
 
 make_setelement_expr(FieldId, Expr, ValueExpr, Line) ->
@@ -433,3 +475,75 @@ make_setelement_expr(FieldId, Expr, ValueExpr, Line) ->
 		{':', Line},
 		{atom, Line, erlang}
 	].
+
+make_getelement_expr(FieldId, Expr, Line) ->
+	[
+		{')', Line},
+		{')', Line}
+	]
+	++ Expr ++
+	[
+		{'(', Line},
+		{',', Line},
+		{integer, Line, FieldId},
+		{'(', Line},
+		{atom, Line, element},
+		{':', Line},
+		{atom, Line, erlang}
+	].
+
+lk_initial() ->
+	[head].
+
+lk_pattern_position_hint([Head | _]) ->
+	Head.
+
+lk_call(List) ->
+	case List of
+		[{fun0} | _] -> List;
+		[head   | _] -> List;
+		_            -> [call | List]
+	end.
+
+lk_token(Tl, 'if') -> [expr | Tl];
+lk_token(Tl, 'case') -> [expr | Tl];
+lk_token(Tl, 'receive') -> [pattern | Tl];
+lk_token([_|Tl], 'of') -> [pattern | Tl];
+lk_token([H|Tl], 'when') -> [{when_, H} | Tl];
+lk_token([{when_, H}|Tl], '->') -> [body, H | Tl];
+lk_token(Tl, '->') -> [body | Tl];
+lk_token([_ | Tl], ';') -> Tl;
+lk_token([_, _ | Tl], 'end') -> Tl;
+lk_token(Tl, 'fun') -> [{fun0} | Tl];
+lk_token([{fun0} | Tl], ':') -> Tl;
+lk_token([{fun0} | Tl], '/') -> Tl;
+lk_token([{fun0} | Tl], '(') -> [head | Tl];
+lk_token(LocKind, _) -> LocKind.
+
+lk_update_hint(head, _) ->
+	true;
+lk_update_hint(pattern, _) ->
+	true;
+lk_update_hint(expr, _) ->
+	false;
+lk_update_hint(call, _) ->
+	false;
+lk_update_hint(X, _) when is_tuple(X) ->
+	false;
+lk_update_hint(body, Tokens) ->
+	find_next_mapped_token(Tokens, #{'=' => true, ',' => false, dot => false, ';' => false}, false);
+lk_update_hint(Hint, []) ->
+	case Hint of
+		pattern -> true;
+		_       -> false
+	end.
+
+find_next_mapped_token([{Token, _} | Tail], Map, Default) ->
+	case maps:find(Token, Map) of
+		{ok, Value} -> Value;
+		error       -> find_next_mapped_token(Tail, Map, Default)
+	end;
+find_next_mapped_token([_Head | Tail], Map, Default) ->
+	find_next_mapped_token(Tail, Map, Default);
+find_next_mapped_token([], _Map, Default) ->
+	Default.
