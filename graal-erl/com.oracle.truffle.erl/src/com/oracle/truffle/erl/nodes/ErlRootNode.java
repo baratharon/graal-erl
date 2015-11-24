@@ -46,9 +46,9 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.erl.ErlangLanguage;
+import com.oracle.truffle.erl.MFA;
 import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
 import com.oracle.truffle.erl.runtime.ErlContext;
-import com.oracle.truffle.erl.runtime.MFA;
 import com.oracle.truffle.erl.runtime.ErlProcess;
 
 /**

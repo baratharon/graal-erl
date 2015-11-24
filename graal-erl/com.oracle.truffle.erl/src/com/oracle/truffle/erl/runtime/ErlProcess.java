@@ -61,6 +61,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.erl.MFA;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.nodes.controlflow.ErlExitProcessException;
 import com.oracle.truffle.erl.nodes.controlflow.ErlTailCallException;

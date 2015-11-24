@@ -32,6 +32,18 @@ from mx_unittest import unittest
 
 _suite = mx.suite('truffle')
 
+def truffle_extract_VM_args(args, useDoubleDash=False):
+    vmArgs, remainder = [], []
+    for (i, arg) in enumerate(args):
+        if any(arg.startswith(prefix) for prefix in ['-X', '-G:', '-D', '-verbose', '-ea']) or arg in ['-esa']:
+            vmArgs += [arg]
+        elif useDoubleDash and arg == '--':
+            remainder += args[i:]
+            break
+        else:
+            remainder += [arg]
+    return vmArgs, remainder
+
 def build(args, vm=None):
     """build the Java sources"""
     opts2 = mx.build(['--source', '1.7'] + args)
@@ -39,7 +51,7 @@ def build(args, vm=None):
 
 def erl(args):
     """run an Erlang program"""
-    vmArgs, erlArgs = mx.extract_VM_args(args)
+    vmArgs, erlArgs = truffle_extract_VM_args(args)
     mx.run_java(vmArgs + ['-cp', mx.classpath(["TRUFFLE_API", "com.oracle.truffle.erl"]), "com.oracle.truffle.erl.ErlangLanguage"] + erlArgs)
 
 mx.update_commands(_suite, {

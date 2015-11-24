@@ -44,10 +44,10 @@ import com.oracle.truffle.api.dsl.GenerateNodeFactory;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeField;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.erl.MFA;
 import com.oracle.truffle.erl.nodes.ErlExpressionNode;
 import com.oracle.truffle.erl.runtime.ErlContext;
 import com.oracle.truffle.erl.runtime.ErlFunctionRegistry;
-import com.oracle.truffle.erl.runtime.MFA;
 
 /**
  * Base class for all built-in functions. It contains the Truffle DSL annotation {@link NodeChild}

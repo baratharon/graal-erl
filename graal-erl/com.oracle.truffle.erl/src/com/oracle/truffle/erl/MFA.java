@@ -38,7 +38,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.oracle.truffle.erl.runtime;
+package com.oracle.truffle.erl;
+
+import com.oracle.truffle.erl.runtime.ErlAtom;
+import com.oracle.truffle.erl.runtime.ErlList;
+import com.oracle.truffle.erl.runtime.ErlTuple;
 
 /**
  * Class to hold a Module:Function/Arity name. Used as key in maps. Also for printing purposes and
@@ -47,14 +51,12 @@ package com.oracle.truffle.erl.runtime;
 public final class MFA {
 
     private final String module;
-    private final String function;
-    private final int arity;
+    private final FA fa;
     private ErlTuple cachedTuple = null;
 
     public MFA(String module, String function, int arity) {
         this.module = module;
-        this.function = function;
-        this.arity = arity;
+        this.fa = new FA(function, arity);
 
         assert null != module && !module.isEmpty();
         assert null != function && !function.isEmpty();
@@ -65,25 +67,24 @@ public final class MFA {
     }
 
     public String getFunction() {
-        return function;
+        return fa.getFunction();
     }
 
     public int getArity() {
-        return arity;
+        return fa.getArity();
     }
 
     @Override
     public String toString() {
-        return module + ":" + function + "/" + arity;
+        return module + ":" + fa.toString();
     }
 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + arity;
-        result = prime * result + ((module == null) ? 0 : module.hashCode());
-        result = prime * result + ((function == null) ? 0 : function.hashCode());
+        result = prime * result + module.hashCode();
+        result = prime * result + fa.hashCode();
         return result;
     }
 
@@ -96,7 +97,7 @@ public final class MFA {
         if (null != obj && obj instanceof MFA) {
             MFA rhs = (MFA) obj;
 
-            return arity == rhs.arity && module.equals(rhs.module) && function.equals(rhs.function);
+            return module.equals(rhs.module) && fa.equals(rhs.fa);
         }
 
         return false;
@@ -105,7 +106,7 @@ public final class MFA {
     public ErlTuple toTuple() {
 
         if (null == cachedTuple) {
-            cachedTuple = new ErlTuple(new ErlAtom(module), new ErlAtom(function), (long) arity, ErlList.NIL);
+            cachedTuple = new ErlTuple(new ErlAtom(module), new ErlAtom(fa.getFunction()), (long) fa.getArity(), ErlList.NIL);
         }
 
         return cachedTuple;

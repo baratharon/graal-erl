@@ -43,10 +43,10 @@ package com.oracle.truffle.erl.builtins.maps;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.erl.MFA;
 import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.runtime.ErlAtom;
-import com.oracle.truffle.erl.runtime.MFA;
 import com.oracle.truffle.erl.runtime.ErlMap;
 import com.oracle.truffle.erl.runtime.ErlTuple;
 

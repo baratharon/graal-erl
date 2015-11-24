@@ -48,8 +48,9 @@ public final class ErlFileDetector extends FileTypeDetector {
     @Override
     public String probeContentType(Path path) throws IOException {
         if (path.getFileName().toString().endsWith(".erl")) {
-            return "text/x-erlang";
+            return ErlangLanguage.ERL_MIME_TYPE;
         }
+
         return null;
     }
 }

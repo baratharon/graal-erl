@@ -38,9 +38,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.oracle.truffle.erl.parser;
+package com.oracle.truffle.erl;
 
-class FA {
+public final class FA {
 
     private final String func;
     private final int arity;
@@ -48,6 +48,17 @@ class FA {
     public FA(String func, int arity) {
         this.func = func;
         this.arity = arity;
+
+        assert null != func;
+        assert 0 <= arity;
+    }
+
+    public String getFunction() {
+        return func;
+    }
+
+    public int getArity() {
+        return arity;
     }
 
     @Override

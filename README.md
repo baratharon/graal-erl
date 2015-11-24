@@ -99,3 +99,7 @@ are supported.
 ````
 $ mx erl -independent -file /home/aron/jku/erlang/list41.erl -mf list41 main
 ````
+
+### Optional environment variables
+
+* `GRAAL_ERL_PARSER_PATH` sets the path to the `parser.beam`

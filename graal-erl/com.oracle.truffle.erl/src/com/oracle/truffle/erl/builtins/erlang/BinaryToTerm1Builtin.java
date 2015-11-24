@@ -43,12 +43,12 @@ package com.oracle.truffle.erl.builtins.erlang;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.erl.MFA;
 import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.runtime.ErlBinary;
 import com.oracle.truffle.erl.runtime.ErlBinaryView;
 import com.oracle.truffle.erl.runtime.ErlLazyBinary;
-import com.oracle.truffle.erl.runtime.MFA;
 import com.oracle.truffle.erl.runtime.misc.ExternalTerm;
 
 /**

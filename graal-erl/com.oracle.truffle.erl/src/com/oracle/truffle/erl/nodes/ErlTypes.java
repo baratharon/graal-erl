@@ -63,7 +63,7 @@ import java.math.BigInteger;
  */
 @TypeSystem({long.class, BigInteger.class, double.class, boolean.class, String.class, ErlFunction.class, ErlAtom.class, ErlTuple.class, ErlMap.class, ErlBinary.class, ErlLazyBinary.class,
                 ErlPort.class})
-@DSLOptions(useNewLayout = true)
+@DSLOptions
 public abstract class ErlTypes {
 
     /**

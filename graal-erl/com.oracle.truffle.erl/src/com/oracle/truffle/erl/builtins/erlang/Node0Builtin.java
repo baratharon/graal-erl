@@ -43,9 +43,9 @@ package com.oracle.truffle.erl.builtins.erlang;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.erl.MFA;
 import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
 import com.oracle.truffle.erl.runtime.ErlAtom;
-import com.oracle.truffle.erl.runtime.MFA;
 
 /**
  * Returns the name of the local node. If the node is not alive, <code>nonode@nohost</code> is

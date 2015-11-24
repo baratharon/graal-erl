@@ -48,14 +48,51 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import java.nio.file.Paths;
 
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.erl.runtime.ErlContext;
+import com.oracle.truffle.erl.runtime.ErlModuleImpl;
 
 /**
  * The Erlang parser.
  */
 public class ErlParser {
+
+    private static final String PARSER_PATH;
+
+    static {
+
+        String path = System.getenv("GRAAL_ERL_PARSER_PATH");
+
+        if (null == path) {
+
+            File file;
+
+            // try to guess the path to the parser
+
+            final String cwd = Paths.get("").toAbsolutePath().toString();
+
+            for (String subdir : new String[]{".", "/erlang", "/../erlang", "/../../erlang"}) {
+
+                path = cwd + subdir;
+                file = new File(path);
+
+                if (file.exists() && file.isDirectory()) {
+                    break;
+                }
+
+                path = null;
+            }
+
+            if (null == path) {
+                // no clue... use a dummy path, and let the erl to fail
+                path = ".";
+            }
+        }
+
+        PARSER_PATH = path;
+    }
 
     public static void parseErlang(ErlContext context, Source source) {
         Reader reader = source.getReader();
@@ -110,7 +147,7 @@ public class ErlParser {
             int exitCode = Integer.MIN_VALUE;
 
             try {
-                final String cmdLine = "erl -pa /home/aron/jku/erlang -run parser gen_ast " + moduleName + " " + astFile.getAbsolutePath() + " " + sourceFile.getAbsolutePath() +
+                final String cmdLine = "erl -pa " + PARSER_PATH + " -run parser gen_ast " + moduleName + " " + astFile.getAbsolutePath() + " " + sourceFile.getAbsolutePath() +
                                 " -run init stop -noshell";
                 exitCode = Runtime.getRuntime().exec(cmdLine).waitFor();
             } catch (InterruptedException e) {
@@ -142,8 +179,9 @@ public class ErlParser {
         }
     }
 
-    public static void parseErlangPreprocessed(ErlContext context, final boolean preLoaded, final String moduleName, Reader reader) {
+    public static ErlModuleImpl parseErlangPreprocessed(ErlContext context, final boolean preLoaded, final String moduleName, Reader reader) {
 
+        ErlModuleImpl module = null;
         BufferedReader br = new BufferedReader(reader);
         try {
 
@@ -154,7 +192,8 @@ public class ErlParser {
             // the 'br' now points to the first character of the AST (which is actually an Erlang
             // term)
             try {
-                new ErlAstParser(context, br, checkModuleName).parse(preLoaded);
+                module = ErlModuleImpl.create(checkModuleName, preLoaded);
+                new ErlAstParser(context, br, module).parse();
             } catch (RuntimeException ex) {
                 ex.printStackTrace();
                 throw ex;
@@ -167,5 +206,7 @@ public class ErlParser {
             ex.printStackTrace();
             throw new RuntimeException("Failed to load preprocessed Erlang source.");
         }
+
+        return module;
     }
 }

@@ -95,13 +95,13 @@ public final class ErlDynamicFunctionNode extends ErlExpressionNode {
 
             if (null == function) {
 
-                // if (!functionRegistry.isModuleLoaded(moduleName) &&
-                // ErlContext.loadModule(moduleName)) {
-                // function = functionRegistry.lookup(moduleName, funcName, (int) arity);
-                // if (null != function) {
-                // return function;
-                // }
-                // }
+                if (!functionRegistry.isModuleLoaded(moduleName) && context.loadModule(moduleName)) {
+                    function = functionRegistry.lookup(moduleName, funcName, (int) arity);
+
+                    if (null != function) {
+                        return function;
+                    }
+                }
 
                 throw ErlControlException.makeUndef();
             }

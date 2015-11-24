@@ -47,8 +47,6 @@ import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.dsl.UnsupportedSpecializationException;
 import com.oracle.truffle.api.frame.MaterializedFrame;
-import com.oracle.truffle.api.instrument.AdvancedInstrumentResultListener;
-import com.oracle.truffle.api.instrument.AdvancedInstrumentRootFactory;
 import com.oracle.truffle.api.instrument.Visualizer;
 import com.oracle.truffle.api.instrument.WrapperNode;
 import com.oracle.truffle.api.nodes.GraphPrintVisitor;
@@ -67,12 +65,18 @@ import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.nodes.instrument.ErlDefaultVisualizer;
 import com.oracle.truffle.erl.nodes.instrument.ErlExpressionWrapperNode;
 import com.oracle.truffle.erl.runtime.ErlAtom;
+import com.oracle.truffle.erl.runtime.ErlBinary;
+import com.oracle.truffle.erl.runtime.ErlBinaryView;
 import com.oracle.truffle.erl.runtime.ErlContext;
 import com.oracle.truffle.erl.runtime.ErlFunction;
 import com.oracle.truffle.erl.runtime.ErlFunctionRegistry;
+import com.oracle.truffle.erl.runtime.ErlLazyBinary;
 import com.oracle.truffle.erl.runtime.ErlList;
+import com.oracle.truffle.erl.runtime.ErlPid;
+import com.oracle.truffle.erl.runtime.ErlPort;
 import com.oracle.truffle.erl.runtime.ErlProcess;
-import com.oracle.truffle.erl.runtime.MFA;
+import com.oracle.truffle.erl.runtime.ErlRef;
+import com.oracle.truffle.erl.runtime.ErlTuple;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -98,7 +102,7 @@ import java.util.stream.Stream;
 /**
  * TODO
  */
-@TruffleLanguage.Registration(name = "Erlang", version = "0.1", mimeType = "text/x-erlang")
+@TruffleLanguage.Registration(name = "Erlang", version = "0.1", mimeType = ErlangLanguage.ERL_MIME_TYPE)
 public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
     private static List<NodeFactory<? extends ErlBuiltinNode>> builtins = Collections.emptyList();
     private static Visualizer visualizer = new ErlDefaultVisualizer();
@@ -107,7 +111,8 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
     }
 
     public static final ErlangLanguage INSTANCE = new ErlangLanguage();
-    private static final String ERL_CONTEXT_NAME = "$ErlContext$";
+    public static final String ERL_MIME_TYPE = "text/x-erlang";
+
     private static final String RESOURCES_PATH = "resources/";
     private static final String INTERNAL_AST_FILE_NAME_PREFIX = "internal:";
 
@@ -148,8 +153,8 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
 
         for (Source source : internalSources) {
             erlContext.evalPreprocessed(source, true);
+            // erlContext.getModuleRegistry().put(source.getShortName(), module);
         }
-
         return erlContext;
     }
 
@@ -180,13 +185,23 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
         erlContext.close();
     }
 
+    public static ErlContext getContext(PolyglotEngine engine) {
+        try {
+            return engine.getLanguages().get(ERL_MIME_TYPE).getGlobalObject().as(ErlContext.class);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
     /**
-     * The main entry point. Use the mx command "mx erl" to run it with the correct class path
-     * setup.
+     * The main entry point. Use the mx command <code>mx erl</code> to run it with the correct class
+     * path setup.
      */
     public static void main(String[] args) throws IOException {
-        PolyglotEngine vm = PolyglotEngine.buildNew().build();
-        assert vm.getLanguages().containsKey("text/x-erlang");
+        PolyglotEngine engine = PolyglotEngine.newBuilder().build();
+        assert engine.getLanguages().containsKey(ERL_MIME_TYPE);
+
+        final ErlContext context = getContext(engine);
 
         if (args.length > 0 && "-independent".equals(args[0])) {
             boolean gotFile = false;
@@ -200,7 +215,7 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
                     index += 2;
 
                     final Source source = Source.fromFileName(filename);
-                    vm.eval(source);
+                    engine.eval(source);
 
                     gotFile = true;
 
@@ -214,12 +229,14 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
                 }
             }
 
-            if (!gotFile) {
-                final Source source = Source.fromReader(new InputStreamReader(System.in), "<stdin>").withMimeType("text/x-erlang");
-                vm.eval(source);
+            if (null == moduleName) {
+                throw new ErlException("Function is not set.");
             }
 
-            final ErlContext context = vm.findGlobalSymbol(ERL_CONTEXT_NAME).as(ErlContext.class);
+            if (!gotFile) {
+                final Source source = Source.fromReader(new InputStreamReader(System.in), "<stdin>").withMimeType(ERL_MIME_TYPE);
+                engine.eval(source);
+            }
 
             if (index != args.length) {
                 // TODO
@@ -239,12 +256,11 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
             System.out.println(stringifyResult(result));
 
         } else {
-            final ErlContext context = vm.findGlobalSymbol(ERL_CONTEXT_NAME).as(ErlContext.class);
             startOTPRing0(context, args);
             context.waitForTerminateAll();
         }
 
-        vm.dispose();
+        engine.dispose();
     }
 
     private static String stringifyResult(Future<Object> result) {
@@ -267,7 +283,7 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
      * Parse and run the specified SL source. Factored out in a separate method so that it can also
      * be used by the unit test harness.
      */
-    public static long run(PolyglotEngine context, Path path, PrintWriter logOutput, PrintWriter out, int repeats, List<NodeFactory<? extends ErlBuiltinNode>> currentBuiltins) throws IOException {
+    public static long run(PolyglotEngine engine, Path path, PrintWriter logOutput, PrintWriter out, int repeats, List<NodeFactory<? extends ErlBuiltinNode>> currentBuiltins) throws IOException {
         builtins = currentBuiltins;
 
         if (logOutput != null) {
@@ -277,13 +293,13 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
 
         Source src = Source.fromFileName(path.toString());
         /* Parse the Erlang source file. */
-        Object result = context.eval(src.withMimeType("text/x-erlang")).get();
+        Object result = engine.eval(src.withMimeType(ERL_MIME_TYPE)).get();
         if (result != null) {
             out.println(result);
         }
 
         /* Lookup our main entry point, which is per definition always named "main". */
-        Value main = context.findGlobalSymbol("main");
+        Value main = engine.findGlobalSymbol("main");
         if (main == null) {
             throw new ErlException("No function main() defined in Erlang source file.");
         }
@@ -300,14 +316,14 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
         printScript("before execution", null, logOutput, printASTToLog, printSourceAttributionToLog, dumpASTToIGV);
         long totalRuntime = 0;
         try {
-            ErlContext erlContext = context.findGlobalSymbol(ERL_CONTEXT_NAME).as(ErlContext.class);
+            final ErlContext context = getContext(engine);
 
             for (int i = 0; i < repeats; i++) {
                 long start = System.nanoTime();
                 /* Call the main entry point, without any arguments. */
                 try {
                     ErlFunction fun = main.as(ErlFunction.class);
-                    ErlProcess proc = ErlProcess.spawn(erlContext, fun, no_args);
+                    ErlProcess proc = ErlProcess.spawn(context, fun, no_args);
                     Future<Object> future = proc.getFuture();
                     out.println(stringifyResult(future));
                 } catch (UnsupportedSpecializationException ex) {
@@ -425,6 +441,7 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
     @Override
     protected CallTarget parse(Source code, Node node, String... argumentNames) throws IOException {
         final ErlContext c = new ErlContext(this);
+
         final Exception[] failed = {null};
         try {
             c.evalSource(code);
@@ -463,20 +480,12 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
     @Override
     protected Object findExportedSymbol(ErlContext context_, String globalName, boolean onlyExplicit) {
 
-        /*
-         * The context itself can be returned if and only if that particular string
-         * (ErlangLanguage.ERL_CONTEXT_NAME) was passed as globalName. So, comparing with the
-         * operator== is intentional.
-         */
-        if (ERL_CONTEXT_NAME == globalName) {
-            return context_;
-        }
-
         for (ErlFunction f : context_.getFunctionRegistry().getFunctions()) {
             if (globalName.equals(f.getName()) || globalName.equals(f.getModule() + ":" + f.getName())) {
                 return f;
             }
         }
+
         return null;
     }
 
@@ -487,7 +496,8 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
 
     @Override
     protected boolean isObjectOfLanguage(Object object) {
-        return object instanceof ErlFunction;
+        return object instanceof ErlFunction || object instanceof ErlAtom || object instanceof ErlBinary || object instanceof ErlLazyBinary || object instanceof ErlBinaryView ||
+                        object instanceof ErlList || object instanceof ErlPort || object instanceof ErlPid || object instanceof ErlRef || object instanceof ErlTuple;
     }
 
     @Override
@@ -514,10 +524,5 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
     @Override
     protected Object evalInContext(Source source, Node node, MaterializedFrame mFrame) throws IOException {
         throw new IllegalStateException("evalInContext not supported in this language");
-    }
-
-    @Override
-    protected AdvancedInstrumentRootFactory createAdvancedInstrumentRootFactory(String expr, AdvancedInstrumentResultListener resultListener) throws IOException {
-        throw new IllegalStateException("createAdvancedInstrumentRootFactory not supported in this language");
     }
 }

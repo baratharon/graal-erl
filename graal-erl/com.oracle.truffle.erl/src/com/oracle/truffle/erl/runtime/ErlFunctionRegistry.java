@@ -42,6 +42,7 @@ package com.oracle.truffle.erl.runtime;
 
 import com.oracle.truffle.api.RootCallTarget;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.erl.MFA;
 import com.oracle.truffle.erl.builtins._module.ModuleInfo1BuiltinFactory;
 import com.oracle.truffle.erl.nodes.ErlRootNode;
 import java.util.ArrayList;

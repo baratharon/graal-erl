@@ -48,6 +48,7 @@ import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -58,6 +59,7 @@ import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.erl.ErlangLanguage;
+import com.oracle.truffle.erl.MFA;
 import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
 import com.oracle.truffle.erl.nodes.ErlExpressionNode;
 import com.oracle.truffle.erl.nodes.ErlRootNode;
@@ -238,6 +240,21 @@ public final class ErlContext extends ExecutionContext {
     public void evalPreprocessed(Source source, final boolean preLoaded) {
         ErlParser.parseErlangPreprocessed(this, preLoaded, null, source.getReader());
     }
+
+    /**
+     * <b>For internal purposes only.</b>
+     * <p>
+     * Loads a module from its <code>.erl</code> file.
+     *
+     * @param moduleName name of the module to load
+     * @return <code>true</code> when successfully loaded, <code>false</code> otherwise
+     */
+    public boolean loadModule(String moduleName) {
+        xxxx = null;
+        return false;
+    }
+
+    private ErlFunction xxxx;
 
     public static Object fromForeignValue(Object a) {
         if (a instanceof Long || a instanceof BigInteger) {

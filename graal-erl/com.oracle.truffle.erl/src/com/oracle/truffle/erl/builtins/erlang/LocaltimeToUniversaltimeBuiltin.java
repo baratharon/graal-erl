@@ -45,9 +45,9 @@ import java.util.Calendar;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.erl.MFA;
 import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
 import com.oracle.truffle.erl.runtime.ErlTuple;
-import com.oracle.truffle.erl.runtime.MFA;
 import com.oracle.truffle.erl.runtime.misc.Time;
 
 /**

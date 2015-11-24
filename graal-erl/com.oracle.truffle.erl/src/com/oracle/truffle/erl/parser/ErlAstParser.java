@@ -47,6 +47,8 @@ import java.util.Set;
 
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlot;
+import com.oracle.truffle.erl.FA;
+import com.oracle.truffle.erl.MFA;
 import com.oracle.truffle.erl.nodes.ErlExpressionNode;
 import com.oracle.truffle.erl.nodes.ErlRootNode;
 import com.oracle.truffle.erl.nodes.controlflow.ErlClauseSelectorNode;
@@ -55,7 +57,7 @@ import com.oracle.truffle.erl.nodes.expression.ErlToBooleanNodeGen;
 import com.oracle.truffle.erl.runtime.ErlAtom;
 import com.oracle.truffle.erl.runtime.ErlContext;
 import com.oracle.truffle.erl.runtime.ErlFunction;
-import com.oracle.truffle.erl.runtime.MFA;
+import com.oracle.truffle.erl.runtime.ErlModuleImpl;
 import com.oracle.truffle.erl.nodes.call.ErlInvokeNodeGen;
 import com.oracle.truffle.erl.nodes.controlflow.ErlBinComprehensionNode;
 import com.oracle.truffle.erl.nodes.controlflow.ErlBinGeneratorNode;
@@ -117,6 +119,7 @@ class ErlAstParser {
 
     private final ErlContext context;
     private final BufferedReader br;
+    private final ErlModuleImpl module;
     private final String moduleName;
     private static final char SEPARATOR = '\uAAAA';
     private char preread;
@@ -124,10 +127,11 @@ class ErlAstParser {
     private final HashSet<FA> onLoadFuntions = new HashSet<>();
     private StackableSet<String> boundVariables = new StackableSet<>();
 
-    ErlAstParser(ErlContext context, BufferedReader br, String moduleName) throws IOException {
+    ErlAstParser(ErlContext context, BufferedReader br, ErlModuleImpl module) throws IOException {
         this.context = context;
         this.br = br;
-        this.moduleName = moduleName;
+        this.module = module;
+        this.moduleName = module.getModuleName();
 
         loadImports(br.readLine());
         loadOnLoads(br.readLine());
@@ -370,7 +374,7 @@ class ErlAstParser {
         return result;
     }
 
-    public void parse(final boolean preLoaded) {
+    public void parse() {
         accept('[');
         do {
 
@@ -379,7 +383,7 @@ class ErlAstParser {
         } while (weakAccept(','));
         accept(']');
 
-        context.getFunctionRegistry().addLoadedModule(context, moduleName, preLoaded);
+        context.getFunctionRegistry().addLoadedModule(context, moduleName, module.isPreLoaded());
     }
 
     private static ErlExpressionNode toBoolean(ErlExpressionNode expr) {
