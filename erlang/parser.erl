@@ -884,9 +884,9 @@ parse_include(Filename, Forms, State) ->
 				true ->
 					Tail0 = lists:nthtail(length(LibDir), AbsFilename),
 					case hd(Tail0) of
-						$/ -> Tail = tl(Tail0);
-						$\ -> Tail = tl(Tail0);
-						_  -> Tail = Tail0
+						$/  -> Tail = tl(Tail0);
+						$\\ -> Tail = tl(Tail0);
+						_   -> Tail = Tail0
 					end;
 				false ->
 					Tail = {}
@@ -944,7 +944,7 @@ join_and_simplify(Dir=[D1 | _], File=[$., $., C3 | _]) when ($/ == D1 orelse ($\
 join_and_simplify([D1, $: | Dir], File=[$., $., C3 | _]) when $/ == C3; ($\\) == C3 ->
 	List1 = string:tokens(Dir,  "/\\"),
 	List2 = string:tokens(File, "/\\"),
-	[D1, $:, $\ | string:join(do_simplify(List1, List2), "/")];
+	[D1, $:, $\\ | string:join(do_simplify(List1, List2), "/")];
 join_and_simplify(_Dir, File) ->
 	File.
 
