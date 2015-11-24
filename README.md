@@ -11,12 +11,11 @@ the Truffle. Truffle provides many optimization, thus the execution
 speed can highly improved.
 
 The internal method is the following:
-1. Convert the source to Erlang AST using the `erlang/parser.erl`
-   (for this, you have to compile the `parser.erl` first to
-   `parser.beam`).
-2. The AST file is ready to load. This is achived using the
-   ErlAstParser class.
-3. Ready!
+
+* Convert the source to Erlang AST using the `erlang/parser.erl`
+   * For this, you have to compile the `parser.erl` first to `parser.beam`.
+* The AST file is ready to load. This is achived using the ErlAstParser class.
+* Ready!
 
 
 ### Get the source
