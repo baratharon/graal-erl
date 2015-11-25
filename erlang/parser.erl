@@ -193,7 +193,7 @@ continue_preprocess_and_parse(RevAcc, Forms, [{import, ImportModuleName, ImportF
 	Imports = maps:get(imports, State, []),
 	NewImports = register_imports(Imports, ImportModuleName, ImportFAs),
 	continue_preprocess_and_parse(RevAcc, Forms, Tail, State#{imports => NewImports});
-continue_preprocess_and_parse(RevAcc, Forms, [{on_load, OnloadFA} | Tail], State) ->
+continue_preprocess_and_parse(RevAcc, Forms, [{onload, OnloadFA} | Tail], State) ->
 	% on_load attribute found
 	Onloads = maps:get(onloads, State, []),
 	NewOnloads = [OnloadFA | Onloads],
@@ -523,9 +523,9 @@ parse_parametric_macro_tail(DefName, Args, Line, Depth, Acc, [Head | Tail], Form
 parse_parametric_macro_tail(DefName, _Args, Line, _Depth, _Acc, _Tail, _Forms) ->
 	{error, {illformed_parametric_macro, DefName, line, Line}}.
 
-parse_onload([{'(', _}, {atom, _, FuncName}, {'/', _}, {integer, _, Arity}, {dot, _}], Forms) ->
+parse_onload([{'(', _}, {atom, _, FuncName}, {'/', _}, {integer, _, Arity}, {')', _}, {dot, _}], Forms) ->
 	case Arity of
-		0 -> {ok, [{import, {FuncName, Arity}}], Forms};
+		0 -> {ok, [{onload, {FuncName, Arity}}], Forms};
 		_ -> {error, {"function " ++ atom_to_list(FuncName) ++ "/" ++ integer_to_list(Arity)
 				++ " has wrong arity (must be 0)"}}
 	end.
