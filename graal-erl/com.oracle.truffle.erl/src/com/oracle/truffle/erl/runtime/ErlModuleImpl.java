@@ -1,5 +1,6 @@
 package com.oracle.truffle.erl.runtime;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -85,11 +86,13 @@ public class ErlModuleImpl implements ErlModule {
         } else {
 
             ErlFunction func = functions.get(new FA(functionName, args0.length));
-            Object[] args = args0;
 
             if (null == func) {
                 return null;
             }
+
+            Object[] args = Arrays.copyOf(args0, args0.length + 1);
+            args[args.length - 1] = func.getContext();
 
             for (;;) {
 
@@ -99,6 +102,8 @@ public class ErlModuleImpl implements ErlModule {
 
                     func = tailCallEx.getFunction();
                     args = tailCallEx.getArguments();
+                    args = Arrays.copyOf(args, args.length + 1);
+                    args[args.length - 1] = func.getContext();
                 }
             }
         }
