@@ -92,12 +92,34 @@ $ mx erl -init_debug -pa /home/aron/jku/erlang -run erlparse01 main -run init st
 The "independent" refers to the independence from the OTP ring0 startup.
 This mode will not start any official processes. The result is an empty
 Erlang runtime system. Also, modules can be loaded into the runtime system
-with the "-file FILE" switch. To select the function to execute, use the
-"-mf MODULE FUNCTION" flag. Currently only functions with 0 arguments
+with the `-file FILE` flag. To select the function to execute, use the
+`-mf MODULE FUNCTION` flag. Currently only functions with 0 arguments
 are supported.
 
 ````
 $ mx erl -independent -file /home/aron/jku/erlang/list41.erl -mf list41 main
+````
+
+Without any `-file FILE` flag, the standard input will be used as source.
+*Important*: the first line must contain the `module` attribute.
+Note: the same thing will happen, when the OTP ring0 startup is used.
+
+Example run:
+
+````
+$ mx erl -independent -mf tmp main
+-module(tmp).
+
+fact(0) ->
+    1;   
+fact(N) ->
+    N * fact(N-1).
+
+
+main() ->
+    fact(5).
+120
+$
 ````
 
 ### Optional environment variables
