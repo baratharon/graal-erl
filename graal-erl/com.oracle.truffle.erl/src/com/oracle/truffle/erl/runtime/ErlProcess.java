@@ -262,7 +262,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
     private final LinkedList<Object> messageQueue = new LinkedList<>();
     private final HashSet<ErlProcess> links = new HashSet<>();
     private final HashSet<ErlTable> tables = new HashSet<>();
-    private final TreeMap<Object, Object> dictionary = new TreeMap<>(ErlContext.TERM_COMPARATOR);
+    private final TreeMap<Object, Object> dictionary = new TreeMap<>(ErlContext.TERM_COMPARATOR_EXACT);
     private final TreeMap<ErlRef, ErlProcess> monitors = new TreeMap<>(ErlRef.COMPARATOR);
     private final TreeMap<ErlRef, ErlProcess> foreignMonitors = new TreeMap<>(ErlRef.COMPARATOR);
     private final Future<Object> future;

@@ -54,7 +54,7 @@ import com.oracle.truffle.erl.runtime.ErlTuple;
 
 public abstract class ErlTable {
 
-    private static final TreeMap<Object, ErlTable> TABLES = new TreeMap<>(ErlContext.TERM_COMPARATOR);
+    private static final TreeMap<Object, ErlTable> TABLES = new TreeMap<>(ErlContext.TERM_COMPARATOR_EXACT);
 
     private final Object tableID;
     private ErlPid owner;
@@ -112,16 +112,16 @@ public abstract class ErlTable {
 
         switch (options.type) {
             case SET:
-                return new SetTable(tableID, name, options);
+                return new SetTable(tableID, name, options, ErlContext.TERM_COMPARATOR_EXACT, TableType.SET);
 
             case BAG:
                 return new BagTable(tableID, name, options);
 
             case DUPLICATE_BAG:
-                ErlContext.notImplemented();
+                return new DuplicateBagTable(tableID, name, options);
 
             case ORDERED_SET:
-                ErlContext.notImplemented();
+                return new SetTable(tableID, name, options, ErlContext.TERM_COMPARATOR_EQUAL, TableType.ORDERED_SET);
 
             default:
                 throw ErlControlException.makeBadarg();

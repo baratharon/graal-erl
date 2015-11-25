@@ -772,15 +772,20 @@ public final class ErlContext extends ExecutionContext {
     }
 
     public static class TermComparator implements Comparator<Object> {
-        private TermComparator() {
+
+        private final boolean exact;
+
+        private TermComparator(boolean exact) {
+            this.exact = exact;
         }
 
         public int compare(Object lhs, Object rhs) {
-            return ErlContext.compareTerms(lhs, rhs, true);
+            return ErlContext.compareTerms(lhs, rhs, exact);
         }
     }
 
-    public static final TermComparator TERM_COMPARATOR = new TermComparator();
+    public static final TermComparator TERM_COMPARATOR_EXACT = new TermComparator(true);
+    public static final TermComparator TERM_COMPARATOR_EQUAL = new TermComparator(false);
 
     public static class ListBuilderConsumer implements Consumer<Object> {
 

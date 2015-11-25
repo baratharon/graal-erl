@@ -40,66 +40,90 @@
  */
 package com.oracle.truffle.erl.runtime.ets;
 
-import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
 
 import com.oracle.truffle.erl.runtime.ErlAtom;
+import com.oracle.truffle.erl.runtime.ErlContext;
 import com.oracle.truffle.erl.runtime.ErlList;
 import com.oracle.truffle.erl.runtime.ErlTuple;
 
-final class SetTable extends ErlTable {
+final class DuplicateBagTable extends ErlTable {
 
-    private static final ArrayList<ErlTuple> EMPTY = new ArrayList<>();
-    private final TreeMap<Object, ErlTuple> elements;
-    private final TableType tableType;
+    private final TreeMap<ErlTuple, Integer> elements;
 
-    protected SetTable(Object tableID, ErlAtom name, TableOptions options, final Comparator<Object> comparator, TableType tableType) {
+    protected DuplicateBagTable(Object tableID, ErlAtom name, TableOptions options) {
         super(tableID, name, options);
-        this.elements = new TreeMap<>(comparator);
-        this.tableType = tableType;
+        elements = new TreeMap<>(ErlContext.TERM_COMPARATOR_EXACT);
     }
 
     @Override
     public TableType getTableType() {
-        return tableType;
+        return TableType.DUPLICATE_BAG;
     }
 
     @Override
     protected boolean insertTuple(ErlTuple tuple) {
-        return null != elements.put(tuple.getElement(keypos), tuple);
+        Integer count = elements.get(tuple);
+
+        if (null == count) {
+            count = 0;
+        }
+
+        elements.put(tuple, count + 1);
+
+        return true;
     }
 
     @Override
     protected boolean removeTuple(ErlTuple tuple) {
-        return null == elements.remove(tuple.getElement(keypos));
+
+        Integer count = elements.get(tuple);
+
+        if (null != count) {
+            if (0 == (--count)) {
+                elements.remove(tuple);
+                return true;
+            } else {
+                elements.put(tuple, count);
+            }
+        }
+
+        return false;
     }
 
     @Override
     protected List<ErlTuple> lookupTuples(Object key) {
 
-        final ErlTuple tuple = elements.get(key);
+        final LinkedList<ErlTuple> result = new LinkedList<>();
 
-        if (null != tuple) {
-            final ArrayList<ErlTuple> result = new ArrayList<>();
-            result.add(tuple);
-            return result;
-        }
+        elements.forEach(new BiConsumer<ErlTuple, Integer>() {
 
-        return EMPTY;
+            public void accept(ErlTuple tuple, Integer count) {
+                if (0 == ErlContext.compareTerms(key, tuple.getElement(keypos), true)) {
+                    for (int c = count; c > 0; --c) {
+                        result.addFirst(tuple);
+                    }
+                }
+            }
+        });
+
+        return result;
     }
 
     @Override
     protected void selectByPattern(final List<ErlTuple> out, final MatchPattern matchPattern) {
 
-        elements.forEach(new BiConsumer<Object, ErlTuple>() {
+        elements.forEach(new BiConsumer<ErlTuple, Integer>() {
 
-            public void accept(Object key, ErlTuple tuple) {
+            public void accept(ErlTuple tuple, Integer count) {
                 MatchContext ctx = new MatchContext();
                 if (matchPattern.match(ctx, tuple)) {
-                    out.add(tuple);
+                    for (int c = count; c >= 0; --c) {
+                        out.add(tuple);
+                    }
                 }
             }
         });
@@ -108,12 +132,14 @@ final class SetTable extends ErlTable {
     @Override
     protected void selectByMatch(final List<ErlList> out, final MatchPattern matchPattern) {
 
-        elements.forEach(new BiConsumer<Object, ErlTuple>() {
+        elements.forEach(new BiConsumer<ErlTuple, Integer>() {
 
-            public void accept(Object key, ErlTuple tuple) {
+            public void accept(ErlTuple tuple, Integer count) {
                 MatchContext ctx = new MatchContext();
                 if (matchPattern.match(ctx, tuple)) {
-                    out.add(ctx.toErlList());
+                    for (int c = count; c >= 0; --c) {
+                        out.add(ctx.toErlList());
+                    }
                 }
             }
         });
@@ -125,12 +151,14 @@ final class SetTable extends ErlTable {
         try {
             final int[] index = new int[]{index_};
 
-            elements.forEach(new BiConsumer<Object, ErlTuple>() {
+            elements.forEach(new BiConsumer<ErlTuple, Integer>() {
 
-                public void accept(Object key, ErlTuple tuple) {
-                    if (0 == (index[0]--)) {
+                public void accept(ErlTuple tuple, Integer count) {
+                    if (index[0] < count) {
                         throw new TupleFound(tuple);
                     }
+
+                    index[0] -= count;
                 }
             });
 

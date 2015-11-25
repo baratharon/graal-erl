@@ -40,8 +40,8 @@
  */
 package com.oracle.truffle.erl.runtime.ets;
 
-import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeSet;
 
@@ -56,7 +56,7 @@ final class BagTable extends ErlTable {
 
     protected BagTable(Object tableID, ErlAtom name, TableOptions options) {
         super(tableID, name, options);
-        elements = new TreeSet<>(ErlContext.TERM_COMPARATOR);
+        elements = new TreeSet<>(ErlContext.TERM_COMPARATOR_EXACT);
     }
 
     @Override
@@ -77,13 +77,13 @@ final class BagTable extends ErlTable {
     @Override
     protected List<ErlTuple> lookupTuples(Object key) {
 
-        final List<ErlTuple> result = new ArrayList<>();
+        final LinkedList<ErlTuple> result = new LinkedList<>();
 
         for (Iterator<ErlTuple> iter = elements.iterator(); iter.hasNext();) {
             final ErlTuple tuple = iter.next();
 
             if (0 == ErlContext.compareTerms(key, tuple.getElement(keypos), true)) {
-                result.add(tuple);
+                result.addFirst(tuple);
             }
         }
 
