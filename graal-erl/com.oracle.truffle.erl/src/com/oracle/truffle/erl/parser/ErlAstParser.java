@@ -1179,8 +1179,54 @@ class ErlAstParser {
     private static ErlExpressionNode decomposeStringToListCons(String str) {
         ErlExpressionNode cons = new ErlListNilNode(null);
 
-        for (int i = str.length() - 1; i >= 0; --i) {
-            cons = new ErlListConsNode(null, new ErlLongLiteralNode(null, str.charAt(i)), cons);
+        ArrayList<Long> list = new ArrayList<>();
+
+        for (int i = 0, n = str.length(); i < n; ++i) {
+
+            if ('\\' == str.charAt(i)) {
+                if (i + 1 < n) {
+                    ++i;
+                    switch (str.charAt(i)) {
+
+                        case '\\':
+                            list.add((long) '\\');
+                            break;
+
+                        case '\"':
+                            list.add((long) '\"');
+                            break;
+
+                        case 'r':
+                            list.add((long) '\r');
+                            break;
+
+                        case 'n':
+                            list.add((long) '\n');
+                            break;
+
+                        case 't':
+                            list.add((long) '\t');
+                            break;
+
+                        case 'f':
+                            list.add((long) '\f');
+                            break;
+
+                        case 'e':
+                            list.add(27l);
+                            break;
+
+                        default:
+                            throw new RuntimeException("Unknown escape sequence");
+                    }
+                }
+            } else {
+                list.add((long) str.charAt(i));
+            }
+        }
+
+        for (int i = list.size() - 1; i >= 0; --i) {
+            cons = new ErlListConsNode(null, new ErlLongLiteralNode(null, list.get(i)), cons);
         }
 
         return cons;
