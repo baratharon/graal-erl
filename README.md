@@ -130,3 +130,4 @@ $
 ### Optional environment variables
 
 * `GRAAL_ERL_PARSER_PATH` sets the path to the `parser.beam`
+* `GRAAL_ERL_ROOT_DIR` sets the the Erlang root directory (defaults to `/usr/lib/erlang`)

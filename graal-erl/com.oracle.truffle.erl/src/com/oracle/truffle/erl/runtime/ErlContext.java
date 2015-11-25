@@ -41,6 +41,8 @@
 package com.oracle.truffle.erl.runtime;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -49,6 +51,7 @@ import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -105,7 +108,7 @@ public final class ErlContext extends ExecutionContext {
         this.language = language;
         this.input = input;
         this.output = output;
-        this.moduleRegistry = new ErlModuleRegistry();
+        this.moduleRegistry = new ErlModuleRegistry(this);
         installBuiltins(installBuiltins);
     }
 
@@ -235,13 +238,15 @@ public final class ErlContext extends ExecutionContext {
      *
      * @param source The {@link Source} to parse.
      */
-    public void evalSource(Source source) {
+    public ErlModuleImpl evalSource(Source source) {
 
         final ErlModuleImpl module = ErlParser.parseErlang(source);
 
         if (null != module) {
             moduleRegistry.register(module);
         }
+
+        return module;
     }
 
     /**
@@ -250,13 +255,15 @@ public final class ErlContext extends ExecutionContext {
      *
      * @param source The {@link Source} to parse.
      */
-    public void evalPreprocessed(Source source, final boolean preLoaded) {
+    public ErlModuleImpl evalPreprocessed(Source source, final boolean preLoaded) {
 
         final ErlModuleImpl module = ErlParser.parseErlangPreprocessed(preLoaded, null, source.getReader());
 
         if (null != module) {
             moduleRegistry.register(module);
         }
+
+        return module;
     }
 
     /**
@@ -268,11 +275,56 @@ public final class ErlContext extends ExecutionContext {
      * @return <code>true</code> when successfully loaded, <code>false</code> otherwise
      */
     public boolean loadModule(String moduleName) {
-        xxxx = null;
+
+        if (null == codeGetPath) {
+            codeGetPath = moduleRegistry.functionLookup(MFA_CODE_GETPATH);
+        }
+
+        if (null != codeGetPath) {
+            try {
+                final Object result = ErlProcess.spawn(this, codeGetPath, new Object[0]).getFuture().get();
+
+                if (null != result && result instanceof ErlList) {
+                    for (Object pathObj : ((ErlList) result).toArray()) {
+                        if (pathObj instanceof ErlList) {
+                            String path = ((ErlList) pathObj).toString();
+                            if (path.length() > 2) {
+                                path = path.substring(1, path.length() - 1);
+
+                                if (path.endsWith("/beam") || path.endsWith("\\beam")) {
+                                    path = path.substring(0, path.length() - 4) + "src";
+                                }
+
+                                final String basename = path + "/" + moduleName;
+
+                                File file;
+
+                                file = new File(basename + ErlangLanguage.ERL_AST_EXTENSION);
+                                if (file.exists() && file.isFile()) {
+                                    evalPreprocessed(Source.fromFileName(file.getAbsolutePath()).withMimeType(ErlangLanguage.ERL_MIME_TYPE), false);
+                                    return true;
+                                }
+
+                                file = new File(basename + ErlangLanguage.ERL_SOURCE_EXTENSION);
+                                if (file.exists() && file.isFile()) {
+                                    evalSource(Source.fromFileName(file.getAbsolutePath()).withMimeType(ErlangLanguage.ERL_MIME_TYPE));
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+
+            } catch (InterruptedException | ExecutionException | IOException e) {
+                return false;
+            }
+        }
+
         return false;
     }
 
-    private ErlFunction xxxx;
+    private static final MFA MFA_CODE_GETPATH = new MFA("code", "get_path", 0);
+    private ErlFunction codeGetPath = null;
 
     public static Object fromForeignValue(Object a) {
         if (a instanceof Long || a instanceof BigInteger) {

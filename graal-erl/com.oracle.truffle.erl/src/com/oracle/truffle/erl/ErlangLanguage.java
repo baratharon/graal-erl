@@ -110,15 +110,29 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
 
     public static final ErlangLanguage INSTANCE = new ErlangLanguage();
     public static final String ERL_MIME_TYPE = "text/x-erlang";
+    public static final String ERL_SOURCE_EXTENSION = ".erl";
+    public static final String ERL_AST_EXTENSION = ".ast";
 
     private static final String OTP_RING0_MODULE = "otp_ring0";
     private static final String OTP_RING0_FUNCTION = "start";
     private static final String RESOURCES_PATH = "resources/";
     private static final String INTERNAL_AST_FILE_NAME_PREFIX = "internal:";
+    private static final String ERLANG_ROOT_DIRECTORY;
 
     private static final List<Source> internalSources;
 
     static {
+
+        {
+            String dir = System.getenv("GRAAL_ERL_ROOT_DIR");
+
+            if (null == dir) {
+                dir = "/usr/lib/erlang";
+            }
+
+            ERLANG_ROOT_DIRECTORY = dir;
+        }
+
         internalSources = new ArrayList<>();
 
         try {
@@ -153,7 +167,6 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
 
         for (Source source : internalSources) {
             erlContext.evalPreprocessed(source, true);
-            // erlContext.getModuleRegistry().put(source.getShortName(), module);
         }
         return erlContext;
     }
@@ -162,13 +175,28 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
         ArrayList<Object> list = new ArrayList<>();
 
         list.add(ErlContext.stringToBinary("-root", ErlContext.LATIN1_CHARSET));
-        list.add(ErlContext.stringToBinary("/usr/lib/erlang", ErlContext.LATIN1_CHARSET));
+        list.add(ErlContext.stringToBinary(ERLANG_ROOT_DIRECTORY, ErlContext.LATIN1_CHARSET));
 
         for (String arg : args) {
             list.add(ErlContext.stringToBinary(arg, ErlContext.LATIN1_CHARSET));
         }
 
         return ErlList.fromList(list);
+    }
+
+    private static Object[] translateArguments(String[] args, int index, boolean forceEmpty) {
+
+        if (index == args.length && !forceEmpty) {
+            return new Object[0];
+        }
+
+        ErlList list = ErlList.NIL;
+
+        for (int i = args.length - 1; i >= index; --i) {
+            list = new ErlList(ErlList.fromString(args[i]), list);
+        }
+
+        return new Object[]{list};
     }
 
     @Override
@@ -185,8 +213,8 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
     }
 
     /**
-     * The main entry point. Use the mx command <code>mx erl</code> to run it with the correct class
-     * path setup.
+     * The main entry point. Use the <code>mx</code> command <code>mx erl</code> to run it with the
+     * correct class path setup.
      */
     public static void main(String[] args) throws IOException {
         PolyglotEngine engine = PolyglotEngine.newBuilder().build();
@@ -205,8 +233,7 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
                     final String filename = args[index + 1];
                     index += 2;
 
-                    final Source source = Source.fromFileName(filename);
-                    engine.eval(source);
+                    engine.eval(Source.fromFileName(filename));
 
                     gotFile = true;
 
@@ -216,8 +243,15 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
                     index += 3;
 
                 } else {
-                    throw new ErlException("Unknown switch: " + args[index] + ".");
+                    break;
                 }
+            }
+
+            boolean forceEmpty = false;
+
+            if (index < args.length && "--".equals(args[index])) {
+                ++index;
+                forceEmpty = true;
             }
 
             if (null == moduleName) {
@@ -229,12 +263,7 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
                 engine.eval(source);
             }
 
-            if (index != args.length) {
-                // TODO
-                throw new ErlException("Argument passing is not implemented yet.");
-            }
-
-            final Object[] arguments = new Object[0];
+            final Object[] arguments = translateArguments(args, index, forceEmpty);
 
             final ErlModule module = context.getModuleRegistry().getModule(moduleName);
             if (null == module) {
@@ -436,10 +465,11 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
     @Override
     protected CallTarget parse(Source code, Node node, String... argumentNames) throws IOException {
         final ErlContext c = new ErlContext(this);
+        final ErlModuleImpl[] loadedModule = {null};
 
         final Exception[] failed = {null};
         try {
-            c.evalSource(code);
+            loadedModule[0] = c.evalSource(code);
             failed[0] = null;
         } catch (Exception e) {
             failed[0] = e;
@@ -456,16 +486,8 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
                 Node n = createFindContextNode();
                 ErlContext fillIn = findContext(n);
                 final ErlModuleRegistry moduleRegistry = fillIn.getModuleRegistry();
-                ErlModuleImpl loadedModule = null;
-                for (ErlModuleImpl mod : c.getModuleRegistry().getModules()) {
-                    if (mod.isPreLoaded()) {
-                        continue;
-                    }
-                    assert null == loadedModule;
-                    moduleRegistry.register(mod);
-                    loadedModule = mod;
-                }
-                return loadedModule;
+                moduleRegistry.register(loadedModule[0]);
+                return loadedModule[0];
             }
         };
     }

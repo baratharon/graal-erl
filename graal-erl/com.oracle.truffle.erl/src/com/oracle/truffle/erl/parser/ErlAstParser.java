@@ -122,7 +122,6 @@ class ErlAstParser {
     private static final char SEPARATOR = '\uAAAA';
     private char preread;
     private final HashMap<FA, String> importedFunctions = new HashMap<>();
-    private final HashSet<FA> onLoadFuntions = new HashSet<>();
     private StackableSet<String> boundVariables = new StackableSet<>();
 
     ErlAstParser(BufferedReader br, ErlModuleImpl module) throws IOException {
@@ -185,7 +184,7 @@ class ErlAstParser {
                     throw new RuntimeException("Arity of the onload function must be 0.");
                 }
 
-                onLoadFuntions.add(new FA(func, arity));
+                module.addOnLoadFunction(new FA(func, arity));
 
                 again = nextIs(',', cb);
                 if (again) {

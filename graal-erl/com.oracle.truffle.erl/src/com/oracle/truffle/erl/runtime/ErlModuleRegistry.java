@@ -22,8 +22,13 @@ import com.oracle.truffle.erl.nodes.ErlRootNode;
  */
 public final class ErlModuleRegistry {
 
+    private final ErlContext context;
     private final Map<MFA, ErlFunction> BIFs = new HashMap<>();
     private final HashMap<String, ErlModuleImpl> modules = new HashMap<>();
+
+    public ErlModuleRegistry(ErlContext context) {
+        this.context = context;
+    }
 
     /**
      * Register a built-in function (BIF).
@@ -44,21 +49,33 @@ public final class ErlModuleRegistry {
     /**
      * Register the module in the module registry.
      */
-    public synchronized void register(ErlModuleImpl module) {
+    public boolean register(ErlModuleImpl module) {
 
-        final String moduleName = module.getModuleName();
+        synchronized (this) {
 
-        // load BIFs into the module
-        for (Entry<MFA, ErlFunction> entry : BIFs.entrySet()) {
+            final String moduleName = module.getModuleName();
 
-            final MFA mfa = entry.getKey();
+            // load BIFs into the module
+            for (Entry<MFA, ErlFunction> entry : BIFs.entrySet()) {
 
-            if (moduleName.equals(mfa.getModule())) {
-                module.register(mfa.getFA(), entry.getValue());
+                final MFA mfa = entry.getKey();
+
+                if (moduleName.equals(mfa.getModule())) {
+                    module.register(mfa.getFA(), entry.getValue());
+                }
+            }
+
+            modules.put(module.getModuleName(), module);
+        }
+
+        if (!module.tryRegisterModule(context)) {
+            synchronized (this) {
+                modules.remove(module.getModuleName());
+                return false;
             }
         }
 
-        modules.put(module.getModuleName(), module);
+        return true;
     }
 
     /**

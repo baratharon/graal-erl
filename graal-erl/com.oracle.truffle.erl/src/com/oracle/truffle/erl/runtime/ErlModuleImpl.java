@@ -3,6 +3,7 @@ package com.oracle.truffle.erl.runtime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -14,12 +15,14 @@ import com.oracle.truffle.erl.MFA;
 import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
 import com.oracle.truffle.erl.builtins._module.ModuleInfo1BuiltinFactory;
 import com.oracle.truffle.erl.nodes.ErlRootNode;
+import com.oracle.truffle.erl.nodes.controlflow.ErlTailCallException;
 
 public class ErlModuleImpl implements ErlModule {
 
     private final String moduleName;
     private final boolean preLoaded;
     private final HashMap<FA, ErlFunction> functions = new HashMap<>();
+    private final HashSet<FA> onLoadFuntions = new HashSet<>();
 
     public ErlModuleImpl(final String moduleName, boolean preLoaded) {
         super();
@@ -63,19 +66,66 @@ public class ErlModuleImpl implements ErlModule {
         return null;
     }
 
-    public Object call(final ErlContext context, String functionName, Object... args) {
+    public Object call(final ErlContext context, String functionName, Object... args0) {
 
-        Future<Object> future = start(context, functionName, args);
+        if (null == ErlProcess.getCurrentProcess() || context != ErlProcess.getContext()) {
 
-        if (null != future) {
-            try {
-                return future.get();
-            } catch (InterruptedException | ExecutionException e) {
+            Future<Object> future = start(context, functionName, args0);
+
+            if (null != future) {
+                try {
+                    return future.get();
+                } catch (InterruptedException | ExecutionException e) {
+                    return null;
+                }
+            }
+
+            return null;
+
+        } else {
+
+            ErlFunction func = functions.get(new FA(functionName, args0.length));
+            Object[] args = args0;
+
+            if (null == func) {
                 return null;
+            }
+
+            for (;;) {
+
+                try {
+                    return func.getCallTarget().call(args);
+                } catch (ErlTailCallException tailCallEx) {
+
+                    func = tailCallEx.getFunction();
+                    args = tailCallEx.getArguments();
+                }
+            }
+        }
+    }
+
+    public void addOnLoadFunction(FA fa) {
+        onLoadFuntions.add(fa);
+    }
+
+    public boolean tryRegisterModule(ErlContext context) {
+
+        for (FA fa : onLoadFuntions) {
+
+            final ErlFunction func = functions.get(fa);
+
+            if (null == func || 0 != fa.getArity()) {
+                return false;
+            }
+
+            final Object result = call(context, fa.getFunction());
+
+            if (!ErlAtom.OK.equals(result)) {
+                return false;
             }
         }
 
-        return null;
+        return true;
     }
 
     public ErlFunction lookup(FA fa) {
