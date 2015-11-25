@@ -55,7 +55,6 @@ import com.oracle.truffle.erl.nodes.controlflow.ErlClauseSelectorNode;
 import com.oracle.truffle.erl.nodes.controlflow.ErlFunctionBodyNode;
 import com.oracle.truffle.erl.nodes.expression.ErlToBooleanNodeGen;
 import com.oracle.truffle.erl.runtime.ErlAtom;
-import com.oracle.truffle.erl.runtime.ErlContext;
 import com.oracle.truffle.erl.runtime.ErlFunction;
 import com.oracle.truffle.erl.runtime.ErlModuleImpl;
 import com.oracle.truffle.erl.nodes.call.ErlInvokeNodeGen;
@@ -117,7 +116,6 @@ import com.oracle.truffle.erl.nodes.local.ErlLocalVariableNodeGen;
 
 class ErlAstParser {
 
-    private final ErlContext context;
     private final BufferedReader br;
     private final ErlModuleImpl module;
     private final String moduleName;
@@ -127,8 +125,7 @@ class ErlAstParser {
     private final HashSet<FA> onLoadFuntions = new HashSet<>();
     private StackableSet<String> boundVariables = new StackableSet<>();
 
-    ErlAstParser(ErlContext context, BufferedReader br, ErlModuleImpl module) throws IOException {
-        this.context = context;
+    ErlAstParser(BufferedReader br, ErlModuleImpl module) throws IOException {
         this.br = br;
         this.module = module;
         this.moduleName = module.getModuleName();
@@ -148,14 +145,14 @@ class ErlAstParser {
 
             do {
                 accept('{', cb);
-                final String module = readUntil(',', cb);
+                final String targetModule = readUntil(',', cb);
                 accept(',', cb);
                 final String func = readUntil(',', cb);
                 accept(',', cb);
                 final String arity = readUntil('}', cb);
                 accept('}', cb);
 
-                importedFunctions.put(new FA(func, Integer.valueOf(arity)), module);
+                importedFunctions.put(new FA(func, Integer.valueOf(arity)), targetModule);
 
                 again = nextIs(',', cb);
                 if (again) {
@@ -382,8 +379,6 @@ class ErlAstParser {
 
         } while (weakAccept(','));
         accept(']');
-
-        context.getFunctionRegistry().addLoadedModule(context, moduleName, module.isPreLoaded());
     }
 
     private static ErlExpressionNode toBoolean(ErlExpressionNode expr) {
@@ -413,11 +408,11 @@ class ErlAstParser {
 
         ErlFunctionBodyNode bodyNode = new ErlFunctionBodyNode(null, selector);
         bodyNode.markAsTail();
-        ErlRootNode rootNode = new ErlRootNode(context, fd, bodyNode, new MFA(moduleName, name, arity));
+        ErlRootNode rootNode = new ErlRootNode(fd, bodyNode, new MFA(moduleName, name, arity));
 
         boundVariables.pop();
 
-        return context.getFunctionRegistry().register(moduleName, name, arity, ErlFunction.Origin.REGULAR, rootNode);
+        return module.register(name, arity, rootNode, ErlFunction.Origin.REGULAR);
     }
 
     private ErlExpressionNode parseClausesAsFunction(FrameDescriptor fd0) {
@@ -445,11 +440,11 @@ class ErlAstParser {
         final ErlExpressionNode preludeNode = createPreludeNode(accessOf.access, fd);
         final ErlFunctionBodyNode bodyNode = new ErlFunctionBodyNode(null, preludeNode, selector);
         bodyNode.markAsTail();
-        final ErlRootNode rootNode = new ErlRootNode(context, fd, bodyNode, new MFA(moduleName, name, arity));
+        final ErlRootNode rootNode = new ErlRootNode(fd, bodyNode, new MFA(moduleName, name, arity));
 
         boundVariables.pop();
 
-        context.getFunctionRegistry().register(moduleName, name, arity, ErlFunction.Origin.ANONYMOUS, rootNode);
+        module.register(name, arity, rootNode, ErlFunction.Origin.ANONYMOUS);
         final ErlFunctionLiteralNode funclitNode = new ErlFunctionLiteralNode(null, moduleName, name, arity);
         return createCaptureNode(funclitNode, accessOf.access, fd0);
     }
@@ -1247,11 +1242,11 @@ class ErlAstParser {
         final ErlExpressionNode preludeNode = createPreludeNode(accessOf.access, fd, bindFunNode);
         ErlFunctionBodyNode bodyNode = new ErlFunctionBodyNode(null, preludeNode, selector);
         bodyNode.markAsTail();
-        ErlRootNode rootNode = new ErlRootNode(context, fd, bodyNode, new MFA(moduleName, name, arity));
+        ErlRootNode rootNode = new ErlRootNode(fd, bodyNode, new MFA(moduleName, name, arity));
 
         boundVariables.pop();
 
-        ErlFunction func = context.getFunctionRegistry().register(moduleName, name, arity, ErlFunction.Origin.ANONYMOUS, rootNode);
+        ErlFunction func = module.register(name, arity, rootNode, ErlFunction.Origin.ANONYMOUS);
         assert func.getModule().equals(moduleName);
         assert func.getName().equals(name);
         assert func.getArity() == arity;

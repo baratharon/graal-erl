@@ -66,6 +66,10 @@ public final class MFA {
         return module;
     }
 
+    public FA getFA() {
+        return fa;
+    }
+
     public String getFunction() {
         return fa.getFunction();
     }

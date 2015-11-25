@@ -48,6 +48,7 @@ import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.runtime.ErlAtom;
 import com.oracle.truffle.erl.runtime.ErlContext;
+import com.oracle.truffle.erl.runtime.ErlModuleImpl;
 
 /**
  * Returns true if the module Module is loaded, otherwise returns false. It does not attempt to load
@@ -56,17 +57,17 @@ import com.oracle.truffle.erl.runtime.ErlContext;
 @NodeInfo(shortName = "moduleInfo")
 public abstract class ModuleInfo1Builtin extends ErlBuiltinNode {
 
-    private final String module;
+    private final ErlModuleImpl module;
     private ErlAtom cachedModule = null;
 
-    public ModuleInfo1Builtin(String module) {
+    public ModuleInfo1Builtin(ErlModuleImpl module) {
         super(SourceSection.createUnavailable("Erlang builtin", "module_info"));
         this.module = module;
     }
 
     @Override
     public MFA[] getNames() {
-        return new MFA[]{new MFA(module, "module_info", 1)};
+        return new MFA[]{new MFA(module.getModuleName(), "module_info", 1)};
     }
 
     @Specialization
@@ -75,7 +76,7 @@ public abstract class ModuleInfo1Builtin extends ErlBuiltinNode {
         if (ErlAtom.MODULE.equals(atom)) {
 
             if (null == cachedModule) {
-                cachedModule = new ErlAtom(module);
+                cachedModule = new ErlAtom(module.getModuleName());
             }
 
             return cachedModule;

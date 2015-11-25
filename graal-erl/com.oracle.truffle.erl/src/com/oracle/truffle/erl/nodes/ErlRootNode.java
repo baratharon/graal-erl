@@ -48,7 +48,6 @@ import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.erl.ErlangLanguage;
 import com.oracle.truffle.erl.MFA;
 import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
-import com.oracle.truffle.erl.runtime.ErlContext;
 import com.oracle.truffle.erl.runtime.ErlProcess;
 
 /**
@@ -68,7 +67,7 @@ public final class ErlRootNode extends RootNode {
     @CompilationFinal private boolean isCloningAllowed;
 
     @SuppressWarnings("unused")
-    public ErlRootNode(ErlContext ignore, FrameDescriptor frameDescriptor, ErlExpressionNode bodyNode, MFA mfa) {
+    public ErlRootNode(FrameDescriptor frameDescriptor, ErlExpressionNode bodyNode, MFA mfa) {
         super(ErlangLanguage.class, null, frameDescriptor);
         this.bodyNode = bodyNode;
         this.mfa = mfa;

@@ -51,7 +51,6 @@ import java.io.Writer;
 import java.nio.file.Paths;
 
 import com.oracle.truffle.api.source.Source;
-import com.oracle.truffle.erl.runtime.ErlContext;
 import com.oracle.truffle.erl.runtime.ErlModuleImpl;
 
 /**
@@ -94,7 +93,7 @@ public class ErlParser {
         PARSER_PATH = path;
     }
 
-    public static void parseErlang(ErlContext context, Source source) {
+    public static ErlModuleImpl parseErlang(Source source) {
         Reader reader = source.getReader();
 
         try {
@@ -168,10 +167,12 @@ public class ErlParser {
             sourceFile = null;
 
             // at this point, we have an alternate representation of the source as an AST
-            parseErlangPreprocessed(context, false, moduleName, new FileReader(astFile));
+            final ErlModuleImpl module = parseErlangPreprocessed(false, moduleName, new FileReader(astFile));
 
             astFile.delete();
             astFile = null;
+
+            return module;
 
         } catch (IOException ex) {
             ex.printStackTrace();
@@ -179,7 +180,7 @@ public class ErlParser {
         }
     }
 
-    public static ErlModuleImpl parseErlangPreprocessed(ErlContext context, final boolean preLoaded, final String moduleName, Reader reader) {
+    public static ErlModuleImpl parseErlangPreprocessed(final boolean preLoaded, final String moduleName, Reader reader) {
 
         ErlModuleImpl module = null;
         BufferedReader br = new BufferedReader(reader);
@@ -192,8 +193,8 @@ public class ErlParser {
             // the 'br' now points to the first character of the AST (which is actually an Erlang
             // term)
             try {
-                module = ErlModuleImpl.create(checkModuleName, preLoaded);
-                new ErlAstParser(context, br, module).parse();
+                module = new ErlModuleImpl(checkModuleName, preLoaded);
+                new ErlAstParser(br, module).parse();
             } catch (RuntimeException ex) {
                 ex.printStackTrace();
                 throw ex;

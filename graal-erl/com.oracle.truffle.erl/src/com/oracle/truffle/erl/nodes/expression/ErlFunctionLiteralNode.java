@@ -75,11 +75,11 @@ public final class ErlFunctionLiteralNode extends ErlExpressionNode {
         if (null == cachedFunction) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             ErlContext context = ErlProcess.getContext();
-            this.cachedFunction = context.getFunctionRegistry().lookup(moduleName, funcName, arity);
+            this.cachedFunction = context.getModuleRegistry().functionLookup(moduleName, funcName, arity);
 
             // auto-imported BIF?
             if (null == this.cachedFunction) {
-                this.cachedFunction = context.getFunctionRegistry().lookup("erlang", funcName, arity);
+                this.cachedFunction = context.getModuleRegistry().functionLookup("erlang", funcName, arity);
             }
 
             // still an unknown function?

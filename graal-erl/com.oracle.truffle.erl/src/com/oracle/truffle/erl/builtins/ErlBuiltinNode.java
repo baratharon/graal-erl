@@ -47,7 +47,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.erl.MFA;
 import com.oracle.truffle.erl.nodes.ErlExpressionNode;
 import com.oracle.truffle.erl.runtime.ErlContext;
-import com.oracle.truffle.erl.runtime.ErlFunctionRegistry;
+import com.oracle.truffle.erl.runtime.ErlModuleRegistry;
 
 /**
  * Base class for all built-in functions. It contains the Truffle DSL annotation {@link NodeChild}
@@ -56,25 +56,18 @@ import com.oracle.truffle.erl.runtime.ErlFunctionRegistry;
  * manually and setting it in a constructor, we use the Truffle DSL annotation {@link NodeField}
  * that generates the field and constructor automatically.
  * <p>
- * The built-in functions are registered in {@link ErlContext#installBuiltins}. Every builtin node
+ * The built-in functions are registered in {@link ErlContext#installBuiltins}. Every built-in node
  * subclass is instantiated there, wrapped into a function, and added to the
- * {@link ErlFunctionRegistry}. This ensures that built-in functions can be called like user-defined
+ * {@link ErlModuleRegistry}. This ensures that built-in functions can be called like user-defined
  * functions; there is no special function lookup or call node for built-in functions.
  */
 @NodeChild(value = "arguments", type = ErlExpressionNode[].class)
-@NodeField(name = "context", type = ErlContext.class)
 @GenerateNodeFactory
 public abstract class ErlBuiltinNode extends ErlExpressionNode {
 
     public ErlBuiltinNode(SourceSection src) {
         super(src);
     }
-
-    /**
-     * Accessor for the {@link ErlContext}. The implementation of this method is generated
-     * automatically based on the {@link NodeField} annotation on the class.
-     */
-    public abstract ErlContext getContext();
 
     public abstract MFA[] getNames();
 }

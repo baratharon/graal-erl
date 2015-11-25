@@ -48,7 +48,7 @@ import com.oracle.truffle.erl.nodes.ErlExpressionNode;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.runtime.ErlContext;
 import com.oracle.truffle.erl.runtime.ErlFunction;
-import com.oracle.truffle.erl.runtime.ErlFunctionRegistry;
+import com.oracle.truffle.erl.runtime.ErlModuleRegistry;
 import com.oracle.truffle.erl.runtime.ErlProcess;
 
 /**
@@ -90,13 +90,13 @@ public final class ErlDynamicFunctionNode extends ErlExpressionNode {
                 throw ErlControlException.makeUndef();
             }
 
-            final ErlFunctionRegistry functionRegistry = context.getFunctionRegistry();
-            ErlFunction function = functionRegistry.lookup(moduleName, funcName, (int) arity);
+            final ErlModuleRegistry moduleRegistry = context.getModuleRegistry();
+            ErlFunction function = moduleRegistry.functionLookup(moduleName, funcName, (int) arity);
 
             if (null == function) {
 
-                if (!functionRegistry.isModuleLoaded(moduleName) && context.loadModule(moduleName)) {
-                    function = functionRegistry.lookup(moduleName, funcName, (int) arity);
+                if (!moduleRegistry.isModuleLoaded(moduleName) && context.loadModule(moduleName)) {
+                    function = moduleRegistry.functionLookup(moduleName, funcName, (int) arity);
 
                     if (null != function) {
                         return function;

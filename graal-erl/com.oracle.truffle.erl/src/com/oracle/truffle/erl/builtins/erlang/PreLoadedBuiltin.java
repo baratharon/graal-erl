@@ -70,7 +70,7 @@ public abstract class PreLoadedBuiltin extends ErlBuiltinNode {
 
         ErlList result = ErlList.NIL;
 
-        for (String name : ErlProcess.getContext().getFunctionRegistry().getPreLoaded()) {
+        for (String name : ErlProcess.getContext().getModuleRegistry().getPreLoadedModuleNames()) {
             result = new ErlList(ErlList.fromString(name), result);
         }
 

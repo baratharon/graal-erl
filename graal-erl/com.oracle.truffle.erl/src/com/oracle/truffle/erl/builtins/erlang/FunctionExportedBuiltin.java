@@ -71,7 +71,7 @@ public abstract class FunctionExportedBuiltin extends ErlBuiltinNode {
     public boolean functionExported(ErlAtom module, ErlAtom function, long arity) {
 
         if (0 <= arity && arity <= Integer.MAX_VALUE) {
-            return null != ErlProcess.getContext().getFunctionRegistry().lookup(module.getValue(), function.getValue(), (int) arity);
+            return null != ErlProcess.getContext().getModuleRegistry().functionLookup(module.getValue(), function.getValue(), (int) arity);
         }
 
         throw ErlControlException.makeBadarg();

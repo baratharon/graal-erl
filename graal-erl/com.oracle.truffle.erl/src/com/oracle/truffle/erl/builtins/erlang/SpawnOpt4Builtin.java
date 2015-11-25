@@ -79,7 +79,7 @@ public abstract class SpawnOpt4Builtin extends ErlBuiltinNode {
         SpawnOptions so = SpawnOptions.parse(opts);
         Object[] args = arglist.toArray();
         ErlContext context = ErlProcess.getContext();
-        ErlFunction fun = context.getFunctionRegistry().lookup(module.getValue(), func.getValue(), args.length);
+        ErlFunction fun = context.getModuleRegistry().functionLookup(module.getValue(), func.getValue(), args.length);
 
         ErlPid pid = ErlProcess.spawn(context, so.link(), so.monitorRef(), fun, module.getValue(), func.getValue(), args).getPid();
 

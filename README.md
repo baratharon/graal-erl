@@ -14,7 +14,7 @@ The internal method is the following:
 
 * Convert the source to Erlang AST using the `erlang/parser.erl`
    * For this, you have to compile the `parser.erl` first to `parser.beam`.
-* The AST file is ready to load. This is achived using the ErlAstParser class.
+* The AST file is ready to load. This is achived by the ErlAstParser class.
 * Ready!
 
 

@@ -58,10 +58,6 @@ import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
  * that the call target is stable. This is possible with the help of a Truffle {@link Assumption}: a
  * call node can keep the call target returned by {@link #getCallTarget()} cached until the
  * assumption returned by {@link #getCallTargetStable()} is valid.
- * <p>
- * The {@link #callTarget} can be {@code null}. To ensure that only one {@link ErlFunction} instance
- * per name exists, the {@link ErlFunctionRegistry} creates an instance also when performing name
- * lookup. A function that has been looked up, i.e., used, but not defined, has no call target.
  */
 public class ErlFunction implements TruffleObject {
 

@@ -82,7 +82,7 @@ public abstract class IsBuiltinBuiltin extends ErlBuiltinNode {
         final String moduleName = module.getValue();
         final String funcName = func.getValue();
 
-        ErlFunction function = context.getFunctionRegistry().lookup(moduleName, funcName, (int) arity);
+        ErlFunction function = context.getModuleRegistry().functionLookup(moduleName, funcName, (int) arity);
 
         if (null == function) {
             return false;

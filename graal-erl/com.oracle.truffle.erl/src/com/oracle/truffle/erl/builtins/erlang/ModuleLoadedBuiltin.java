@@ -46,6 +46,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.erl.MFA;
 import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
 import com.oracle.truffle.erl.runtime.ErlAtom;
+import com.oracle.truffle.erl.runtime.ErlProcess;
 
 /**
  * Returns true if the module Module is loaded, otherwise returns false. It does not attempt to load
@@ -65,7 +66,7 @@ public abstract class ModuleLoadedBuiltin extends ErlBuiltinNode {
 
     @Specialization
     public boolean moduleLoaded(ErlAtom atom) {
-        return getContext().getFunctionRegistry().isModuleLoaded(atom.getValue());
+        return ErlProcess.getContext().getModuleRegistry().isModuleLoaded(atom.getValue());
     }
 
     @Specialization

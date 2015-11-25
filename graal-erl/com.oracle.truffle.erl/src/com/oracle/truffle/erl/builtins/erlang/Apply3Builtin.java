@@ -87,7 +87,7 @@ public abstract class Apply3Builtin extends ErlBuiltinNode {
         final Object[] argArray = args.toArray();
         final int arity = argArray.length;
 
-        ErlFunction function = context.getFunctionRegistry().lookup(moduleName, funcName, arity);
+        ErlFunction function = context.getModuleRegistry().functionLookup(moduleName, funcName, arity);
 
         if (null == function) {
             throw ErlControlException.makeUndef();

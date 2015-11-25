@@ -59,7 +59,6 @@ import com.oracle.truffle.api.vm.PolyglotEngine;
 import com.oracle.truffle.api.vm.PolyglotEngine.Value;
 import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
 import com.oracle.truffle.erl.nodes.ErlExpressionNode;
-import com.oracle.truffle.erl.nodes.ErlRootNode;
 import com.oracle.truffle.erl.nodes.call.ErlUndefinedFunctionException;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.nodes.instrument.ErlDefaultVisualizer;
@@ -69,9 +68,10 @@ import com.oracle.truffle.erl.runtime.ErlBinary;
 import com.oracle.truffle.erl.runtime.ErlBinaryView;
 import com.oracle.truffle.erl.runtime.ErlContext;
 import com.oracle.truffle.erl.runtime.ErlFunction;
-import com.oracle.truffle.erl.runtime.ErlFunctionRegistry;
 import com.oracle.truffle.erl.runtime.ErlLazyBinary;
 import com.oracle.truffle.erl.runtime.ErlList;
+import com.oracle.truffle.erl.runtime.ErlModuleImpl;
+import com.oracle.truffle.erl.runtime.ErlModuleRegistry;
 import com.oracle.truffle.erl.runtime.ErlPid;
 import com.oracle.truffle.erl.runtime.ErlPort;
 import com.oracle.truffle.erl.runtime.ErlProcess;
@@ -113,6 +113,8 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
     public static final ErlangLanguage INSTANCE = new ErlangLanguage();
     public static final String ERL_MIME_TYPE = "text/x-erlang";
 
+    private static final String OTP_RING0_MODULE = "otp_ring0";
+    private static final String OTP_RING0_FUNCTION = "start";
     private static final String RESOURCES_PATH = "resources/";
     private static final String INTERNAL_AST_FILE_NAME_PREFIX = "internal:";
 
@@ -156,15 +158,6 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
             // erlContext.getModuleRegistry().put(source.getShortName(), module);
         }
         return erlContext;
-    }
-
-    private static void startOTPRing0(ErlContext erlContext, String[] args) {
-        final MFA mfa = new MFA("otp_ring0", "start", 2);
-        final ErlFunction func = erlContext.getFunctionRegistry().lookup(mfa.getModule(), mfa.getFunction(), mfa.getArity());
-        if (null == func) {
-            throw new RuntimeException("" + mfa + " not found");
-        }
-        ErlProcess.spawn(erlContext, func, new Object[]{ErlList.NIL, buildInitArgs(args)});
     }
 
     private static ErlList buildInitArgs(String[] args) {
@@ -243,20 +236,26 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
                 throw new ErlException("Argument passing is not implemented yet.");
             }
 
-            final MFA mfa = new MFA(moduleName, functionName, 0);
-            final ErlFunction func = context.getFunctionRegistry().lookup(mfa);
+            final Object[] arguments = new Object[0];
 
-            if (null == func) {
-                throw new ErlException("Function " + mfa + " is not defined.");
+            final ErlModule module = context.getModuleRegistry().getModule(moduleName);
+            if (null == module) {
+                throw new ErlException("Module " + moduleName + " is not loaded.");
             }
 
-            final ErlProcess proc = ErlProcess.spawn(context, func, new Object[0]);
-            final Future<Object> result = proc.getFuture();
+            final Future<Object> future = module.start(context, functionName, arguments);
+            if (null == future) {
+                throw new ErlException("Function " + moduleName + ":" + functionName + "/" + arguments.length + " is not defined.");
+            }
 
-            System.out.println(stringifyResult(result));
+            System.out.println(stringifyResult(future));
 
         } else {
-            startOTPRing0(context, args);
+
+            final ErlModule module = context.getModuleRegistry().getModule(OTP_RING0_MODULE);
+            if (null == module.start(context, "start", ErlList.NIL, buildInitArgs(args))) {
+                throw new RuntimeException("Function " + OTP_RING0_MODULE + ":" + OTP_RING0_FUNCTION + " function not found");
+            }
             context.waitForTerminateAll();
         }
 
@@ -410,7 +409,7 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
         if (dumpASTToIGV) {
             GraphPrintVisitor graphPrinter = new GraphPrintVisitor();
             graphPrinter.beginGroup(groupName);
-            for (ErlFunction function : context.getFunctionRegistry().getFunctions()) {
+            for (ErlFunction function : context.getModuleRegistry().getFunctions()) {
                 RootCallTarget callTarget = function.getCallTarget();
                 if (callTarget != null) {
                     graphPrinter.beginGraph(function.toString()).visit(callTarget.getRootNode());
@@ -419,7 +418,7 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
             graphPrinter.printToNetwork(true);
         }
         if (printASTToLog && logOutput != null) {
-            for (ErlFunction function : context.getFunctionRegistry().getFunctions()) {
+            for (ErlFunction function : context.getModuleRegistry().getFunctions()) {
                 RootCallTarget callTarget = function.getCallTarget();
                 if (callTarget != null) {
                     logOutput.println("=== " + function);
@@ -428,7 +427,7 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
             }
         }
         if (printSourceAttributionToLog && logOutput != null) {
-            for (ErlFunction function : context.getFunctionRegistry().getFunctions()) {
+            for (ErlFunction function : context.getModuleRegistry().getFunctions()) {
                 RootCallTarget callTarget = function.getCallTarget();
                 if (callTarget != null) {
                     logOutput.println("=== " + function);
@@ -460,17 +459,12 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
                 }
                 Node n = createFindContextNode();
                 ErlContext fillIn = findContext(n);
-                final ErlFunctionRegistry functionRegistry = fillIn.getFunctionRegistry();
-                for (ErlFunction f : c.getFunctionRegistry().getFunctions()) {
-                    if (f.isBuiltin()) {
+                final ErlModuleRegistry moduleRegistry = fillIn.getModuleRegistry();
+                for (ErlModuleImpl mod : c.getModuleRegistry().getModules()) {
+                    if (mod.isPreLoaded()) {
                         continue;
                     }
-                    RootCallTarget callTarget = f.getCallTarget();
-                    if (callTarget == null) {
-                        continue;
-                    }
-                    // functionRegistry.lookup(f.getName(), f.getArity());
-                    functionRegistry.register(f.getModule(), f.getName(), f.getArity(), f.getOrigin(), (ErlRootNode) f.getCallTarget().getRootNode());
+                    moduleRegistry.register(mod);
                 }
                 return null;
             }
@@ -480,11 +474,12 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
     @Override
     protected Object findExportedSymbol(ErlContext context_, String globalName, boolean onlyExplicit) {
 
-        for (ErlFunction f : context_.getFunctionRegistry().getFunctions()) {
-            if (globalName.equals(f.getName()) || globalName.equals(f.getModule() + ":" + f.getName())) {
-                return f;
-            }
-        }
+        // for (ErlFunction f : context_.getFunctionRegistry().getFunctions()) {
+        // if (globalName.equals(f.getName()) || globalName.equals(f.getModule() + ":" +
+        // f.getName())) {
+        // return f;
+        // }
+        // }
 
         return null;
     }
