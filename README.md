@@ -101,8 +101,10 @@ $ mx erl -independent -file /home/aron/jku/erlang/list41.erl -mf list41 main
 ````
 
 Without any `-file FILE` flag, the standard input will be used as source.
-*Important*: the first line must contain the `module` attribute.
-Note: the same thing will happen, when the OTP ring0 startup is used.
+
+**Important**: the first line must contain the `module` attribute.
+
+*Note*: the same thing will happen, when the OTP ring0 startup is used.
 
 Example run:
 
@@ -118,6 +120,9 @@ fact(N) ->
 
 main() ->
     fact(5).
+````
+*(here Ctrl+D was pressed)*
+````
 120
 $
 ````
