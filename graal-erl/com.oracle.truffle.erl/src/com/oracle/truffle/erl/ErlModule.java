@@ -10,6 +10,8 @@ public interface ErlModule {
 
     public boolean isPreLoaded();
 
+    public boolean functionExists(final String functionName, final int arity);
+
     public Future<Object> start(final ErlContext context, final String functionName, Object... args);
 
     public Object call(final ErlContext context, final String functionName, Object... args);

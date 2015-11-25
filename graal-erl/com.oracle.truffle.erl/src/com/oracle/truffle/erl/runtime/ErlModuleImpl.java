@@ -44,6 +44,10 @@ public class ErlModuleImpl implements ErlModule {
         return preLoaded;
     }
 
+    public boolean functionExists(String functionName, int arity) {
+        return functions.containsKey(new FA(functionName, arity));
+    }
+
     public Future<Object> start(final ErlContext context, String functionName, Object... args) {
 
         final ErlFunction func = functions.get(new FA(functionName, args.length));

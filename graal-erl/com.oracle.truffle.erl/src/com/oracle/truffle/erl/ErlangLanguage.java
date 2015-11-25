@@ -56,7 +56,6 @@ import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.vm.PolyglotEngine;
-import com.oracle.truffle.api.vm.PolyglotEngine.Value;
 import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
 import com.oracle.truffle.erl.nodes.ErlExpressionNode;
 import com.oracle.truffle.erl.nodes.call.ErlUndefinedFunctionException;
@@ -74,7 +73,6 @@ import com.oracle.truffle.erl.runtime.ErlModuleImpl;
 import com.oracle.truffle.erl.runtime.ErlModuleRegistry;
 import com.oracle.truffle.erl.runtime.ErlPid;
 import com.oracle.truffle.erl.runtime.ErlPort;
-import com.oracle.truffle.erl.runtime.ErlProcess;
 import com.oracle.truffle.erl.runtime.ErlRef;
 import com.oracle.truffle.erl.runtime.ErlTuple;
 
@@ -293,13 +291,15 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
         Source src = Source.fromFileName(path.toString());
         /* Parse the Erlang source file. */
         Object result = engine.eval(src.withMimeType(ERL_MIME_TYPE)).get();
-        if (result != null) {
-            out.println(result);
-        }
+        // if (result != null) {
+        // out.println(result);
+        // }
+
+        final ErlModule module = (ErlModule) result;
+        final String functionName = "main";
 
         /* Lookup our main entry point, which is per definition always named "main". */
-        Value main = engine.findGlobalSymbol("main");
-        if (main == null) {
+        if (!module.functionExists(functionName, 0)) {
             throw new ErlException("No function main() defined in Erlang source file.");
         }
 
@@ -310,8 +310,6 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
         /* Change to dump the AST to IGV over the network. */
         boolean dumpASTToIGV = false;
 
-        final Object[] no_args = new Object[0];
-
         printScript("before execution", null, logOutput, printASTToLog, printSourceAttributionToLog, dumpASTToIGV);
         long totalRuntime = 0;
         try {
@@ -321,9 +319,7 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
                 long start = System.nanoTime();
                 /* Call the main entry point, without any arguments. */
                 try {
-                    ErlFunction fun = main.as(ErlFunction.class);
-                    ErlProcess proc = ErlProcess.spawn(context, fun, no_args);
-                    Future<Object> future = proc.getFuture();
+                    Future<Object> future = module.start(context, functionName);
                     out.println(stringifyResult(future));
                 } catch (UnsupportedSpecializationException ex) {
                     out.println(formatTypeError(ex));
@@ -460,13 +456,16 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
                 Node n = createFindContextNode();
                 ErlContext fillIn = findContext(n);
                 final ErlModuleRegistry moduleRegistry = fillIn.getModuleRegistry();
+                ErlModuleImpl loadedModule = null;
                 for (ErlModuleImpl mod : c.getModuleRegistry().getModules()) {
                     if (mod.isPreLoaded()) {
                         continue;
                     }
+                    assert null == loadedModule;
                     moduleRegistry.register(mod);
+                    loadedModule = mod;
                 }
-                return null;
+                return loadedModule;
             }
         };
     }

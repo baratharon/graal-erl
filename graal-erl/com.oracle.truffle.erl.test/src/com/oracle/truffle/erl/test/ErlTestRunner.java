@@ -288,7 +288,7 @@ public final class ErlTestRunner extends ParentRunner<TestCase> {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         PolyglotEngine vm = null;
         try {
-            vm = PolyglotEngine.buildNew().setIn(new ByteArrayInputStream(repeat(testCase.testInput, repeats).getBytes("UTF-8"))).setOut(out).build();
+            vm = PolyglotEngine.newBuilder().setIn(new ByteArrayInputStream(repeat(testCase.testInput, repeats).getBytes("UTF-8"))).setOut(out).build();
 
             String script = readAllLines(testCase.path);
 
