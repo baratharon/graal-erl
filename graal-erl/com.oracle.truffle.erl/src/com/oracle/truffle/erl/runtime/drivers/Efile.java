@@ -60,6 +60,11 @@ public final class Efile extends Driver {
         super(getDriverName());
     }
 
+    @Override
+    protected void closeDriver() {
+        // nothing to do here
+    }
+
     public static Efile create(@SuppressWarnings("unused") String command, PortOptions po) {
         if (po.isBinary()) {
             return new Efile();

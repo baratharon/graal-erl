@@ -113,6 +113,7 @@ public abstract class Driver extends ErlPort {
         }
 
         if (!isOpen && actions.isEmpty()) {
+            closeDriver();
             onClosed();
         }
     }
@@ -122,6 +123,11 @@ public abstract class Driver extends ErlPort {
         while (!actions.isEmpty()) {
             AsyncAction action = actions.remove(actions.size() - 1);
             perform(action, true);
+        }
+
+        if (!isOpen && actions.isEmpty()) {
+            closeDriver();
+            onClosed();
         }
     }
 
@@ -185,6 +191,8 @@ public abstract class Driver extends ErlPort {
     protected Object doControl(@SuppressWarnings("unused") int operation, @SuppressWarnings("unused") byte[] data) {
         return null;
     }
+
+    protected abstract void closeDriver();
 
     @SuppressWarnings("deprecation") public static final ErlList EINVAL = ErlList.fromString("einval");
     @SuppressWarnings("deprecation") public static final ErlList ENOENT = ErlList.fromString("enoent");

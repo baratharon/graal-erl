@@ -140,6 +140,7 @@ public abstract class ErlPort implements TruffleObject, Registrable {
     }
 
     public boolean closeSync() {
+        sendClosedTo = null;
         closeUnderlying();
         flush();
         cleanup();

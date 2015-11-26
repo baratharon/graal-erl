@@ -68,6 +68,16 @@ public final class UdpInet extends Driver {
         super(getDriverName());
     }
 
+    @Override
+    protected void closeDriver() {
+        if (null != channel) {
+            try {
+                channel.close();
+            } catch (IOException e) {
+            }
+        }
+    }
+
     public static UdpInet create(@SuppressWarnings("unused") String command, PortOptions po) {
         if (po.isBinary()) {
             return new UdpInet();
