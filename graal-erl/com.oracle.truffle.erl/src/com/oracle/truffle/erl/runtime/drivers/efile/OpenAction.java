@@ -38,116 +38,110 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.Arrays;
 
-import com.oracle.truffle.erl.runtime.ErlBinary;
-import com.oracle.truffle.erl.runtime.ErlContext;
 import com.oracle.truffle.erl.runtime.ErlList;
 import com.oracle.truffle.erl.runtime.drivers.AsyncActionSingle;
 import com.oracle.truffle.erl.runtime.drivers.Driver;
+import com.oracle.truffle.erl.runtime.drivers.FDFile;
 
 public class OpenAction extends AsyncActionSingle {
 
     private final String name;
-    private final boolean TODO;
+    private final int mode;
+    private boolean TODO;
 
-    public OpenAction(String name) {
+    public OpenAction(String name, int mode) {
         super();
         this.name = name;
+        this.mode = mode;
         TODO = true;
     }
 
     @Override
     public Result async() {
 
-        if (TODO) {
-            addResult(new ErlList((long) Driver.FILE_RESP_ERROR, Driver.ENOENT));
+        FDFile fd = null;
+
+        if (null == name || 0 == mode) {
+            addResult(new ErlList((long) Driver.FILE_RESP_ERROR, Driver.EINVAL));
             return Result.ERROR;
         }
 
-        ErlContext.notImplemented();
-
-        ErlList result = null;
-        ByteBuffer bin = null;
-        FileChannel fd = null;
-
         try {
+            final File file = new File(name);
 
-            if (null == bin) {
-
-                if (null == name) {
-                    result = new ErlList((long) Driver.FILE_RESP_ERROR, Driver.EINVAL);
-                    return Result.ERROR;
-                }
-
-                long size;
-
-                try {
-                    File file = new File(name);
-                    fd = new FileInputStream(file).getChannel();
-                    size = file.length();
-                } catch (FileNotFoundException ex) {
-                    result = new ErlList((long) Driver.FILE_RESP_ERROR, Driver.ENOENT);
-                    return Result.ERROR;
-                }
-
-                if (size > Integer.MAX_VALUE || size < 0) {
-                    result = new ErlList((long) Driver.FILE_RESP_ERROR, Driver.ENOMEM);
-                    return Result.ERROR;
-                }
-
-                try {
-                    bin = ByteBuffer.allocate((int) size);
-                } catch (OutOfMemoryError ex) {
-                    result = new ErlList((long) Driver.FILE_RESP_ERROR, Driver.ENOMEM);
-                    return Result.ERROR;
-                }
-
-                if (0 == size) {
-                    return Result.DONE;
-                }
-            }
-
-            if (null != bin && bin.hasRemaining()) {
-                try {
-                    int bytes = fd.read(bin);
-
-                    if (bytes == -1 && bin.hasRemaining()) {
-                        // this is bad
-                        result = new ErlList((long) Driver.FILE_RESP_ERROR, Driver.EINVAL);
-                        return Result.ERROR;
-                    }
-
-                    if (bin.hasRemaining()) {
-                        return Result.AGAIN;
-                    }
-
-                } catch (IOException ex) {
-                    result = new ErlList((long) Driver.FILE_RESP_ERROR, Driver.ENOENT);
-                    return Result.ERROR;
-                }
-            }
-
-            try {
-                fd.close();
-            } catch (IOException ex) {
-                result = new ErlList((long) Driver.FILE_RESP_ERROR, Driver.ENOENT);
+            if (file.exists() && !file.isFile()) {
+                addResult(new ErlList((long) Driver.FILE_RESP_ERROR, Driver.EISDIR));
                 return Result.ERROR;
             }
 
-            return Result.DONE;
+            final boolean append = 0 != (mode & Driver.EFILE_MODE_APPEND);
+            final boolean write = 0 != (mode & Driver.EFILE_MODE_WRITE);
 
-        } finally {
-
-            if (null == result) {
-                final int len = bin.limit();
-                final byte[] bytes = Arrays.copyOf(bin.array(), len);
-                result = new ErlList((long) Driver.FILE_RESP_ALL_DATA, ErlBinary.fromArray(bytes));
+            if (!write && !file.exists()) {
+                addResult(new ErlList((long) Driver.FILE_RESP_ERROR, Driver.ENOENT));
+                return Result.ERROR;
             }
 
-            addResult(result);
+            if (TODO) {
+                addResult(new ErlList((long) Driver.FILE_RESP_ERROR, Driver.EPERM));
+                return Result.ERROR;
+            }
+
+            if (write && !append) {
+                // overwrite the file
+                if (truncateFile(file)) {
+                    addResult(new ErlList((long) Driver.FILE_RESP_ERROR, Driver.EPERM));
+                    return Result.ERROR;
+                }
+            }
+
+            if (write && !file.canWrite()) {
+                addResult(new ErlList((long) Driver.FILE_RESP_ERROR, Driver.EPERM));
+                return Result.ERROR;
+            }
+
+            final FileChannel channel = new FileInputStream(file).getChannel();
+
+            if (append) {
+                try {
+                    channel.position(channel.size());
+                } catch (IOException e) {
+                    try {
+                        channel.close();
+                    } catch (IOException e1) {
+                    }
+                    addResult(new ErlList((long) Driver.FILE_RESP_ERROR, Driver.EPERM));
+                    return Result.ERROR;
+                }
+            }
+
+            fd = new FDFile(channel, !write);
+
+        } catch (FileNotFoundException ex) {
+            addResult(new ErlList((long) Driver.FILE_RESP_ERROR, Driver.ENOENT));
+            return Result.ERROR;
+        } catch (FDFile.TooManyFilesException ex) {
+            addResult(new ErlList((long) Driver.FILE_RESP_ERROR, Driver.EMFILE));
+            return Result.ERROR;
+        }
+
+        addResult(Driver.makeNumberResponse(fd.getFD()));
+
+        return Result.DONE;
+    }
+
+    private static boolean truncateFile(File file) {
+
+        if (file.exists() && !file.delete()) {
+            return false;
+        }
+
+        try {
+            return file.createNewFile();
+        } catch (IOException e) {
+            return false;
         }
     }
 }

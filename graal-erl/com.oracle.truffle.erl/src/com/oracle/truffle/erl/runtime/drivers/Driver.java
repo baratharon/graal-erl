@@ -178,11 +178,43 @@ public abstract class Driver extends ErlPort {
 
     protected abstract void closeDriver();
 
+    public static Object makeNumberResponse(long number) {
+
+        ErlList list = ErlList.NIL;
+        long num = number;
+
+        for (int i = 0; i < 8; ++i) {
+            list = new ErlList((num & 0xff), list);
+            num >>= 8;
+        }
+
+        return new ErlList((long) FILE_RESP_NUMBER, list);
+    }
+
+    protected static int extractIntMSB(final byte[] data, final int offset) {
+
+        // unrolled loop by hand: probably this is the fastest way
+
+        int acc = 0;
+
+        acc = Byte.toUnsignedInt(data[offset + 0]);
+        acc <<= 8;
+        acc = Byte.toUnsignedInt(data[offset + 1]);
+        acc <<= 8;
+        acc = Byte.toUnsignedInt(data[offset + 2]);
+        acc <<= 8;
+        acc = Byte.toUnsignedInt(data[offset + 3]);
+
+        return acc;
+    }
+
     @SuppressWarnings("deprecation") public static final ErlList EINVAL = ErlList.fromString("einval");
     @SuppressWarnings("deprecation") public static final ErlList ENOENT = ErlList.fromString("enoent");
     @SuppressWarnings("deprecation") public static final ErlList ENOMEM = ErlList.fromString("enomem");
     @SuppressWarnings("deprecation") public static final ErlList ENOTDIR = ErlList.fromString("enotdir");
+    @SuppressWarnings("deprecation") public static final ErlList EISDIR = ErlList.fromString("eisdir");
     @SuppressWarnings("deprecation") public static final ErlList EPERM = ErlList.fromString("eperm");
+    @SuppressWarnings("deprecation") public static final ErlList EMFILE = ErlList.fromString("emfile");
     @SuppressWarnings("deprecation") public static final ErlList EXBADSEQ = ErlList.fromString("exbadseq");
 
     public static final byte FILE_OPEN = 1;

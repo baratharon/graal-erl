@@ -89,8 +89,8 @@ public final class Efile extends Driver {
             case FILE_OPEN: {
 
                 final String name = (data.length >= 6 && 0 == data[data.length - 1]) ? (new String(data, 5, data.length - 5)) : null;
-                // TODO: reconstruct open mode from data[1..4]
-                return new OpenAction(name);
+                final int mode = extractIntMSB(data, 1);
+                return new OpenAction(name, mode);
             }
 
             case FILE_FSTAT:
