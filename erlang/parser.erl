@@ -11,7 +11,7 @@
 -endif.
 
 main() ->
-	ast(boot01, "/tmp/boot01.ast", "/home/aron/jku/erlang/boot01.erl").
+	ast(boot01, "/tmp/parser.ast", "/home/aron/jku/erlang/parser.erl").
 
 scan(FileName) ->
 	{ok, File} = file:read_file(FileName),
@@ -928,9 +928,7 @@ parse_include_lib(CWD, Filename, Forms, State) ->
 	end.
 
 get_module_dir(AbstractModule, LibDir) ->
-io:format("get_module_dir(~p, ~p)~n", [AbstractModule, LibDir]),
 	Prefix = AbstractModule ++ "-",
-io:format("list_dir: ~p~n", [(catch file:list_dir(LibDir))]),
 	{ok, ModuleList} = file:list_dir(LibDir),
 	case list_find(fun(S) -> 1 =:= string:str(S, Prefix) end, ModuleList) of
 		{ok, ConcreteModule} -> ConcreteModule;
