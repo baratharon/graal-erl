@@ -60,8 +60,8 @@ public abstract class MapSizeBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "map_size", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "map_size", 1);
     }
 
     @Specialization

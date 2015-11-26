@@ -66,8 +66,8 @@ public abstract class ListToAtomBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "list_to_atom", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "list_to_atom", 1);
     }
 
     @Specialization

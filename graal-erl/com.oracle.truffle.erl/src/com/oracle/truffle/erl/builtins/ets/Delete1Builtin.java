@@ -60,8 +60,8 @@ public abstract class Delete1Builtin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("ets", "delete", 1)};
+    public MFA getName() {
+        return new MFA("ets", "delete", 1);
     }
 
     @Specialization

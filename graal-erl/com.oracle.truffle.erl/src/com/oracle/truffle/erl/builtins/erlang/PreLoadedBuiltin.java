@@ -61,8 +61,8 @@ public abstract class PreLoadedBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "pre_loaded", 0)};
+    public MFA getName() {
+        return new MFA("erlang", "pre_loaded", 0);
     }
 
     @Specialization

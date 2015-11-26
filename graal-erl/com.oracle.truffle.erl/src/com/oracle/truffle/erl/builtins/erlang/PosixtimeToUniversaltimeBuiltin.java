@@ -62,8 +62,8 @@ public abstract class PosixtimeToUniversaltimeBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "posixtime_to_universaltime", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "posixtime_to_universaltime", 1);
     }
 
     @Specialization

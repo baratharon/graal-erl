@@ -60,8 +60,8 @@ public abstract class TruncBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "trunc", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "trunc", 1);
     }
 
     @Specialization

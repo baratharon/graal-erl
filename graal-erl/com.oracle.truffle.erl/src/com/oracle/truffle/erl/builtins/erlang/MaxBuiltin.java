@@ -58,8 +58,8 @@ public abstract class MaxBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "max", 2)};
+    public MFA getName() {
+        return new MFA("erlang", "max", 2);
     }
 
     @Specialization

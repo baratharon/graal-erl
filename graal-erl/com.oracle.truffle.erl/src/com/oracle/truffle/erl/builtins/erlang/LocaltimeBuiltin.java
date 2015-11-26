@@ -63,8 +63,8 @@ public abstract class LocaltimeBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "localtime", 0)};
+    public MFA getName() {
+        return new MFA("erlang", "localtime", 0);
     }
 
     @Specialization

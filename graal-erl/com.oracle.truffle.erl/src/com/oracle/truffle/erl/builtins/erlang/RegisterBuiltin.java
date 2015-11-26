@@ -63,8 +63,8 @@ public abstract class RegisterBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "register", 2)};
+    public MFA getName() {
+        return new MFA("erlang", "register", 2);
     }
 
     @Specialization

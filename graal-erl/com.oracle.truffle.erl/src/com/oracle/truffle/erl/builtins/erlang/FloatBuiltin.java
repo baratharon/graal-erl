@@ -60,8 +60,8 @@ public abstract class FloatBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "float", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "float", 1);
     }
 
     @Specialization

@@ -59,8 +59,8 @@ public abstract class TupleSizeBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "tuple_size", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "tuple_size", 1);
     }
 
     @Specialization

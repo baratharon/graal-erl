@@ -62,8 +62,8 @@ public abstract class PrintAstBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("truffle", "print_ast", 1)};
+    public MFA getName() {
+        return new MFA("truffle", "print_ast", 1);
     }
 
     @Specialization

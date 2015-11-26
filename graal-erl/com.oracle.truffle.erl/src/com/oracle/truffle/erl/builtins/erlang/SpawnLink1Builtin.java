@@ -64,8 +64,8 @@ public abstract class SpawnLink1Builtin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "spawn_link", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "spawn_link", 1);
     }
 
     @Specialization

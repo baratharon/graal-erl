@@ -58,8 +58,8 @@ public abstract class IsReferenceBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "is_reference", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "is_reference", 1);
     }
 
     @Specialization

@@ -60,8 +60,8 @@ public abstract class ReverseBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("lists", "reverse", 2)};
+    public MFA getName() {
+        return new MFA("lists", "reverse", 2);
     }
 
     @Specialization

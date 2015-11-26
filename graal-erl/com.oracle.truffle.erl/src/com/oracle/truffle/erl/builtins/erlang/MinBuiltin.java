@@ -58,8 +58,8 @@ public abstract class MinBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "min", 2)};
+    public MFA getName() {
+        return new MFA("erlang", "min", 2);
     }
 
     @Specialization

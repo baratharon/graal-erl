@@ -60,8 +60,8 @@ public abstract class TupleToListBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "tuple_to_list", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "tuple_to_list", 1);
     }
 
     @Specialization

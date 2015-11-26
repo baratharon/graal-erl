@@ -58,8 +58,8 @@ public abstract class IsPidBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "is_pid", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "is_pid", 1);
     }
 
     @Specialization

@@ -61,8 +61,8 @@ public abstract class IsKeyBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("maps", "is_key", 2)};
+    public MFA getName() {
+        return new MFA("maps", "is_key", 2);
     }
 
     @Specialization

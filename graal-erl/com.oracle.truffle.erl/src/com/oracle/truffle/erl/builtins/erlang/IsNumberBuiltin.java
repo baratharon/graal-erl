@@ -59,8 +59,8 @@ public abstract class IsNumberBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "is_number", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "is_number", 1);
     }
 
     @Specialization

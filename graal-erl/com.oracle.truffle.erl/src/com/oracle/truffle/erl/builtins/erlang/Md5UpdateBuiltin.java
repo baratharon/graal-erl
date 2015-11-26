@@ -60,8 +60,8 @@ public abstract class Md5UpdateBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "md5_update", 2)};
+    public MFA getName() {
+        return new MFA("erlang", "md5_update", 2);
     }
 
     @Specialization

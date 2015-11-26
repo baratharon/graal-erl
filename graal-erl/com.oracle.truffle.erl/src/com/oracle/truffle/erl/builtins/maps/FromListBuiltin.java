@@ -65,8 +65,8 @@ public abstract class FromListBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("maps", "from_list", 1)};
+    public MFA getName() {
+        return new MFA("maps", "from_list", 1);
     }
 
     @Specialization

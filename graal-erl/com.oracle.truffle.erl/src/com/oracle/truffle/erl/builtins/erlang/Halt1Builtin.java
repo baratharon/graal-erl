@@ -59,8 +59,8 @@ public abstract class Halt1Builtin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "halt", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "halt", 1);
     }
 
     @Specialization

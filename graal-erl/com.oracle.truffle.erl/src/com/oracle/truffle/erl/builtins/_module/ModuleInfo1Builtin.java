@@ -66,8 +66,8 @@ public abstract class ModuleInfo1Builtin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA(module.getModuleName(), "module_info", 1)};
+    public MFA getName() {
+        return new MFA(module.getModuleName(), "module_info", 1);
     }
 
     @Specialization

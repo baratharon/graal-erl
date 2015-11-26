@@ -69,8 +69,8 @@ public abstract class SpawnOpt4Builtin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "spawn_opt", 4)};
+    public MFA getName() {
+        return new MFA("erlang", "spawn_opt", 4);
     }
 
     @Specialization

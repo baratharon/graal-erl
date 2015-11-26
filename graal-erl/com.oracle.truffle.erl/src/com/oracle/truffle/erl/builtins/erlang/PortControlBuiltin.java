@@ -72,8 +72,8 @@ public abstract class PortControlBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "port_control", 3)};
+    public MFA getName() {
+        return new MFA("erlang", "port_control", 3);
     }
 
     @Specialization

@@ -60,8 +60,8 @@ public abstract class HdBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "hd", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "hd", 1);
     }
 
     @Specialization

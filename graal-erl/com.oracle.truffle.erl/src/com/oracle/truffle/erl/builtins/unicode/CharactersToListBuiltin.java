@@ -64,8 +64,8 @@ public abstract class CharactersToListBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("unicode", "characters_to_list", 2)};
+    public MFA getName() {
+        return new MFA("unicode", "characters_to_list", 2);
     }
 
     private static final class Callback implements Unicode.CodepointCallback {

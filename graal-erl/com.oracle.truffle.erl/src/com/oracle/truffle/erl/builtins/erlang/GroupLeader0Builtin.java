@@ -64,8 +64,8 @@ public abstract class GroupLeader0Builtin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "group_leader", 0)};
+    public MFA getName() {
+        return new MFA("erlang", "group_leader", 0);
     }
 
     @Specialization

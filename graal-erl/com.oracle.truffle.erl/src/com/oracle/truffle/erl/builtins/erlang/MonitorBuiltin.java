@@ -65,8 +65,8 @@ public abstract class MonitorBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "monitor", 2)};
+    public MFA getName() {
+        return new MFA("erlang", "monitor", 2);
     }
 
     @Specialization

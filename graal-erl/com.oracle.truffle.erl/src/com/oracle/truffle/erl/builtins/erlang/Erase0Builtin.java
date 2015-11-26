@@ -60,8 +60,8 @@ public abstract class Erase0Builtin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "erase", 0)};
+    public MFA getName() {
+        return new MFA("erlang", "erase", 0);
     }
 
     @Specialization

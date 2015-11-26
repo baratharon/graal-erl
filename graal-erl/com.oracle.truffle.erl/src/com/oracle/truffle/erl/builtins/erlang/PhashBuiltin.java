@@ -65,8 +65,8 @@ public abstract class PhashBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "phash", 2)};
+    public MFA getName() {
+        return new MFA("erlang", "phash", 2);
     }
 
     private static final long RANGE_MIN = 1;

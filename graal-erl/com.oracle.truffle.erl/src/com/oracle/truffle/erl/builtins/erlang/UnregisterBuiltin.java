@@ -60,8 +60,8 @@ public abstract class UnregisterBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "unregister", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "unregister", 1);
     }
 
     @Specialization

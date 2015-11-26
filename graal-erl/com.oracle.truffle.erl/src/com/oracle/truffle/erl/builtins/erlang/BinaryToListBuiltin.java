@@ -62,8 +62,8 @@ public abstract class BinaryToListBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "binary_to_list", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "binary_to_list", 1);
     }
 
     @Specialization

@@ -65,8 +65,8 @@ public abstract class ProcessFlag3Builtin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "process_flag", 3)};
+    public MFA getName() {
+        return new MFA("erlang", "process_flag", 3);
     }
 
     @Specialization

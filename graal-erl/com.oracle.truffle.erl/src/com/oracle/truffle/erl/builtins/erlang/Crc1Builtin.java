@@ -58,8 +58,8 @@ public abstract class Crc1Builtin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "crc32", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "crc32", 1);
     }
 
     @Specialization

@@ -71,8 +71,8 @@ public abstract class LinkBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "link", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "link", 1);
     }
 
     @Specialization

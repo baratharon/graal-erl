@@ -69,5 +69,5 @@ public abstract class ErlBuiltinNode extends ErlExpressionNode {
         super(src);
     }
 
-    public abstract MFA[] getNames();
+    public abstract MFA getName();
 }

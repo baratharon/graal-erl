@@ -64,8 +64,8 @@ public abstract class FindBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("maps", "find", 2)};
+    public MFA getName() {
+        return new MFA("maps", "find", 2);
     }
 
     @Specialization

@@ -66,8 +66,8 @@ public abstract class PortCommand3Builtin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "port_command", 3)};
+    public MFA getName() {
+        return new MFA("erlang", "port_command", 3);
     }
 
     @Specialization

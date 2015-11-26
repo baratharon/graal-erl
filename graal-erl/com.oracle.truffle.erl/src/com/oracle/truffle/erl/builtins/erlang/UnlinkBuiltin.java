@@ -63,8 +63,8 @@ public abstract class UnlinkBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "unlink", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "unlink", 1);
     }
 
     @Specialization

@@ -65,8 +65,8 @@ public abstract class InternalName2NativeBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("prim_file", "internal_name2native", 1)};
+    public MFA getName() {
+        return new MFA("prim_file", "internal_name2native", 1);
     }
 
     @Specialization

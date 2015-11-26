@@ -61,8 +61,8 @@ public abstract class AbsBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "abs", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "abs", 1);
     }
 
     @Specialization

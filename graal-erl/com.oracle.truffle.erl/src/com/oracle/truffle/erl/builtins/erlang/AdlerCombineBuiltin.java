@@ -60,8 +60,8 @@ public abstract class AdlerCombineBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "adler32_combine", 3)};
+    public MFA getName() {
+        return new MFA("erlang", "adler32_combine", 3);
     }
 
     @Specialization

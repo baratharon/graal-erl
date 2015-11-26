@@ -58,8 +58,8 @@ public abstract class GarbageCollect0Builtin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "garbage_collect", 0)};
+    public MFA getName() {
+        return new MFA("erlang", "garbage_collect", 0);
     }
 
     @Specialization

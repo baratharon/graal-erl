@@ -57,8 +57,8 @@ public abstract class DtAppendVmTagDataBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "dt_append_vm_tag_data", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "dt_append_vm_tag_data", 1);
     }
 
     @Specialization

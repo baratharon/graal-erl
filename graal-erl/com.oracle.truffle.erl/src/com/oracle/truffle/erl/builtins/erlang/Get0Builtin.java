@@ -60,8 +60,8 @@ public abstract class Get0Builtin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "get", 0)};
+    public MFA getName() {
+        return new MFA("erlang", "get", 0);
     }
 
     @Specialization

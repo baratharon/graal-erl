@@ -57,8 +57,8 @@ public abstract class BumpReductionsBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "bump_reductions", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "bump_reductions", 1);
     }
 
     @Specialization

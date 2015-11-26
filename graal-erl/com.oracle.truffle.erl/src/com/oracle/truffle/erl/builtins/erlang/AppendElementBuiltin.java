@@ -60,8 +60,8 @@ public abstract class AppendElementBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "append_element", 2)};
+    public MFA getName() {
+        return new MFA("erlang", "append_element", 2);
     }
 
     @Specialization

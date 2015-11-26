@@ -62,8 +62,8 @@ public abstract class BinIs7bitBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("unicode", "bin_is_7bit", 1)};
+    public MFA getName() {
+        return new MFA("unicode", "bin_is_7bit", 1);
     }
 
     @Specialization

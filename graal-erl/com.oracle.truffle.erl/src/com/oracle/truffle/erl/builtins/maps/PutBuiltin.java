@@ -63,8 +63,8 @@ public abstract class PutBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("maps", "put", 3)};
+    public MFA getName() {
+        return new MFA("maps", "put", 3);
     }
 
     @Specialization

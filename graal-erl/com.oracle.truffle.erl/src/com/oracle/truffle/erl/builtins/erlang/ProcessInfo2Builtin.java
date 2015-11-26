@@ -72,8 +72,8 @@ public abstract class ProcessInfo2Builtin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "process_info", 2)};
+    public MFA getName() {
+        return new MFA("erlang", "process_info", 2);
     }
 
     private static ErlTuple getInfo(ErlProcess proc, ErlAtom item) {

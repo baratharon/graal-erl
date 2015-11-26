@@ -63,8 +63,8 @@ public abstract class DateBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "date", 0)};
+    public MFA getName() {
+        return new MFA("erlang", "date", 0);
     }
 
     @Specialization

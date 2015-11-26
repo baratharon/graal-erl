@@ -70,8 +70,8 @@ public abstract class InsertBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("ets", "insert", 2)};
+    public MFA getName() {
+        return new MFA("ets", "insert", 2);
     }
 
     @Specialization

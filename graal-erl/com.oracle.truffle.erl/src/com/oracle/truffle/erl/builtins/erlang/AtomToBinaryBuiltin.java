@@ -64,8 +64,8 @@ public abstract class AtomToBinaryBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "atom_to_binary", 2)};
+    public MFA getName() {
+        return new MFA("erlang", "atom_to_binary", 2);
     }
 
     @Specialization

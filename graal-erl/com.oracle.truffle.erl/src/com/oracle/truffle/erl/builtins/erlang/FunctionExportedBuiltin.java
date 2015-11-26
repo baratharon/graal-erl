@@ -63,8 +63,8 @@ public abstract class FunctionExportedBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "function_exported", 3)};
+    public MFA getName() {
+        return new MFA("erlang", "function_exported", 3);
     }
 
     @Specialization

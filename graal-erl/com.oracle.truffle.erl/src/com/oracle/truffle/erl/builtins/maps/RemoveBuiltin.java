@@ -62,8 +62,8 @@ public abstract class RemoveBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("maps", "remove", 2)};
+    public MFA getName() {
+        return new MFA("maps", "remove", 2);
     }
 
     @Specialization

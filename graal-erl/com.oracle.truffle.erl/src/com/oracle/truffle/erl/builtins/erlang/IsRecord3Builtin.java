@@ -62,8 +62,8 @@ public abstract class IsRecord3Builtin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "is_record", 3)};
+    public MFA getName() {
+        return new MFA("erlang", "is_record", 3);
     }
 
     @Specialization

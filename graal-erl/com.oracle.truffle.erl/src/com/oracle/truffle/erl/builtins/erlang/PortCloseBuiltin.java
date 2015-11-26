@@ -62,8 +62,8 @@ public abstract class PortCloseBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "port_close", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "port_close", 1);
     }
 
     @Specialization

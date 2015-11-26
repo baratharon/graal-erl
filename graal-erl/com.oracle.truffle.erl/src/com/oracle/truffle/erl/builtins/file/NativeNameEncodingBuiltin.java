@@ -60,8 +60,8 @@ public abstract class NativeNameEncodingBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("file", "native_name_encoding", 0)};
+    public MFA getName() {
+        return new MFA("file", "native_name_encoding", 0);
     }
 
     @Specialization

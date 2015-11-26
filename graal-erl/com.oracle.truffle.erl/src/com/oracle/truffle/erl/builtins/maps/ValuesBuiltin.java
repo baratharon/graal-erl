@@ -62,8 +62,8 @@ public abstract class ValuesBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("maps", "values", 1)};
+    public MFA getName() {
+        return new MFA("maps", "values", 1);
     }
 
     @Specialization

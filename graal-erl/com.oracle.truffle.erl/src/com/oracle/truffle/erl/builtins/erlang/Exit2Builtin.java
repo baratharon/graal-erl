@@ -74,8 +74,8 @@ public abstract class Exit2Builtin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "exit", 2)};
+    public MFA getName() {
+        return new MFA("erlang", "exit", 2);
     }
 
     @Specialization

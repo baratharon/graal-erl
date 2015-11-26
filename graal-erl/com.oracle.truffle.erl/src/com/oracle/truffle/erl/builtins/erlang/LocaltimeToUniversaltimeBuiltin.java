@@ -61,8 +61,8 @@ public abstract class LocaltimeToUniversaltimeBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "localtime_to_universaltime", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "localtime_to_universaltime", 1);
     }
 
     @Specialization

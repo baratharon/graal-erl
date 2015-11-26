@@ -62,8 +62,8 @@ public abstract class SystemInfoBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "system_info", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "system_info", 1);
     }
 
     @Specialization

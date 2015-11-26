@@ -62,8 +62,8 @@ public abstract class MergeBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("maps", "merge", 2)};
+    public MFA getName() {
+        return new MFA("maps", "merge", 2);
     }
 
     @Specialization

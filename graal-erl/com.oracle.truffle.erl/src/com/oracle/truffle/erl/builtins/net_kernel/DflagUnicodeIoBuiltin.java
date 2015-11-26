@@ -58,8 +58,8 @@ public abstract class DflagUnicodeIoBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("net_kernel", "dflag_unicode_io", 1)};
+    public MFA getName() {
+        return new MFA("net_kernel", "dflag_unicode_io", 1);
     }
 
     @Specialization

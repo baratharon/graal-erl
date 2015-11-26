@@ -66,8 +66,8 @@ public abstract class HashBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "hash", 2)};
+    public MFA getName() {
+        return new MFA("erlang", "hash", 2);
     }
 
     private static final int RANGE_MIN = 1;

@@ -58,8 +58,8 @@ public abstract class DisplayBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "display", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "display", 1);
     }
 
     @Specialization

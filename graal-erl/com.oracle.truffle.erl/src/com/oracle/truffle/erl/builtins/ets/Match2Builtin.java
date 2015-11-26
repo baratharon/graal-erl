@@ -64,8 +64,8 @@ public abstract class Match2Builtin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("ets", "match", 2)};
+    public MFA getName() {
+        return new MFA("ets", "match", 2);
     }
 
     @Specialization

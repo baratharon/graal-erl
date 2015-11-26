@@ -61,8 +61,8 @@ public abstract class ListToInteger1Builtin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "list_to_integer", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "list_to_integer", 1);
     }
 
     @Specialization

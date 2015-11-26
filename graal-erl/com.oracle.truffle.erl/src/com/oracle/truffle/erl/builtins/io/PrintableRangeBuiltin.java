@@ -58,8 +58,8 @@ public abstract class PrintableRangeBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("io", "printable_range", 0)};
+    public MFA getName() {
+        return new MFA("io", "printable_range", 0);
     }
 
     @Specialization

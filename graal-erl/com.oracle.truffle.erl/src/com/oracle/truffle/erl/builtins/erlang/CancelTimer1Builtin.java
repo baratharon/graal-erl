@@ -59,8 +59,8 @@ public abstract class CancelTimer1Builtin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "cancel_timer", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "cancel_timer", 1);
     }
 
     @Specialization

@@ -58,8 +58,8 @@ public abstract class IolistSizeBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "iolist_size", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "iolist_size", 1);
     }
 
     @Specialization

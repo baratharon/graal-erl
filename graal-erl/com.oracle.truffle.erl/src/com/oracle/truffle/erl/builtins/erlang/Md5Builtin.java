@@ -65,8 +65,8 @@ public abstract class Md5Builtin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "md5", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "md5", 1);
     }
 
     @Specialization

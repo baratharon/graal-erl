@@ -61,8 +61,8 @@ public abstract class NifError1Builtin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "nif_error", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "nif_error", 1);
     }
 
     @Specialization

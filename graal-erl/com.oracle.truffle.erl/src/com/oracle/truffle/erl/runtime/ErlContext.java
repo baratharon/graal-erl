@@ -203,21 +203,20 @@ public final class ErlContext extends ExecutionContext {
         int argumentCount = factory.getExecutionSignature().size();
         ErlBuiltinNode builtinBodyNode = makeBuiltin(factory);
 
-        for (MFA mfa : builtinBodyNode.getNames()) {
+        final MFA mfa = builtinBodyNode.getName();
 
-            final String moduleName = mfa.getModule();
-            final String funcName = mfa.getFunction();
-            final int arity = mfa.getArity();
+        final String moduleName = mfa.getModule();
+        final String funcName = mfa.getFunction();
+        final int arity = mfa.getArity();
 
-            assert arity == argumentCount;
+        assert arity == argumentCount;
 
-            /* Wrap the builtin in a RootNode. Truffle requires all AST to start with a RootNode. */
-            ErlRootNode rootNode = wrapBuiltinBodyNode(builtinBodyNode, mfa);
+        /* Wrap the builtin in a RootNode. Truffle requires all AST to start with a RootNode. */
+        ErlRootNode rootNode = wrapBuiltinBodyNode(builtinBodyNode, mfa);
 
-            if (registerRootNodes) {
-                /* Register the builtin function in our function registry. */
-                moduleRegistry.registerBIF(moduleName, funcName, arity, rootNode);
-            }
+        if (registerRootNodes) {
+            /* Register the builtin function in our function registry. */
+            moduleRegistry.registerBIF(moduleName, funcName, arity, rootNode);
         }
     }
 

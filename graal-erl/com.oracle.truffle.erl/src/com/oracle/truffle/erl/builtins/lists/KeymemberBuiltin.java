@@ -62,8 +62,8 @@ public abstract class KeymemberBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("lists", "keymember", 3)};
+    public MFA getName() {
+        return new MFA("lists", "keymember", 3);
     }
 
     @Specialization

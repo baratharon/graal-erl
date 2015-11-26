@@ -62,8 +62,8 @@ public abstract class SendAfter3Builtin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "send_after", 3)};
+    public MFA getName() {
+        return new MFA("erlang", "send_after", 3);
     }
 
     @Specialization

@@ -62,8 +62,8 @@ public abstract class KeyfindBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("lists", "keyfind", 3)};
+    public MFA getName() {
+        return new MFA("lists", "keyfind", 3);
     }
 
     public static Object doKeyfind(Object key, long num, ErlList tupleList) {

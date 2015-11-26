@@ -36,7 +36,7 @@ public class ErlModuleImpl implements ErlModule {
          * compatible, we register the function as a {@link ErlFunction.Origin.REGULAR} function.
          */
         final ErlBuiltinNode moduleInfoBIF = ErlContext.makeBuiltin(this, ModuleInfo1BuiltinFactory.getInstance());
-        final MFA mfa = moduleInfoBIF.getNames()[0];
+        final MFA mfa = moduleInfoBIF.getName();
         register(mfa.getFunction(), mfa.getArity(), ErlContext.wrapBuiltinBodyNode(moduleInfoBIF, mfa), ErlFunction.Origin.REGULAR);
     }
 

@@ -63,8 +63,8 @@ public abstract class TimeBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "time", 0)};
+    public MFA getName() {
+        return new MFA("erlang", "time", 0);
     }
 
     @Specialization

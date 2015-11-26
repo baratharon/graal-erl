@@ -65,8 +65,8 @@ public abstract class TermToBinary1Builtin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "term_to_binary", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "term_to_binary", 1);
     }
 
     @Specialization

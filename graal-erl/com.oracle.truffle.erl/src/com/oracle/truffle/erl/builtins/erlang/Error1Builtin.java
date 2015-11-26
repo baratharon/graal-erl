@@ -58,8 +58,8 @@ public abstract class Error1Builtin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "error", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "error", 1);
     }
 
     @Specialization

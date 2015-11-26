@@ -58,8 +58,8 @@ public abstract class IsBooleanBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "is_boolean", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "is_boolean", 1);
     }
 
     @Specialization

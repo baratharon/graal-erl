@@ -73,8 +73,8 @@ public abstract class Apply3Builtin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "apply", 3)};
+    public MFA getName() {
+        return new MFA("erlang", "apply", 3);
     }
 
     @Specialization

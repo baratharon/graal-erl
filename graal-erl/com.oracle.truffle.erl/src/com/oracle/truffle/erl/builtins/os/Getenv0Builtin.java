@@ -65,8 +65,8 @@ public abstract class Getenv0Builtin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("os", "getenv", 0)};
+    public MFA getName() {
+        return new MFA("os", "getenv", 0);
     }
 
     @Specialization

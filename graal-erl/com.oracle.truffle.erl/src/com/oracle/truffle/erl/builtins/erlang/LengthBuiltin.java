@@ -59,8 +59,8 @@ public abstract class LengthBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "length", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "length", 1);
     }
 
     @Specialization

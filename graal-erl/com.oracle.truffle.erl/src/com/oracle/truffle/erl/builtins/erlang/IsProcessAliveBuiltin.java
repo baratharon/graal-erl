@@ -61,8 +61,8 @@ public abstract class IsProcessAliveBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "is_process_alive", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "is_process_alive", 1);
     }
 
     @Specialization

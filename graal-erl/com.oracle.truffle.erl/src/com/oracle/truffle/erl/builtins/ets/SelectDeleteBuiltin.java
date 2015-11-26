@@ -64,8 +64,8 @@ public abstract class SelectDeleteBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("ets", "select_delete", 2)};
+    public MFA getName() {
+        return new MFA("ets", "select_delete", 2);
     }
 
     @Specialization

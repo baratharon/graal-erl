@@ -62,8 +62,9 @@ public abstract class SizeBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "size", 1)};
+    public MFA getName() {
+        return new MFA("erlang", "size", 1);
+
     }
 
     @Specialization

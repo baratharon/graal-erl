@@ -63,8 +63,8 @@ public abstract class UpdateBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("maps", "update", 3)};
+    public MFA getName() {
+        return new MFA("maps", "update", 3);
     }
 
     @Specialization

@@ -60,8 +60,8 @@ public abstract class CrcCombineBuiltin extends ErlBuiltinNode {
     }
 
     @Override
-    public MFA[] getNames() {
-        return new MFA[]{new MFA("erlang", "crc32_combine", 3)};
+    public MFA getName() {
+        return new MFA("erlang", "crc32_combine", 3);
     }
 
     @Specialization
