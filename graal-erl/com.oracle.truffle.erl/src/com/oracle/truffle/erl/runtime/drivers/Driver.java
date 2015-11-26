@@ -41,7 +41,6 @@
 package com.oracle.truffle.erl.runtime.drivers;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import com.oracle.truffle.erl.runtime.ErlAtom;
 import com.oracle.truffle.erl.runtime.ErlList;
@@ -53,9 +52,7 @@ import com.oracle.truffle.erl.runtime.misc.PortOptions;
 
 public abstract class Driver extends ErlPort {
 
-    private static final HashMap<String, Driver> loadedDrivers = new HashMap<>();
     private final ArrayList<AsyncAction> actions = new ArrayList<>();
-    private final String driverName;
     private boolean isOpen = true;
 
     public static Driver open(String command, PortOptions po) {
@@ -63,12 +60,6 @@ public abstract class Driver extends ErlPort {
         String[] argv = command.split(" \t", 2);
         if (0 == argv.length) {
             return null;
-        }
-
-        Driver drv = loadedDrivers.get(argv[0]);
-
-        if (null != drv) {
-            return drv;
         }
 
         final String name = argv[0];
@@ -84,20 +75,13 @@ public abstract class Driver extends ErlPort {
         return null;
     }
 
-    public static Driver lookup(String name) {
-        return loadedDrivers.get(name);
-    }
-
     protected Driver(String name) {
         super(name);
-        driverName = name;
-        loadedDrivers.put(name, this);
     }
 
     @Override
     public void closeUnderlying() {
         isOpen = false;
-        loadedDrivers.remove(driverName);
     }
 
     @Override
