@@ -46,6 +46,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.erl.MFA;
 import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
+import com.oracle.truffle.erl.runtime.ErlContext;
 import com.oracle.truffle.erl.runtime.ErlPid;
 import com.oracle.truffle.erl.runtime.ErlPort;
 import com.oracle.truffle.erl.runtime.ErlProcess;
@@ -86,6 +87,7 @@ public abstract class Exit2Builtin extends ErlBuiltinNode {
 
     @Specialization
     public boolean exit(ErlPort port, Object reason) {
+        ErlContext.notImplemented();
         throw ErlControlException.makeBadarg();
     }
 
