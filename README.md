@@ -93,8 +93,12 @@ The "independent" refers to the independence from the OTP ring0 startup.
 This mode will not start any official processes. The result is an empty
 Erlang runtime system. Also, modules can be loaded into the runtime system
 with the `-file FILE` flag. To select the function to execute, use the
-`-mf MODULE FUNCTION` flag. Currently only functions with 0 arguments
-are supported.
+`-mf MODULE FUNCTION` flag. All extra parameters will be passed to the
+selected function as a list of strings. That means, the selected function
+can be a function with 0 arguments, and with 1 arguments (the list of
+strings) as well. To force the usage of the list of strings, use the
+`--` flag. After this flag, all remaining arguments are converted to one
+list of strings. Also, this can be empty.
 
 ````
 $ mx erl -independent -file /home/aron/jku/erlang/list41.erl -mf list41 main
