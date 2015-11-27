@@ -507,7 +507,7 @@ prim_file
         [{tuple,373,[{atom,373,error},{atom,373,einval}]}]}]}]},
    {clause,375,
     [{tuple,375,
-      [{atom,375,file_descriptor},{atom,-1,prim_file},{atom,375,undefined}]},
+      [{atom,375,file_descriptor},{atom,-1,prim_file},{var,375,'_'}]},
      {var,375,'_'},
      {var,375,'_'}],
     [],
