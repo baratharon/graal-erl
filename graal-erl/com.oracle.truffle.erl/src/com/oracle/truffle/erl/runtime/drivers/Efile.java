@@ -88,7 +88,7 @@ public final class Efile extends Driver {
 
             case FILE_OPEN: {
 
-                final String name = (data.length >= 6 && 0 == data[data.length - 1]) ? (new String(data, 5, data.length - 5)) : null;
+                final String name = (data.length >= 6 && 0 == data[data.length - 1]) ? (new String(data, 5, data.length - 6)) : null;
                 final int mode = extractIntMSB(data, 1);
                 return new OpenAction(name, mode);
             }

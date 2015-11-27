@@ -35,9 +35,10 @@
 package com.oracle.truffle.erl.runtime.drivers.efile;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 
 import com.oracle.truffle.erl.runtime.ErlList;
@@ -76,8 +77,9 @@ public class OpenAction extends AsyncActionSingle {
                 return Result.ERROR;
             }
 
-            final boolean append = 0 != (mode & Driver.EFILE_MODE_APPEND);
+            final boolean read = 0 != (mode & Driver.EFILE_MODE_READ);
             final boolean write = 0 != (mode & Driver.EFILE_MODE_WRITE);
+            final boolean append = 0 != (mode & Driver.EFILE_MODE_APPEND);
 
             if (!write && !file.exists()) {
                 addResult(new ErlList((long) Driver.FILE_RESP_ERROR, Driver.ENOENT));
@@ -89,20 +91,45 @@ public class OpenAction extends AsyncActionSingle {
                 return Result.ERROR;
             }
 
+            final String openMode;
+            if (read && write) {
+                openMode = "rw";
+            } else if (read) {
+                openMode = "r";
+            } else {
+                openMode = null;
+            }
+
+            if (write && !file.exists() && !file.getParentFile().canWrite()) {
+                addResult(new ErlList((long) Driver.FILE_RESP_ERROR, Driver.EPERM));
+                return Result.ERROR;
+            }
+
             if (write && !append) {
                 // overwrite the file
-                if (truncateFile(file)) {
+                if (file.exists() && !file.delete()) {
                     addResult(new ErlList((long) Driver.FILE_RESP_ERROR, Driver.EPERM));
                     return Result.ERROR;
                 }
             }
 
-            if (write && !file.canWrite()) {
+            if (write && file.exists() && !file.canWrite()) {
                 addResult(new ErlList((long) Driver.FILE_RESP_ERROR, Driver.EPERM));
                 return Result.ERROR;
             }
 
-            final FileChannel channel = new FileInputStream(file).getChannel();
+            if (read && (!file.exists() || !file.canRead())) {
+                addResult(new ErlList((long) Driver.FILE_RESP_ERROR, Driver.EPERM));
+                return Result.ERROR;
+            }
+
+            final FileChannel channel;
+
+            if (null != openMode) {
+                channel = new RandomAccessFile(file, openMode).getChannel();
+            } else {
+                channel = new FileOutputStream(file).getChannel();
+            }
 
             if (append) {
                 try {
@@ -117,31 +144,24 @@ public class OpenAction extends AsyncActionSingle {
                 }
             }
 
-            fd = new FDFile(channel, !write);
+            try {
+                fd = new FDFile(channel, read, write);
+            } catch (FDFile.TooManyFilesException ex) {
+                try {
+                    channel.close();
+                } catch (IOException e1) {
+                }
+                addResult(new ErlList((long) Driver.FILE_RESP_ERROR, Driver.EMFILE));
+                return Result.ERROR;
+            }
 
         } catch (FileNotFoundException ex) {
             addResult(new ErlList((long) Driver.FILE_RESP_ERROR, Driver.ENOENT));
-            return Result.ERROR;
-        } catch (FDFile.TooManyFilesException ex) {
-            addResult(new ErlList((long) Driver.FILE_RESP_ERROR, Driver.EMFILE));
             return Result.ERROR;
         }
 
         addResult(Driver.makeNumberResponse(fd.getFD()));
 
         return Result.DONE;
-    }
-
-    private static boolean truncateFile(File file) {
-
-        if (file.exists() && !file.delete()) {
-            return false;
-        }
-
-        try {
-            return file.createNewFile();
-        } catch (IOException e) {
-            return false;
-        }
     }
 }

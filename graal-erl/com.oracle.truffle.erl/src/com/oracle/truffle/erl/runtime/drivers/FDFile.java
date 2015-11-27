@@ -93,12 +93,14 @@ public final class FDFile {
     }
 
     private final int fd;
-    private final boolean readonly;
+    private final boolean canRead;
+    private final boolean canWrite;
     private FileChannel channel;
 
-    public FDFile(FileChannel channel, boolean readonly) {
+    public FDFile(FileChannel channel, boolean canRead, boolean canWrite) {
         this.fd = register(this);
-        this.readonly = readonly;
+        this.canRead = canRead;
+        this.canWrite = canWrite;
         this.channel = channel;
     }
 
