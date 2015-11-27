@@ -66,7 +66,6 @@ public final class ErlRootNode extends RootNode {
 
     @CompilationFinal private boolean isCloningAllowed;
 
-    @SuppressWarnings("unused")
     public ErlRootNode(FrameDescriptor frameDescriptor, ErlExpressionNode bodyNode, MFA mfa) {
         super(ErlangLanguage.class, null, frameDescriptor);
         this.bodyNode = bodyNode;

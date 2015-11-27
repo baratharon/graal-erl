@@ -78,8 +78,9 @@ public final class ErlClauseSelectorNode extends ErlExpressionNode {
 
         Object args[] = frame.getArguments();
         assert 0 != args.length;
+        args = Arrays.copyOf(args, args.length - 1);
 
-        return doSelect(frame, Arrays.copyOf(args, args.length - 1));
+        return doSelect(frame, args);
     }
 
     @ExplodeLoop

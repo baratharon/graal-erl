@@ -118,19 +118,10 @@ public final class ErlTryNode extends ErlExpressionNode {
                     } catch (ErlNoClauseMatchedException ex) {
 
                         throw ErlControlException.makeTryClause(value);
-                    } finally {
-
-                        if (null != afterNode) {
-                            afterNode.executeGeneric(frame);
-                        }
                     }
                 }
 
             } catch (ErlControlException ex) {
-
-                if (null != afterNode) {
-                    afterNode.executeGeneric(frame);
-                }
 
                 ErlTuple exceptionData = ex.getDescribingTerm();
 
@@ -175,12 +166,15 @@ public final class ErlTryNode extends ErlExpressionNode {
     @Override
     public void markAsTail() {
 
-        if (null != clauseSelector) {
-            clauseSelector.markAsTail();
-        }
+        if (null == afterNode) {
 
-        if (null != exceptionSelector) {
-            exceptionSelector.markAsTail();
+            if (null != clauseSelector) {
+                clauseSelector.markAsTail();
+            }
+
+            if (null != exceptionSelector) {
+                exceptionSelector.markAsTail();
+            }
         }
     }
 }
