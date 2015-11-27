@@ -40,11 +40,6 @@
  */
 package com.oracle.truffle.erl.nodes.controlflow;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.frame.FrameDescriptor;
-import com.oracle.truffle.api.frame.FrameSlot;
-import com.oracle.truffle.api.frame.FrameSlotKind;
-import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
@@ -81,8 +76,6 @@ public final class ErlFunctionBodyNode extends ErlExpressionNode {
     @Override
     public Object executeGeneric(VirtualFrame frame) {
 
-        importCallerContext(frame);
-
         if (null != preludeNode) {
             preludeNode.executeGeneric(frame);
         }
@@ -94,72 +87,6 @@ public final class ErlFunctionBodyNode extends ErlExpressionNode {
         } catch (ErlNoClauseMatchedException ex) {
 
             throw ErlControlException.makeFunctionClause();
-        }
-    }
-
-    public static void importCallerContext(VirtualFrame frame) {
-
-        Object[] args = frame.getArguments();
-
-        if (args.length > 0 && (args[args.length - 1] instanceof VirtualFrame)) {
-
-            VirtualFrame callerFrame = (VirtualFrame) args[args.length - 1];
-            FrameDescriptor fd = frame.getFrameDescriptor();
-
-            for (FrameSlot foreignSlot : callerFrame.getFrameDescriptor().getSlots()) {
-
-                FrameSlot localSlot = fd.findFrameSlot(foreignSlot.getIdentifier());
-
-                if (null != localSlot) {
-
-                    switch (foreignSlot.getKind()) {
-
-                        case Illegal:
-                            // nothing to do here
-                            break;
-
-                        case Long:
-                            try {
-                                CompilerDirectives.transferToInterpreterAndInvalidate();
-                                localSlot.setKind(FrameSlotKind.Long);
-                                frame.setLong(localSlot, callerFrame.getLong(foreignSlot));
-                            } catch (FrameSlotTypeException e) {
-                                // ignore
-                            }
-                            break;
-
-                        case Double:
-                            try {
-                                CompilerDirectives.transferToInterpreterAndInvalidate();
-                                localSlot.setKind(FrameSlotKind.Double);
-                                frame.setDouble(localSlot, callerFrame.getDouble(foreignSlot));
-                            } catch (FrameSlotTypeException e) {
-                                // ignore
-                            }
-                            break;
-
-                        case Boolean:
-                            try {
-                                CompilerDirectives.transferToInterpreterAndInvalidate();
-                                localSlot.setKind(FrameSlotKind.Boolean);
-                                frame.setBoolean(localSlot, callerFrame.getBoolean(foreignSlot));
-                            } catch (FrameSlotTypeException e) {
-                                // ignore
-                            }
-                            break;
-
-                        default:
-                            try {
-                                CompilerDirectives.transferToInterpreterAndInvalidate();
-                                localSlot.setKind(FrameSlotKind.Object);
-                                frame.setObject(localSlot, callerFrame.getObject(foreignSlot));
-                            } catch (FrameSlotTypeException e) {
-                                // ignore
-                            }
-                            break;
-                    }
-                }
-            }
         }
     }
 

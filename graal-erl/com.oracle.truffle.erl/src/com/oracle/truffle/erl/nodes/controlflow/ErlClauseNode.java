@@ -118,8 +118,6 @@ public final class ErlClauseNode extends ErlExpressionNode {
             throw ErlControlException.makeFunctionClause();
         }
 
-        ErlFunctionBodyNode.importCallerContext(frame);
-
         for (int i = 0; i < matchNodes.length; ++i) {
             try {
 
