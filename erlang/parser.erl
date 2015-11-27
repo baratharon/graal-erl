@@ -119,21 +119,22 @@ preprocess_and_parse(RevAcc, [Head | Tail], State) ->
 preprocess_and_parse(RevAcc, [], State) ->
 	{lists:reverse(RevAcc), State}.
 
-preprocess(RevAcc, Tokens, State, Mode) ->
-	preprocess_impl(RevAcc, Tokens, State, lk_initial(), Mode).
+preprocess([], Tokens, State, Mode) ->
+	LocKind = lk_initial(),
+	preprocess_impl([], Tokens, State, LocKind, LocKind, Mode).
 
-preprocess_with_lk(RevAcc, Tokens, State, LocKind, Mode) ->
-	preprocess_impl(RevAcc, Tokens, State, LocKind, Mode).
+preprocess_with_lk([], Tokens, State, LocKind, Mode) ->
+	preprocess_impl([], Tokens, State, LocKind, LocKind, Mode).
 
-preprocess_impl(RevAcc, [{'?', _}, {Type, Line, Name} | MoreTokens], State, LocKind, Mode) when atom==Type; var==Type ->
+preprocess_impl(RevAcc, [{'?', _}, {Type, Line, Name} | MoreTokens], State, LocKind, LocKind0, Mode) when atom==Type; var==Type ->
 	?TRACE("macro replace (~p, line ~p)~n", [Name, Line]),
 	{ok,  Resolved, RestTokens} = resolve(Name, Line, MoreTokens, State, Mode),
 	case Mode of
-		hard -> preprocess_impl([], lists:append(lists:reverse(RevAcc), lists:append(lists:reverse(Resolved), RestTokens)), State, LocKind, Mode);
-		soft -> preprocess_impl(lists:append(Resolved, RevAcc), RestTokens, State, LocKind, Mode);
+		hard -> preprocess_impl([], lists:append(lists:reverse(RevAcc), lists:append(lists:reverse(Resolved), RestTokens)), State, LocKind0, LocKind0, Mode);
+		soft -> preprocess_impl(lists:append(Resolved, RevAcc), RestTokens, State, LocKind, LocKind0, Mode);
 		_    -> {error, unknown_mode, Mode}
 	end;
-preprocess_impl(RevAcc, [{'#', _}, {atom, Line, RecName}, {'{', _} | MoreTokens], State, LocKind, Mode) ->
+preprocess_impl(RevAcc, [{'#', _}, {atom, Line, RecName}, {'{', _} | MoreTokens], State, LocKind, LocKind0, Mode) ->
 	% record expression or record update
 	?TRACE("record expression or record update (~p, line ~p)~n", [RecName, Line]),
 	case head_is_end_of_expr(RevAcc) of
@@ -145,8 +146,8 @@ preprocess_impl(RevAcc, [{'#', _}, {atom, Line, RecName}, {'{', _} | MoreTokens]
 			PatternPositionHint = lk_pattern_position_hint(LocKind),
 			{ok, Replacement, RestTokens} = resolve_record_expr(RecName, Line, MoreTokens, PatternPositionHint, State)
 	end,
-	preprocess_impl(lists:append(Replacement, NewRevAcc), RestTokens, State, LocKind, Mode);
-preprocess_impl(RevAcc, [{'#', _}, {atom, Line, RecName}, {'.', _}, {atom, _, Field} | MoreTokens], State, LocKind, Mode) ->
+	preprocess_impl(lists:append(Replacement, NewRevAcc), RestTokens, State, LocKind, LocKind0, Mode);
+preprocess_impl(RevAcc, [{'#', _}, {atom, Line, RecName}, {'.', _}, {atom, _, Field} | MoreTokens], State, LocKind, LocKind0, Mode) ->
 	% record field access
 	?TRACE("record field access (~p.~p, line ~p)~n", [RecName, Field, Line]),
 	case head_is_end_of_expr(RevAcc) of
@@ -154,28 +155,28 @@ preprocess_impl(RevAcc, [{'#', _}, {atom, Line, RecName}, {'.', _}, {atom, _, Fi
 			{Expr, NewRevAcc} = fetch_last_expr(RevAcc),
 			RestTokens = MoreTokens,
 			Replacement = resolve_record_fieldaccess(RecName, Expr, Line, Field, State),
-			preprocess_impl(lists:append(Replacement, NewRevAcc), RestTokens, State, LocKind, Mode);
+			preprocess_impl(lists:append(Replacement, NewRevAcc), RestTokens, State, LocKind, LocKind0, Mode);
 		false ->
 			Expr = resolve_record_fieldid(RecName, Line, Field, State),
-			preprocess_impl(lists:append(Expr, RevAcc), MoreTokens, State, LocKind, Mode)
+			preprocess_impl(lists:append(Expr, RevAcc), MoreTokens, State, LocKind, LocKind0, Mode)
 	end;
-preprocess_impl(RevAcc, [{'::', _} | MoreTokens], State, LocKind, Mode) ->
+preprocess_impl(RevAcc, [{'::', _} | MoreTokens], State, LocKind, LocKind0, Mode) ->
 	RestTokens = drop_type_spec(MoreTokens),
-	preprocess_impl(RevAcc, RestTokens, State, LocKind, Mode);
-preprocess_impl(RevAcc, [T1={Type, _, _}, T2={'(', _} | MoreTokens], State, LocKind, Mode) ->
+	preprocess_impl(RevAcc, RestTokens, State, LocKind, LocKind0, Mode);
+preprocess_impl(RevAcc, [T1={Type, _, _}, T2={'(', _} | MoreTokens], State, LocKind, LocKind0, Mode) ->
 	case Type of
 		var  -> NewLocKind = lk_call(LocKind);
 		atom -> NewLocKind = lk_call(LocKind);
 		_    -> NewLocKind = lk_token(LocKind, '(')
 	end,
-	preprocess_impl([T2, T1 | RevAcc], MoreTokens, State, NewLocKind, Mode);
-preprocess_impl(RevAcc, [Token | MoreTokens], State, LocKind, Mode) ->
+	preprocess_impl([T2, T1 | RevAcc], MoreTokens, State, NewLocKind, LocKind0, Mode);
+preprocess_impl(RevAcc, [Token | MoreTokens], State, LocKind, LocKind0, Mode) ->
 	case Token of
-		{T, _} -> NewLocKind = lk_token(LocKind, T);
+		{T, _} -> ?TRACE("token ~p~n", [Token]), NewLocKind = lk_token(LocKind, T);
 		_      -> NewLocKind = LocKind
 	end,
-	preprocess_impl([Token | RevAcc], MoreTokens, State, NewLocKind, Mode);
-preprocess_impl(RevAcc, [], _State, _LocKind, _Mode) ->
+	preprocess_impl([Token | RevAcc], MoreTokens, State, NewLocKind, LocKind0, Mode);
+preprocess_impl(RevAcc, [], _State, _LocKind, _LocKind0, _Mode) ->
 	lists:reverse(RevAcc).
 
 continue_preprocess_and_parse(RevAcc, Forms, [{macro, MacroName, MacroDef} | Tail], State) ->
@@ -804,7 +805,7 @@ lk_token_impl([_, _ | Tl], 'end') -> Tl;
 lk_token_impl(Tl, 'fun') -> [{fun0} | Tl];
 lk_token_impl([{fun0} | Tl], ':') -> Tl;
 lk_token_impl([{fun0} | Tl], '/') -> Tl;
-lk_token_impl([{fun0} | Tl], '(') -> [head | Tl];
+lk_token_impl([{fun0} | Tl], '(') -> [pattern, head | Tl];
 lk_token_impl(Tl, '(') -> [expr | Tl];
 lk_token_impl([_ | Tl], ')') -> Tl;
 lk_token_impl(LocKind, _) -> LocKind.
