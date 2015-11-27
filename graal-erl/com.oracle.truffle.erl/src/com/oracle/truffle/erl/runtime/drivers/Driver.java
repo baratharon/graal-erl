@@ -185,7 +185,7 @@ public abstract class Driver extends ErlPort {
 
         for (int i = 0; i < 8; ++i) {
             list = new ErlList((num & 0xff), list);
-            num >>= 8;
+            num >>>= 8;
         }
 
         return new ErlList((long) FILE_RESP_NUMBER, list);
