@@ -11,7 +11,7 @@
 -endif.
 
 main() ->
-	ast(boot01, "/tmp/parser.ast", "/home/aron/jku/erlang/parser.erl").
+	ast(parser, "/tmp/parser.ast", "/home/aron/jku/erlang/parser.erl").
 
 scan(FileName) ->
 	{ok, File} = file:read_file(FileName),
