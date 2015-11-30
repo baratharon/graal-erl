@@ -173,7 +173,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
                     registry.remove(proc.registeredName);
                 }
 
-                proc.monitors.forEach(new MonitorNotify(proc));
+                proc.monitors.forEach(new MonitorNotify(proc, exitReason));
 
                 for (ErlProcess p : proc.links) {
 
@@ -241,14 +241,27 @@ public final class ErlProcess implements Callable<Object>, Registrable {
 
     private final static class MonitorNotify implements BiConsumer<ErlRef, ErlProcess> {
 
-        private ErlProcess sender;
+        private final ErlProcess sender;
+        private final Object reason;
 
-        public MonitorNotify(ErlProcess sender) {
+        public MonitorNotify(ErlProcess sender, Object exitReason) {
+
+            Object newReason = ErlAtom.NOPROC;
+
+            if (exitReason instanceof ErlTuple) {
+                final ErlTuple tuple = (ErlTuple) exitReason;
+
+                if (tuple.getSize() > 1) {
+                    newReason = tuple.getElement(tuple.getSize());
+                }
+            }
+
             this.sender = sender;
+            this.reason = newReason;
         }
 
         public void accept(ErlRef ref, ErlProcess proc) {
-            proc.sendMonitorDown(ref, sender.pid);
+            proc.sendMonitorDown(ref, sender.pid, reason);
         }
     }
 
@@ -600,12 +613,12 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         return ErlAtom.OK;
     }
 
-    public void sendMonitorDown(ErlRef ref, ErlPid sender) {
+    public void sendMonitorDown(ErlRef ref, ErlPid sender, Object reason) {
         // we must remove the monitor reference from the foreign monitors
         foreignMonitors.remove(ref);
 
         // send the tuple to the process
-        sendMessage(new ErlTuple(ErlAtom._DOWN, ref, ErlAtom.PROCESS, sender, ErlAtom.NOPROC), false);
+        sendMessage(new ErlTuple(ErlAtom._DOWN, ref, ErlAtom.PROCESS, sender, reason), false);
     }
 
     private boolean sendMessage(Object msg, boolean nosuspend) {
@@ -769,7 +782,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
                 proc.monitors.put(ref, curr);
                 curr.foreignMonitors.put(ref, proc);
             } else {
-                getCurrentProcess().sendMonitorDown(ref, item);
+                getCurrentProcess().sendMonitorDown(ref, item, ErlAtom.NOPROC);
             }
         }
 
