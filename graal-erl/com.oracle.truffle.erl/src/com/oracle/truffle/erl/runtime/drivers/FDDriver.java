@@ -50,6 +50,7 @@ import java.util.concurrent.Future;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.runtime.ErlAtom;
 import com.oracle.truffle.erl.runtime.ErlBinary;
+import com.oracle.truffle.erl.runtime.ErlContext;
 import com.oracle.truffle.erl.runtime.ErlList;
 import com.oracle.truffle.erl.runtime.ErlPid;
 import com.oracle.truffle.erl.runtime.ErlPort;
@@ -81,16 +82,17 @@ public final class FDDriver extends ErlPort {
 
         @Override
         public void run() {
+            char buf[] = new char[32];
             while (!in.eof()) {
                 try {
-                    int ch = in.read();
+                    int num = in.read(buf);
 
-                    if (-1 == ch) {
+                    if (-1 == num) {
                         // TODO: EOF
                         return;
                     }
 
-                    final ErlTuple inner = new ErlTuple(ErlAtom.DATA, ErlBinary.fromArray(new byte[]{(byte) ch}));
+                    final ErlTuple inner = new ErlTuple(ErlAtom.DATA, ErlBinary.fromChars(buf, num, ErlContext.UTF8_CHARSET));
                     final ErlTuple msg = new ErlTuple(driver, inner);
 
                     process.send(pid, msg, false, true);
