@@ -94,6 +94,7 @@ import com.oracle.truffle.erl.builtins.erlang.IntegerToList1BuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.IntegerToList2BuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.IolistSizeBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.IolistToBinaryBuiltinFactory;
+import com.oracle.truffle.erl.builtins.erlang.IsAliveBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.IsAtomBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.IsBinaryBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.IsBitstringBuiltinFactory;
@@ -206,6 +207,7 @@ public final class ErlangBuiltins {
         context.installBuiltin(IsRecord2BuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(IsRecord3BuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(IsProcessAliveBuiltinFactory.getInstance(), registerRootNodes);
+        context.installBuiltin(IsAliveBuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(ProcessInfo2BuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(MakeRefBuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(LengthBuiltinFactory.getInstance(), registerRootNodes);
