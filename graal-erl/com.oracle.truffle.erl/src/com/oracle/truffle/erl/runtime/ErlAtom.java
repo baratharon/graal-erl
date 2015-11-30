@@ -157,6 +157,7 @@ public final class ErlAtom implements TruffleObject {
     public static final ErlAtom KILLED = new ErlAtom("killed");
     public static final ErlAtom COMMAND = new ErlAtom("command");
     public static final ErlAtom CONNECT = new ErlAtom("connect");
+    public static final ErlAtom VERSION = new ErlAtom("version");
 
     public static ErlAtom fromBoolean(boolean value) {
         if (value) {

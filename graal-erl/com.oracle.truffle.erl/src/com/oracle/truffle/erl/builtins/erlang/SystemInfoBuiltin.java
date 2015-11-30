@@ -48,6 +48,7 @@ import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.runtime.ErlAtom;
 import com.oracle.truffle.erl.runtime.ErlContext;
+import com.oracle.truffle.erl.runtime.ErlList;
 import com.oracle.truffle.erl.runtime.ErlTuple;
 
 /**
@@ -90,6 +91,10 @@ public abstract class SystemInfoBuiltin extends ErlBuiltinNode {
 
         if (ErlAtom.HIPE_ARCHITECTURE.equals(item)) {
             return new ErlAtom(ErlContext.OS_ARCH);
+        }
+
+        if (ErlAtom.VERSION.equals(item)) {
+            return new ErlList((long) '7', new ErlList((long) '.', new ErlList((long) '1', ErlList.NIL)));
         }
 
         ErlContext.notImplemented();
