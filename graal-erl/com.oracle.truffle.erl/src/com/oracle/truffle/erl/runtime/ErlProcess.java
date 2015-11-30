@@ -153,7 +153,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
 
         public Set<ErlPid> getAllPid() {
             synchronized (processes) {
-                return Collections.unmodifiableSet(processes.keySet());
+                return Collections.unmodifiableSet(new HashSet<>(processes.keySet()));
             }
         }
 
@@ -234,7 +234,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
 
         public Set<String> getRegisteredNames() {
             synchronized (processes) {
-                return Collections.unmodifiableSet(registry.keySet());
+                return Collections.unmodifiableSet(new HashSet<>(registry.keySet()));
             }
         }
     }
