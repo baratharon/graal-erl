@@ -84,7 +84,7 @@ startup sequence is performed by the OTP ring0. Any arguments can be
 used what the "erl" command takes.
 
 ````
-$ mx erl -init_debug -pa /home/aron/jku/erlang -run erlparse01 main -run init stop -noshell
+$ mx erl -init_debug -pa ~/graal-erl/erlang/test -run erlparse03 main "lists:seq(1,100)." -run init stop -noshell
 ````
 
 #### Independent
@@ -101,7 +101,7 @@ strings) as well. To force the usage of the list of strings, use the
 list of strings. Also, this can be empty.
 
 ````
-$ mx erl -independent -file /home/aron/jku/erlang/list41.erl -mf list41 main
+$ mx erl -independent -file ~/graal-erl/erlang/list41.erl -mf list41 main
 ````
 
 Without any `-file FILE` flag, the standard input will be used as source.
