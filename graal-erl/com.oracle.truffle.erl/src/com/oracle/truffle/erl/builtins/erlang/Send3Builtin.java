@@ -71,13 +71,13 @@ public abstract class Send3Builtin extends ErlBuiltinNode {
     @Specialization
     public Object send(ErlPid pid, Object msg, ErlList opts) {
         final SendOptions so = SendOptions.parse(opts);
-        return ErlProcess.send(pid, msg, so.nosuspend(), so.noconnect());
+        return ErlProcess.getCurrentProcess().send(pid, msg, so.nosuspend(), so.noconnect());
     }
 
     @Specialization
     public Object send(ErlAtom name, Object msg, ErlList opts) {
         final SendOptions so = SendOptions.parse(opts);
-        return ErlProcess.send(name, msg, so.nosuspend(), so.noconnect());
+        return ErlProcess.getCurrentProcess().send(name, msg, so.nosuspend(), so.noconnect());
     }
 
     @Specialization

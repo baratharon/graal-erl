@@ -80,7 +80,7 @@ public abstract class ErlSendNode extends ErlBinaryNode {
 
     @Specialization
     protected Object send(ErlPid pid, Object msg) {
-        ErlProcess.send(pid, msg, false, false);
+        ErlProcess.getCurrentProcess().send(pid, msg, false, false);
         return msg;
     }
 
@@ -123,7 +123,7 @@ public abstract class ErlSendNode extends ErlBinaryNode {
 
     @Specialization
     protected Object send(ErlAtom name, Object msg) {
-        ErlProcess.send(name, msg, false, false);
+        ErlProcess.getCurrentProcess().send(name, msg, false, false);
         return msg;
     }
 

@@ -583,9 +583,9 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         return null;
     }
 
-    public static Object send(ErlPid destPid, Object msg, boolean nosuspend, boolean noconnect) {
+    public Object send(ErlPid destPid, Object msg, boolean nosuspend, boolean noconnect) {
 
-        ErlProcess proc = ErlProcess.findProcess(destPid);
+        ErlProcess proc = processManager.findProcess(destPid);
 
         if (null != proc) {
             if (proc.sendMessage(msg, nosuspend)) {
@@ -598,9 +598,9 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         return ErlAtom.OK;
     }
 
-    public static Object send(ErlAtom destName, Object msg, boolean nosuspend, boolean noconnect) {
+    public Object send(ErlAtom destName, Object msg, boolean nosuspend, boolean noconnect) {
 
-        ErlProcess proc = ErlProcess.findRegistered(ErlProcess.class, destName.getValue());
+        ErlProcess proc = processManager.findRegisteredName(ErlProcess.class, destName.getValue());
 
         if (null != proc) {
             if (proc.sendMessage(msg, nosuspend)) {

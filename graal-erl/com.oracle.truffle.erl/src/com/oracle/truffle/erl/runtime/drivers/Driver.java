@@ -166,7 +166,7 @@ public abstract class Driver extends ErlPort {
 
         while (action.hasMore()) {
             final ErlTuple msg = new ErlTuple(this, new ErlTuple(ErlAtom.DATA, action.result()));
-            ErlProcess.send(action.getPid(), msg, false, false);
+            ErlProcess.getCurrentProcess().send(action.getPid(), msg, false, false);
         }
     }
 

@@ -66,12 +66,12 @@ public abstract class Send2Builtin extends ErlBuiltinNode {
 
     @Specialization
     public Object send(ErlPid pid, Object msg) {
-        return ErlProcess.send(pid, msg, false, false);
+        return ErlProcess.getCurrentProcess().send(pid, msg, false, false);
     }
 
     @Specialization
     public Object send(ErlAtom name, Object msg) {
-        return ErlProcess.send(name, msg, false, false);
+        return ErlProcess.getCurrentProcess().send(name, msg, false, false);
     }
 
     @Specialization

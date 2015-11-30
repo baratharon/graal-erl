@@ -220,7 +220,7 @@ public abstract class ErlTable {
     public void onProcessDied() {
         if (null != heir) {
             final ErlTuple msg = new ErlTuple(ErlAtom._ETS_TRANSFER, tableID, owner, heirData);
-            if (ErlAtom.OK == ErlProcess.send(heir, msg, false, false)) {
+            if (ErlAtom.OK == ErlProcess.getCurrentProcess().send(heir, msg, false, false)) {
                 return;
             }
         }

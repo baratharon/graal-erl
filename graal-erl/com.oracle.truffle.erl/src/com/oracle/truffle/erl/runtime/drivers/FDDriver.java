@@ -69,9 +69,13 @@ public final class FDDriver extends ErlPort {
 
     private final class InputReaderThread implements Runnable {
 
+        final FDDriver driver;
+        final ErlProcess process;
         final ErlPid pid;
 
-        public InputReaderThread(ErlPid pid) {
+        public InputReaderThread(FDDriver driver, ErlProcess process, ErlPid pid) {
+            this.driver = driver;
+            this.process = process;
             this.pid = pid;
         }
 
@@ -87,9 +91,9 @@ public final class FDDriver extends ErlPort {
                     }
 
                     final ErlTuple inner = new ErlTuple(ErlAtom.DATA, ErlBinary.fromArray(new byte[]{(byte) ch}));
-                    final ErlTuple msg = new ErlTuple(this, inner);
+                    final ErlTuple msg = new ErlTuple(driver, inner);
 
-                    ErlProcess.send(pid, msg, false, true);
+                    process.send(pid, msg, false, true);
 
                 } catch (IOException ex) {
                     return;
@@ -106,7 +110,7 @@ public final class FDDriver extends ErlPort {
 
         if (null != in) {
             executor = Executors.newFixedThreadPool(1);
-            InputReaderThread thread = new InputReaderThread(ErlProcess.getSelfPid());
+            InputReaderThread thread = new InputReaderThread(this, ErlProcess.getCurrentProcess(), ErlProcess.getSelfPid());
             future = executor.submit(thread);
         }
     }
@@ -123,9 +127,9 @@ public final class FDDriver extends ErlPort {
                 out = UnifiedOutput.wrap(System.err);
             }
 
-            // if (0 == fdIn) {
-            // in = UnifiedInput.wrap(ErlProcess.getContext().getInput());
-            // }
+            if (0 == fdIn) {
+                in = UnifiedInput.wrap(ErlProcess.getContext().getInput());
+            }
         }
 
         if (po.isOut()) {

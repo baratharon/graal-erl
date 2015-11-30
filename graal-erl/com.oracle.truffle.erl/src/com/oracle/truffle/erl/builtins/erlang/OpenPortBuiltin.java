@@ -82,7 +82,8 @@ public abstract class OpenPortBuiltin extends ErlBuiltinNode {
 
             if (ErlAtom.SPAWN.equals(first)) {
 
-                ErlContext.notImplemented();
+                // ErlContext.notImplemented();
+                throw ErlControlException.makeBadarg();
 
             } else if (ErlAtom.SPAWN_DRIVER.equals(first)) {
 
