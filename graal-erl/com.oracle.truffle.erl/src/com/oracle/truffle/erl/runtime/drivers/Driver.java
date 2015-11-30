@@ -178,7 +178,7 @@ public abstract class Driver extends ErlPort {
 
     protected abstract void closeDriver();
 
-    public static Object makeNumberResponse(long number) {
+    public static ErlList makeNumberResponse(long number) {
 
         ErlList list = ErlList.NIL;
         long num = number;
@@ -195,15 +195,40 @@ public abstract class Driver extends ErlPort {
 
         // unrolled loop by hand: probably this is the fastest way
 
-        int acc = 0;
+        int acc;
 
         acc = Byte.toUnsignedInt(data[offset + 0]);
         acc <<= 8;
-        acc = Byte.toUnsignedInt(data[offset + 1]);
+        acc |= Byte.toUnsignedInt(data[offset + 1]);
         acc <<= 8;
-        acc = Byte.toUnsignedInt(data[offset + 2]);
+        acc |= Byte.toUnsignedInt(data[offset + 2]);
         acc <<= 8;
-        acc = Byte.toUnsignedInt(data[offset + 3]);
+        acc |= Byte.toUnsignedInt(data[offset + 3]);
+
+        return acc;
+    }
+
+    protected static long extractLongMSB(final byte[] data, final int offset) {
+
+        // unrolled loop by hand: probably this is the fastest way
+
+        long acc;
+
+        acc = Byte.toUnsignedLong(data[offset + 0]);
+        acc <<= 8;
+        acc |= Byte.toUnsignedLong(data[offset + 1]);
+        acc <<= 8;
+        acc |= Byte.toUnsignedLong(data[offset + 2]);
+        acc <<= 8;
+        acc |= Byte.toUnsignedLong(data[offset + 3]);
+        acc <<= 8;
+        acc |= Byte.toUnsignedLong(data[offset + 4]);
+        acc <<= 8;
+        acc |= Byte.toUnsignedLong(data[offset + 5]);
+        acc <<= 8;
+        acc |= Byte.toUnsignedLong(data[offset + 6]);
+        acc <<= 8;
+        acc |= Byte.toUnsignedLong(data[offset + 7]);
 
         return acc;
     }
@@ -217,12 +242,16 @@ public abstract class Driver extends ErlPort {
     @SuppressWarnings("deprecation") public static final ErlList EMFILE = ErlList.fromString("emfile");
     @SuppressWarnings("deprecation") public static final ErlList EXBADSEQ = ErlList.fromString("exbadseq");
 
-    public static final byte FILE_OPEN = 1;
-    public static final byte FILE_FSTAT = 5;
-    public static final byte FILE_PWD = 6;
-    public static final byte FILE_READDIR = 7;
-    public static final byte FILE_READ_FILE = 15;
-    public static final byte FILE_LSTAT = 19;
+    public static final byte FILE_OPEN = 1; // required for boot
+    public static final byte FILE_READ = 2;
+    public static final byte FILE_LSEEK = 3;
+    public static final byte FILE_WRITE = 4;
+    public static final byte FILE_FSTAT = 5; // required for boot
+    public static final byte FILE_PWD = 6; // required for boot
+    public static final byte FILE_READDIR = 7; // required for boot
+    public static final byte FILE_READ_FILE = 15; // required for boot
+    public static final byte FILE_LSTAT = 19; // required for boot
+    public static final byte FILE_CLOSE = 23;
 
     public static final byte FILE_RESP_OK = 0;
     public static final byte FILE_RESP_ERROR = 1;

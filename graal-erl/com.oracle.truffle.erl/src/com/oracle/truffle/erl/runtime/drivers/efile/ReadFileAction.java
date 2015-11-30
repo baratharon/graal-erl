@@ -50,6 +50,8 @@ import com.oracle.truffle.erl.runtime.drivers.Driver;
 public class ReadFileAction extends AsyncActionSingle {
 
     private final String name;
+    private ByteBuffer bin = null;
+    private FileChannel fd = null;
 
     public ReadFileAction(String name) {
         super();
@@ -60,8 +62,6 @@ public class ReadFileAction extends AsyncActionSingle {
     public Result async() {
 
         ErlList result = null;
-        ByteBuffer bin = null;
-        FileChannel fd = null;
 
         try {
 
@@ -84,7 +84,7 @@ public class ReadFileAction extends AsyncActionSingle {
                 }
 
                 if (size > Integer.MAX_VALUE || size < 0) {
-                    result = new ErlList((long) Driver.FILE_RESP_ERROR, Driver.ENOMEM);
+                    result = new ErlList((long) Driver.FILE_RESP_ERROR, Driver.EINVAL);
                     return Result.ERROR;
                 }
 

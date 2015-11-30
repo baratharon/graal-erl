@@ -44,19 +44,20 @@ import java.nio.channels.FileChannel;
 import com.oracle.truffle.erl.runtime.ErlList;
 import com.oracle.truffle.erl.runtime.drivers.AsyncActionSingle;
 import com.oracle.truffle.erl.runtime.drivers.Driver;
+import com.oracle.truffle.erl.runtime.drivers.Efile;
 import com.oracle.truffle.erl.runtime.drivers.FDFile;
 
 public class OpenAction extends AsyncActionSingle {
 
+    private final Efile efile;
     private final String name;
     private final int mode;
-    private boolean TODO;
 
-    public OpenAction(String name, int mode) {
+    public OpenAction(Efile efile, String name, int mode) {
         super();
+        this.efile = efile;
         this.name = name;
         this.mode = mode;
-        TODO = true;
     }
 
     @Override
@@ -83,11 +84,6 @@ public class OpenAction extends AsyncActionSingle {
 
             if (!write && !file.exists()) {
                 addResult(new ErlList((long) Driver.FILE_RESP_ERROR, Driver.ENOENT));
-                return Result.ERROR;
-            }
-
-            if (TODO) {
-                addResult(new ErlList((long) Driver.FILE_RESP_ERROR, Driver.EPERM));
                 return Result.ERROR;
             }
 
@@ -160,6 +156,7 @@ public class OpenAction extends AsyncActionSingle {
             return Result.ERROR;
         }
 
+        efile.registerOpenedFile(fd);
         addResult(Driver.makeNumberResponse(fd.getFD()));
 
         return Result.DONE;

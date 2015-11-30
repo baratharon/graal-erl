@@ -41,6 +41,7 @@
 package com.oracle.truffle.erl.runtime.drivers;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.HashMap;
 import java.util.Set;
@@ -92,6 +93,9 @@ public final class FDFile {
         files.remove(file.getFD());
     }
 
+    private static final IOException ACCESS_DENIED = new IOException("Access denied.");
+    private static final IOException CHANNEL_CLOSED = new IOException("Backing channel is already closed.");
+
     private final int fd;
     private final boolean canRead;
     private final boolean canWrite;
@@ -124,4 +128,67 @@ public final class FDFile {
         }
     }
 
+    public long size() {
+        if (null != channel) {
+            try {
+                return channel.size();
+            } catch (IOException ex) {
+            }
+        }
+
+        return -1;
+    }
+
+    public long position() {
+        if (null != channel) {
+            try {
+                return channel.position();
+            } catch (IOException ex) {
+            }
+        }
+
+        return -1;
+    }
+
+    public void position(long pos) throws IOException {
+        if (null != channel) {
+            channel.position(pos);
+        } else {
+            throw CHANNEL_CLOSED;
+        }
+    }
+
+    public boolean canRead() {
+        return null != channel && canRead;
+    }
+
+    public boolean canWrite() {
+        return null != channel && canWrite;
+    }
+
+    public int read(ByteBuffer bin) throws IOException {
+
+        if (null == channel) {
+            throw CHANNEL_CLOSED;
+        }
+
+        if (canRead) {
+            return channel.read(bin);
+        }
+
+        throw ACCESS_DENIED;
+    }
+
+    public int write(ByteBuffer bin) throws IOException {
+
+        if (null == channel) {
+            throw CHANNEL_CLOSED;
+        }
+
+        if (canWrite) {
+            return channel.write(bin);
+        }
+
+        throw ACCESS_DENIED;
+    }
 }

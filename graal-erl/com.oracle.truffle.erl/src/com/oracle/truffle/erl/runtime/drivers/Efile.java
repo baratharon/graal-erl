@@ -42,15 +42,22 @@ package com.oracle.truffle.erl.runtime.drivers;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.nio.ByteBuffer;
 
+import com.oracle.truffle.erl.runtime.drivers.efile.CloseAction;
 import com.oracle.truffle.erl.runtime.drivers.efile.FstatAction;
 import com.oracle.truffle.erl.runtime.drivers.efile.OpenAction;
 import com.oracle.truffle.erl.runtime.drivers.efile.PwdAction;
+import com.oracle.truffle.erl.runtime.drivers.efile.ReadAction;
 import com.oracle.truffle.erl.runtime.drivers.efile.ReadDirAction;
 import com.oracle.truffle.erl.runtime.drivers.efile.ReadFileAction;
+import com.oracle.truffle.erl.runtime.drivers.efile.SeekAction;
+import com.oracle.truffle.erl.runtime.drivers.efile.WriteAction;
 import com.oracle.truffle.erl.runtime.misc.PortOptions;
 
 public final class Efile extends Driver {
+
+    private FDFile openedFile = null;
 
     public static String getDriverName() {
         return "efile";
@@ -62,7 +69,9 @@ public final class Efile extends Driver {
 
     @Override
     protected void closeDriver() {
-        // nothing to do here
+        if (null != openedFile) {
+            openedFile.close();
+        }
     }
 
     public static Efile create(@SuppressWarnings("unused") String command, PortOptions po) {
@@ -81,16 +90,45 @@ public final class Efile extends Driver {
         }
     };
 
+    /**
+     * The efile has a quite strange behavior when opening files. Only one file can be opened at the
+     * same time. In order to protect ourself from keeping garbage (file descriptors that are
+     * unaccessible from Erlang), we simply close the previous file.
+     */
+    public void registerOpenedFile(FDFile file) {
+
+        if (null != openedFile) {
+            openedFile.close();
+        }
+
+        openedFile = file;
+    }
+
     @Override
     protected AsyncAction parseCommand(byte[] data) {
 
         switch (data[0]) {
 
             case FILE_OPEN: {
-
                 final String name = (data.length >= 6 && 0 == data[data.length - 1]) ? (new String(data, 5, data.length - 6)) : null;
                 final int mode = extractIntMSB(data, 1);
-                return new OpenAction(name, mode);
+                return new OpenAction(this, name, mode);
+            }
+
+            case FILE_READ: {
+                final long size = extractLongMSB(data, 1);
+                return new ReadAction(openedFile, size);
+            }
+
+            case FILE_LSEEK: {
+                final long offset = extractLongMSB(data, 1);
+                final int whence = extractIntMSB(data, 1 + 8);
+                return new SeekAction(openedFile, offset, whence);
+            }
+
+            case FILE_WRITE: {
+                final ByteBuffer buf = ByteBuffer.wrap(data, 1, data.length - 1);
+                return new WriteAction(openedFile, buf);
             }
 
             case FILE_FSTAT:
@@ -104,15 +142,19 @@ public final class Efile extends Driver {
             }
 
             case FILE_READ_FILE: {
-
                 final String name = (data.length >= 3 && 0 == data[data.length - 1]) ? (new String(data, 1, data.length - 2)) : null;
                 return new ReadFileAction(name);
             }
 
             case FILE_READDIR: {
-
                 final String name = (data.length >= 3 && 0 == data[data.length - 1]) ? (new String(data, 1, data.length - 2)) : null;
                 return new ReadDirAction(name);
+            }
+
+            case FILE_CLOSE: {
+                final FDFile file = openedFile;
+                openedFile = null;
+                return new CloseAction(file);
             }
         }
 
