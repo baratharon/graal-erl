@@ -40,6 +40,8 @@
  */
 package com.oracle.truffle.erl.runtime;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
 
@@ -64,6 +66,11 @@ public final class ErlBinary implements TruffleObject {
         this.bytes = bytes;
 
         assert null != bytes;
+    }
+
+    public static ErlBinary fromString(final String str, Charset charset) {
+        ByteBuffer bb = charset.encode(str);
+        return new ErlBinary(0, Arrays.copyOf(bb.array(), bb.limit()));
     }
 
     public static ErlBinary fromArray(byte[] bytes) {

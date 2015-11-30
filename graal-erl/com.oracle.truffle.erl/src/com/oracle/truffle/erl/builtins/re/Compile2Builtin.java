@@ -38,50 +38,42 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.oracle.truffle.erl.builtins.erlang;
+package com.oracle.truffle.erl.builtins.re;
 
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.erl.MFA;
 import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
-import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
-import com.oracle.truffle.erl.runtime.ErlAtom;
-import com.oracle.truffle.erl.runtime.ErlBinary;
-import com.oracle.truffle.erl.runtime.ErlContext;
+import com.oracle.truffle.erl.runtime.ErlList;
+import com.oracle.truffle.erl.runtime.ErlTuple;
+import com.oracle.truffle.erl.runtime.misc.CompiledRegex;
 
 /**
- * Returns a binary which corresponds to the text representation of Atom. If Encoding is latin1,
- * there will be one byte for each character in the text representation. If Encoding is utf8 or
- * unicode, the characters will be encoded using UTF-8 (meaning that characters from 16#80 up to
- * 0xFF will be encoded in two bytes).
+ * This function compiles a regular expression with the syntax described below into an internal
+ * format to be used later as a parameter to the run/2,3 functions.
+ * <p>
+ * Compiling the regular expression before matching is useful if the same expression is to be used
+ * in matching against multiple subjects during the program's lifetime. Compiling once and executing
+ * many times is far more efficient than compiling each time one wants to match.
+ * <p>
+ * When the unicode option is given, the regular expression should be given as a valid Unicode
+ * charlist(), otherwise as any valid iodata().
  */
-@NodeInfo(shortName = "atomToBinary")
-public abstract class AtomToBinaryBuiltin extends ErlBuiltinNode {
+@NodeInfo(shortName = "compile")
+public abstract class Compile2Builtin extends ErlBuiltinNode {
 
-    public AtomToBinaryBuiltin() {
-        super(SourceSection.createUnavailable("Erlang builtin", "atom_to_binary"));
+    public Compile2Builtin() {
+        super(SourceSection.createUnavailable("Erlang builtin", "compile"));
     }
 
     @Override
     public MFA getName() {
-        return new MFA("erlang", "atom_to_binary", 2);
+        return new MFA("re", "compile", 2);
     }
 
     @Specialization
-    public ErlBinary atomToBinary(ErlAtom atom, ErlAtom encoding) {
-
-        if (ErlAtom.LATIN1.equals(encoding)) {
-            return ErlBinary.fromString(atom.getValue(), ErlContext.LATIN1_CHARSET);
-        } else if (ErlAtom.UNICODE.equals(encoding) || ErlAtom.UTF8.equals(encoding)) {
-            return ErlBinary.fromString(atom.getValue(), ErlContext.UTF8_CHARSET);
-        }
-
-        throw ErlControlException.makeBadarg();
-    }
-
-    @Specialization
-    public ErlBinary atomToBinary(Object arg1, Object arg2) {
-        return atomToBinary(ErlAtom.fromObject(arg1), ErlAtom.fromObject(arg2));
+    public ErlTuple compile(Object arg1, Object arg2) {
+        return CompiledRegex.compile(arg1, ErlList.fromObject(arg2)).toTuple();
     }
 }

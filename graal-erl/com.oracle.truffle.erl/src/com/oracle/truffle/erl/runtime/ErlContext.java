@@ -48,7 +48,6 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.concurrent.ExecutionException;
@@ -77,6 +76,7 @@ import com.oracle.truffle.erl.runtime.builtins.MapsBuiltins;
 import com.oracle.truffle.erl.runtime.builtins.NetKernelBuiltins;
 import com.oracle.truffle.erl.runtime.builtins.OSBuiltins;
 import com.oracle.truffle.erl.runtime.builtins.PrimFileBuiltins;
+import com.oracle.truffle.erl.runtime.builtins.ReBuiltins;
 import com.oracle.truffle.erl.runtime.builtins.TruffleBuiltins;
 import com.oracle.truffle.erl.runtime.builtins.UnicodeBuiltins;
 
@@ -164,6 +164,7 @@ public final class ErlContext extends ExecutionContext {
         ETSBuiltins.install(this, registerRootNodes);
         OSBuiltins.install(this, registerRootNodes);
         IOBuiltins.install(this, registerRootNodes);
+        ReBuiltins.install(this, registerRootNodes);
     }
 
     public static ErlBuiltinNode makeBuiltin(NodeFactory<? extends ErlBuiltinNode> factory) {
@@ -442,16 +443,6 @@ public final class ErlContext extends ExecutionContext {
         }
 
         throw ErlControlException.makeBadarg();
-    }
-
-    public static byte[] stringToBytes(final String str, Charset charset) {
-
-        ByteBuffer bb = charset.encode(str);
-        return Arrays.copyOf(bb.array(), bb.limit());
-    }
-
-    public static ErlBinary stringToBinary(final String str, Charset charset) {
-        return ErlBinary.fromArray(stringToBytes(str, charset));
     }
 
     public enum NumberKind {

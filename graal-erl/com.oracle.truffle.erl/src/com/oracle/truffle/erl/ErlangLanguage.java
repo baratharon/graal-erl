@@ -174,11 +174,11 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
     private static ErlList buildInitArgs(String[] args) {
         ArrayList<Object> list = new ArrayList<>();
 
-        list.add(ErlContext.stringToBinary("-root", ErlContext.LATIN1_CHARSET));
-        list.add(ErlContext.stringToBinary(ERLANG_ROOT_DIRECTORY, ErlContext.LATIN1_CHARSET));
+        list.add(ErlBinary.fromString("-root", ErlContext.LATIN1_CHARSET));
+        list.add(ErlBinary.fromString(ERLANG_ROOT_DIRECTORY, ErlContext.LATIN1_CHARSET));
 
         for (String arg : args) {
-            list.add(ErlContext.stringToBinary(arg, ErlContext.LATIN1_CHARSET));
+            list.add(ErlBinary.fromString(arg, ErlContext.LATIN1_CHARSET));
         }
 
         return ErlList.fromList(list);

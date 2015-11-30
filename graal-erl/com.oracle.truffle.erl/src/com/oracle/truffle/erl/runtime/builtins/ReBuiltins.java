@@ -38,50 +38,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.oracle.truffle.erl.builtins.erlang;
+package com.oracle.truffle.erl.runtime.builtins;
 
-import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.nodes.NodeInfo;
-import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.erl.MFA;
-import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
-import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
-import com.oracle.truffle.erl.runtime.ErlAtom;
-import com.oracle.truffle.erl.runtime.ErlBinary;
+import com.oracle.truffle.erl.builtins.re.Compile1BuiltinFactory;
+import com.oracle.truffle.erl.builtins.re.Compile2BuiltinFactory;
+import com.oracle.truffle.erl.builtins.re.Run2BuiltinFactory;
+import com.oracle.truffle.erl.builtins.re.Run3BuiltinFactory;
 import com.oracle.truffle.erl.runtime.ErlContext;
 
-/**
- * Returns a binary which corresponds to the text representation of Atom. If Encoding is latin1,
- * there will be one byte for each character in the text representation. If Encoding is utf8 or
- * unicode, the characters will be encoded using UTF-8 (meaning that characters from 16#80 up to
- * 0xFF will be encoded in two bytes).
- */
-@NodeInfo(shortName = "atomToBinary")
-public abstract class AtomToBinaryBuiltin extends ErlBuiltinNode {
+public final class ReBuiltins {
 
-    public AtomToBinaryBuiltin() {
-        super(SourceSection.createUnavailable("Erlang builtin", "atom_to_binary"));
-    }
-
-    @Override
-    public MFA getName() {
-        return new MFA("erlang", "atom_to_binary", 2);
-    }
-
-    @Specialization
-    public ErlBinary atomToBinary(ErlAtom atom, ErlAtom encoding) {
-
-        if (ErlAtom.LATIN1.equals(encoding)) {
-            return ErlBinary.fromString(atom.getValue(), ErlContext.LATIN1_CHARSET);
-        } else if (ErlAtom.UNICODE.equals(encoding) || ErlAtom.UTF8.equals(encoding)) {
-            return ErlBinary.fromString(atom.getValue(), ErlContext.UTF8_CHARSET);
-        }
-
-        throw ErlControlException.makeBadarg();
-    }
-
-    @Specialization
-    public ErlBinary atomToBinary(Object arg1, Object arg2) {
-        return atomToBinary(ErlAtom.fromObject(arg1), ErlAtom.fromObject(arg2));
+    public static void install(ErlContext context, final boolean registerRootNodes) {
+        context.installBuiltin(Compile1BuiltinFactory.getInstance(), registerRootNodes);
+        context.installBuiltin(Compile2BuiltinFactory.getInstance(), registerRootNodes);
+        context.installBuiltin(Run2BuiltinFactory.getInstance(), registerRootNodes);
+        context.installBuiltin(Run3BuiltinFactory.getInstance(), registerRootNodes);
+        boolean TODO = true;
+        // re:inspect/2 // TODO
     }
 }

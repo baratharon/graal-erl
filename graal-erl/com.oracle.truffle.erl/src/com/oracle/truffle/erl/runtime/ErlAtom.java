@@ -150,6 +150,8 @@ public final class ErlAtom implements TruffleObject {
     public static final ErlAtom RUNNING = new ErlAtom("running");
     public static final ErlAtom RUNNABLE = new ErlAtom("runnable");
     public static final ErlAtom BINARY = new ErlAtom("binary");
+    public static final ErlAtom INDEX = new ErlAtom("index");
+    public static final ErlAtom LIST = new ErlAtom("list");
     public static final ErlAtom IN = new ErlAtom("in");
     public static final ErlAtom OUT = new ErlAtom("out");
     public static final ErlAtom EOF = new ErlAtom("eof");
@@ -158,6 +160,21 @@ public final class ErlAtom implements TruffleObject {
     public static final ErlAtom COMMAND = new ErlAtom("command");
     public static final ErlAtom CONNECT = new ErlAtom("connect");
     public static final ErlAtom VERSION = new ErlAtom("version");
+    public static final ErlAtom ALL = new ErlAtom("all");
+    public static final ErlAtom ALL_NAMES = new ErlAtom("all_names");
+    public static final ErlAtom ALL_BUT_FIRST = new ErlAtom("all_but_first");
+    public static final ErlAtom FIRST = new ErlAtom("first");
+    public static final ErlAtom LAST = new ErlAtom("last");
+    public static final ErlAtom RE_PATTERN = new ErlAtom("re_pattern");
+    public static final ErlAtom CR = new ErlAtom("cr");
+    public static final ErlAtom LF = new ErlAtom("lf");
+    public static final ErlAtom CRLF = new ErlAtom("crlf");
+    public static final ErlAtom ANYCRLF = new ErlAtom("anycrlf");
+    public static final ErlAtom ANY = new ErlAtom("any");
+    public static final ErlAtom MATCH = new ErlAtom("match");
+    public static final ErlAtom NOMATCH = new ErlAtom("nomatch");
+    public static final ErlAtom ANCHORED = new ErlAtom("anchored");
+    public static final ErlAtom GLOBAL = new ErlAtom("global");
 
     public static ErlAtom fromBoolean(boolean value) {
         if (value) {
@@ -188,7 +205,7 @@ public final class ErlAtom implements TruffleObject {
 
     public String getValue() {
 
-        // TODO: remove it and replace with a string->int mapping
+        // TODO: remove it and replace with a string->int mapping?
         boolean TODO_remove = true;
 
         return value;

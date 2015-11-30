@@ -38,50 +38,36 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.oracle.truffle.erl.builtins.erlang;
+package com.oracle.truffle.erl.builtins.re;
 
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.erl.MFA;
 import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
-import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
-import com.oracle.truffle.erl.runtime.ErlAtom;
-import com.oracle.truffle.erl.runtime.ErlBinary;
-import com.oracle.truffle.erl.runtime.ErlContext;
+import com.oracle.truffle.erl.runtime.ErlList;
+import com.oracle.truffle.erl.runtime.misc.CompiledRegex;
 
 /**
- * Returns a binary which corresponds to the text representation of Atom. If Encoding is latin1,
- * there will be one byte for each character in the text representation. If Encoding is utf8 or
- * unicode, the characters will be encoded using UTF-8 (meaning that characters from 16#80 up to
- * 0xFF will be encoded in two bytes).
+ * Executes a regexp matching, returning match/{match, Captured} or nomatch. The regular expression
+ * can be given either as iodata() in which case it is automatically compiled (as by re:compile/2)
+ * and executed, or as a pre-compiled mp() in which case it is executed against the subject
+ * directly.
  */
-@NodeInfo(shortName = "atomToBinary")
-public abstract class AtomToBinaryBuiltin extends ErlBuiltinNode {
+@NodeInfo(shortName = "run")
+public abstract class Run3Builtin extends ErlBuiltinNode {
 
-    public AtomToBinaryBuiltin() {
-        super(SourceSection.createUnavailable("Erlang builtin", "atom_to_binary"));
+    public Run3Builtin() {
+        super(SourceSection.createUnavailable("Erlang builtin", "run"));
     }
 
     @Override
     public MFA getName() {
-        return new MFA("erlang", "atom_to_binary", 2);
+        return new MFA("re", "run", 3);
     }
 
     @Specialization
-    public ErlBinary atomToBinary(ErlAtom atom, ErlAtom encoding) {
-
-        if (ErlAtom.LATIN1.equals(encoding)) {
-            return ErlBinary.fromString(atom.getValue(), ErlContext.LATIN1_CHARSET);
-        } else if (ErlAtom.UNICODE.equals(encoding) || ErlAtom.UTF8.equals(encoding)) {
-            return ErlBinary.fromString(atom.getValue(), ErlContext.UTF8_CHARSET);
-        }
-
-        throw ErlControlException.makeBadarg();
-    }
-
-    @Specialization
-    public ErlBinary atomToBinary(Object arg1, Object arg2) {
-        return atomToBinary(ErlAtom.fromObject(arg1), ErlAtom.fromObject(arg2));
+    public Object run(Object arg1, Object arg2, Object arg3) {
+        return CompiledRegex.run(arg1, arg2, ErlList.fromObject(arg3));
     }
 }
