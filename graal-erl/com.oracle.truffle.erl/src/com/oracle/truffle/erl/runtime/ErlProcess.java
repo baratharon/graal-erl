@@ -309,7 +309,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         ErlProcess curr = getCurrentProcess();
 
         if (null != curr) {
-            setGroupLeader(curr.pid);
+            setGroupLeader(curr.groupLeader);
         } else {
             setGroupLeader(this.pid);
         }
