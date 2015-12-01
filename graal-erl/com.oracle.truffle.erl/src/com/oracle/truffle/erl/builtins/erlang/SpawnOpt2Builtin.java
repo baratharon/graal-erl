@@ -78,7 +78,7 @@ public abstract class SpawnOpt2Builtin extends ErlBuiltinNode {
 
         SpawnOptions so = SpawnOptions.parse(opts);
 
-        ErlPid pid = ErlProcess.spawn(ErlProcess.getContext(), so.link(), so.monitorRef(), func, func.getModule(), func.getName(), NO_ARGS).getPid();
+        ErlPid pid = ErlProcess.spawn(ErlProcess.getContext(), so.link(), so.monitorRef(), func, NO_ARGS).getPid();
 
         if (so.hasMonitorOption()) {
             return new ErlTuple(pid, so.monitorRef()[0]);

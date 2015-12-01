@@ -268,8 +268,6 @@ public final class ErlProcess implements Callable<Object>, Registrable {
     private final ErlContext context;
     private final ErlPid pid;
     private final ErlFunction initialFunction;
-    private final String initialModuleName;
-    private final String initialFunctionName;
     private final Object[] initialArguments;
     private final LinkedBlockingDeque<Object> messageQueueIn = new LinkedBlockingDeque<>();
     private final LinkedList<Object> messageQueue = new LinkedList<>();
@@ -288,12 +286,10 @@ public final class ErlProcess implements Callable<Object>, Registrable {
     private boolean trapExit = false;
     private boolean monitorNodes = false;
 
-    private ErlProcess(ErlContext context, ErlProcess linkWith, ErlRef[] monitorRef, ErlFunction function, String moduleName, String functionName, Object... arguments) {
+    private ErlProcess(ErlContext context, ErlProcess linkWith, ErlRef[] monitorRef, ErlFunction function, Object... arguments) {
         this.context = context;
         this.pid = ErlPid.make();
         this.initialFunction = function;
-        this.initialModuleName = moduleName;
-        this.initialFunctionName = functionName;
         this.initialArguments = Arrays.copyOf(arguments, arguments.length + 1);
         this.initialArguments[this.initialArguments.length - 1] = function.getContext();
         this.processManager = context.getProcessManager();
@@ -318,23 +314,15 @@ public final class ErlProcess implements Callable<Object>, Registrable {
     }
 
     public static ErlProcess spawn(ErlContext context, ErlFunction function, Object[] arguments) {
-        return new ErlProcess(context, null, null, function, function.getModule(), function.getName(), arguments);
+        return new ErlProcess(context, null, null, function, arguments);
     }
 
     public static ErlProcess spawn(ErlContext context, ErlProcess linkWith, ErlFunction function, Object[] arguments) {
-        return new ErlProcess(context, linkWith, null, function, function.getModule(), function.getName(), arguments);
+        return new ErlProcess(context, linkWith, null, function, arguments);
     }
 
-    public static ErlProcess spawn(ErlContext context, ErlFunction function, String moduleName, String functionName, Object[] arguments) {
-        return new ErlProcess(context, null, null, function, moduleName, functionName, arguments);
-    }
-
-    public static ErlProcess spawn(ErlContext context, ErlProcess linkWith, ErlRef[] monitorRef, ErlFunction function, String moduleName, String functionName, Object[] arguments) {
-        return new ErlProcess(context, linkWith, monitorRef, function, moduleName, functionName, arguments);
-    }
-
-    private int getArity() {
-        return initialArguments.length - 1;
+    public static ErlProcess spawn(ErlContext context, ErlProcess linkWith, ErlRef[] monitorRef, ErlFunction function, Object[] arguments) {
+        return new ErlProcess(context, linkWith, monitorRef, function, arguments);
     }
 
     public ErlPid getPid() {
@@ -959,7 +947,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
                     }
 
                 } else {
-                    ErlList desc = new ErlList(new ErlTuple(initialModuleName, initialFunctionName, getArity()), ErlList.NIL);
+                    ErlList desc = new ErlList(new ErlTuple(initialFunction.getModule(), initialFunction.getName(), initialFunction.getArity()), ErlList.NIL);
                     ErlControlException ex = ErlControlException.makeUndef(desc);
                     exitReason = ex.getDescribingTerm();
                     throw ex;

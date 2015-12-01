@@ -46,9 +46,9 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.erl.nodes.ErlExpressionNode;
-import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.runtime.ErlContext;
 import com.oracle.truffle.erl.runtime.ErlFunction;
+import com.oracle.truffle.erl.runtime.ErlModuleRegistry;
 import com.oracle.truffle.erl.runtime.ErlProcess;
 
 /**
@@ -74,17 +74,18 @@ public final class ErlFunctionLiteralNode extends ErlExpressionNode {
     public ErlFunction executeGeneric(VirtualFrame frame) {
         if (null == cachedFunction) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            ErlContext context = ErlProcess.getContext();
-            this.cachedFunction = context.getModuleRegistry().functionLookup(moduleName, funcName, arity);
+            final ErlContext context = ErlProcess.getContext();
+            final ErlModuleRegistry registry = context.getModuleRegistry();
+            this.cachedFunction = registry.functionLookup(moduleName, funcName, arity);
 
             // auto-imported BIF?
             if (null == this.cachedFunction) {
-                this.cachedFunction = context.getModuleRegistry().functionLookup("erlang", funcName, arity);
+                this.cachedFunction = registry.functionLookup("erlang", funcName, arity);
             }
 
             // still an unknown function?
             if (null == this.cachedFunction) {
-                throw ErlControlException.makeUndef();
+                this.cachedFunction = registry.makeFunction(moduleName, funcName, arity);
             }
         }
         return cachedFunction;

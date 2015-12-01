@@ -79,9 +79,9 @@ public abstract class Spawn3Builtin extends ErlBuiltinNode {
         Object[] args = arglist.toArray();
 
         ErlContext context = ErlProcess.getContext();
-        ErlFunction fun = context.getModuleRegistry().functionLookup(module.getValue(), func.getValue(), args.length);
+        ErlFunction fun = context.getModuleRegistry().makeFunction(module.getValue(), func.getValue(), args.length);
 
-        return ErlProcess.spawn(context, null, null, fun, module.getValue(), func.getValue(), args).getPid();
+        return ErlProcess.spawn(context, null, null, fun, args).getPid();
     }
 
     @Specialization
