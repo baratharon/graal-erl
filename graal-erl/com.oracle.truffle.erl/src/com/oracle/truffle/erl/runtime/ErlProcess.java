@@ -267,10 +267,10 @@ public final class ErlProcess implements Callable<Object>, Registrable {
 
     private final ErlContext context;
     private final ErlPid pid;
-    private final ErlFunction function;
-    private final String moduleName;
-    private final String functionName;
-    private final Object[] arguments;
+    private final ErlFunction initialFunction;
+    private final String initialModuleName;
+    private final String initialFunctionName;
+    private final Object[] initialArguments;
     private final LinkedBlockingDeque<Object> messageQueueIn = new LinkedBlockingDeque<>();
     private final LinkedList<Object> messageQueue = new LinkedList<>();
     private final HashSet<ErlProcess> links = new HashSet<>();
@@ -291,11 +291,11 @@ public final class ErlProcess implements Callable<Object>, Registrable {
     private ErlProcess(ErlContext context, ErlProcess linkWith, ErlRef[] monitorRef, ErlFunction function, String moduleName, String functionName, Object... arguments) {
         this.context = context;
         this.pid = ErlPid.make();
-        this.function = function;
-        this.moduleName = moduleName;
-        this.functionName = functionName;
-        this.arguments = Arrays.copyOf(arguments, arguments.length + 1);
-        this.arguments[this.arguments.length - 1] = function.getContext();
+        this.initialFunction = function;
+        this.initialModuleName = moduleName;
+        this.initialFunctionName = functionName;
+        this.initialArguments = Arrays.copyOf(arguments, arguments.length + 1);
+        this.initialArguments[this.initialArguments.length - 1] = function.getContext();
         this.processManager = context.getProcessManager();
 
         if (null != linkWith) {
@@ -309,9 +309,9 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         ErlProcess curr = getCurrentProcess();
 
         if (null != curr) {
-            setGroupLeader(processManager, curr.pid, this);
+            setGroupLeader(curr.pid);
         } else {
-            setGroupLeader(processManager, this.pid, this);
+            setGroupLeader(this.pid);
         }
 
         this.future = processManager.put(this);
@@ -334,7 +334,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
     }
 
     private int getArity() {
-        return arguments.length - 1;
+        return initialArguments.length - 1;
     }
 
     public ErlPid getPid() {
@@ -366,21 +366,18 @@ public final class ErlProcess implements Callable<Object>, Registrable {
                 throw ErlControlException.makeBadarg();
             }
 
-            setGroupLeader(pm, leaderPid, proc);
+            proc.setGroupLeader(leaderPid);
         }
     }
 
-    public static void setGroupLeader(ProcessManager pm, ErlPid leaderPid, ErlProcess proc) {
-        synchronized (pm.processes) {
+    private void setGroupLeader(ErlPid leaderPid) {
+        synchronized (processManager.processes) {
 
-            if (!leaderPid.equals(proc.pid) && null == pm.findProcess(leaderPid)) {
+            if (!leaderPid.equals(pid) && null == processManager.findProcess(leaderPid)) {
                 throw ErlControlException.makeBadarg();
             }
 
-            // TODO
-            boolean TODO = true;
-
-            proc.groupLeader = leaderPid;
+            groupLeader = leaderPid;
         }
     }
 
@@ -909,44 +906,48 @@ public final class ErlProcess implements Callable<Object>, Registrable {
     }
 
     public static void funcEnter(MFA mfa, VirtualFrame frame) {
-        if (LOG_LEVEL >= 2) {
-            System.err.println("" + getCurrentProcess().pid + " enter " + mfa);
-        }
+        // if (LOG_LEVEL >= 2) {
+        // System.err.println("" + getCurrentProcess().pid + " enter " + mfa);
+        // }
         getCurrentProcess().callStack.push(mfa);
 
-        if (LOG_LEVEL >= 3) {
-            Object[] args = frame.getArguments();
-            for (int i = 0, n = mfa.getArity(); i < n; ++i) {
-                ErlContext.getTermRank(args[i]);
-                System.err.println("" + getCurrentProcess().pid + "   arg[" + i + "] = " + args[i]);
-            }
-        }
+        // if (LOG_LEVEL >= 3) {
+        // Object[] args = frame.getArguments();
+        // for (int i = 0, n = mfa.getArity(); i < n; ++i) {
+        // ErlContext.getTermRank(args[i]);
+        // System.err.println("" + getCurrentProcess().pid + " arg[" + i + "] = " + args[i]);
+        // }
+        // }
     }
 
     public static void funcLeave() {
-        if (LOG_LEVEL >= 2) {
-            System.err.println("" + getCurrentProcess().pid + " leave " + getCurrentProcess().callStack.getFirst());
-        }
+        // if (LOG_LEVEL >= 2) {
+        // System.err.println("" + getCurrentProcess().pid + " leave " +
+        // getCurrentProcess().callStack.getFirst());
+        // }
         getCurrentProcess().callStack.pop();
     }
 
     @Override
     public String toString() {
-        return "" + pid + "/" + registeredName + " (initial=" + function + ", reason=" + exitReason + ")";
+        return "" + pid + "/" + registeredName + " (initial=" + initialFunction + ", reason=" + exitReason + ")";
     }
+
+    ErlFunction func;
+    Object[] args;
 
     @Override
     public Object call() {
         if (LOG_LEVEL >= 1) {
-            System.err.println("" + pid + " started at " + function);
+            System.err.println("" + pid + " started at " + initialFunction);
         }
         ProcessManager.processEntry(this);
         try {
 
-            if (null != function && null != function.getCallTarget()) {
+            if (null != initialFunction && null != initialFunction.getCallTarget()) {
 
-                ErlFunction func = function;
-                Object[] args = arguments;
+                /* ErlFunction */ func = initialFunction;
+                /* Object[] */ args = initialArguments;
 
                 for (;;) {
 
@@ -962,7 +963,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
                 }
 
             } else {
-                ErlList desc = new ErlList(new ErlTuple(moduleName, functionName, getArity()), ErlList.NIL);
+                ErlList desc = new ErlList(new ErlTuple(initialModuleName, initialFunctionName, getArity()), ErlList.NIL);
                 ErlControlException ex = ErlControlException.makeUndef(desc);
                 exitReason = ex.getDescribingTerm();
                 throw ex;
