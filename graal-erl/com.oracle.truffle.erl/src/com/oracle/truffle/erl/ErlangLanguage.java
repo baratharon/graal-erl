@@ -58,7 +58,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.vm.PolyglotEngine;
 import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
 import com.oracle.truffle.erl.nodes.ErlExpressionNode;
-import com.oracle.truffle.erl.nodes.call.ErlUndefinedFunctionException;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.nodes.instrument.ErlDefaultVisualizer;
 import com.oracle.truffle.erl.nodes.instrument.ErlExpressionWrapperNode;
@@ -352,8 +351,6 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
                     out.println(stringifyResult(future));
                 } catch (UnsupportedSpecializationException ex) {
                     out.println(formatTypeError(ex));
-                } catch (ErlUndefinedFunctionException ex) {
-                    out.println(String.format("Undefined function: %s", ex.getFunctionName()));
                 }
                 long end = System.nanoTime();
                 totalRuntime += end - start;
