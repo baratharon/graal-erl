@@ -195,8 +195,8 @@ public final class ErlContext extends ExecutionContext {
         }
     }
 
-    public static ErlRootNode wrapBuiltinBodyNode(final ErlBuiltinNode builtinBodyNode, final MFA mfa) {
-        return new ErlRootNode(new FrameDescriptor(), builtinBodyNode, mfa);
+    public static ErlRootNode wrapBuiltinBodyNode(final ErlExpressionNode nodeToWrap, final MFA mfa) {
+        return new ErlRootNode(new FrameDescriptor(), nodeToWrap, mfa);
     }
 
     public void installBuiltin(NodeFactory<? extends ErlBuiltinNode> factory, boolean registerRootNodes) {
@@ -214,6 +214,21 @@ public final class ErlContext extends ExecutionContext {
 
         /* Wrap the builtin in a RootNode. Truffle requires all AST to start with a RootNode. */
         ErlRootNode rootNode = wrapBuiltinBodyNode(builtinBodyNode, mfa);
+
+        if (registerRootNodes) {
+            /* Register the builtin function in our function registry. */
+            moduleRegistry.registerBIF(moduleName, funcName, arity, rootNode);
+        }
+    }
+
+    public void installWrappedExpressionBuiltin(final MFA mfa, ErlExpressionNode exprBodyNode, boolean registerRootNodes) {
+
+        final String moduleName = mfa.getModule();
+        final String funcName = mfa.getFunction();
+        final int arity = mfa.getArity();
+
+        /* Wrap the builtin in a RootNode. Truffle requires all AST to start with a RootNode. */
+        ErlRootNode rootNode = wrapBuiltinBodyNode(exprBodyNode, mfa);
 
         if (registerRootNodes) {
             /* Register the builtin function in our function registry. */

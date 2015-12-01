@@ -40,6 +40,8 @@
  */
 package com.oracle.truffle.erl.runtime.builtins;
 
+import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.erl.MFA;
 import com.oracle.truffle.erl.builtins.erlang.AbsBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.Adler1BuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.Adler2BuiltinFactory;
@@ -187,6 +189,33 @@ import com.oracle.truffle.erl.builtins.erlang.UnlinkBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.UnregisterBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.WhereisBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.YieldBuiltinFactory;
+import com.oracle.truffle.erl.nodes.ErlExpressionNode;
+import com.oracle.truffle.erl.nodes.expression.ErlAddNodeGen;
+import com.oracle.truffle.erl.nodes.expression.ErlBitshiftLeftNodeGen;
+import com.oracle.truffle.erl.nodes.expression.ErlBitshiftRightNodeGen;
+import com.oracle.truffle.erl.nodes.expression.ErlBitwiseAndNodeGen;
+import com.oracle.truffle.erl.nodes.expression.ErlBitwiseOrNodeGen;
+import com.oracle.truffle.erl.nodes.expression.ErlBitwiseXorNodeGen;
+import com.oracle.truffle.erl.nodes.expression.ErlEqualNodeGen;
+import com.oracle.truffle.erl.nodes.expression.ErlExactEqualNodeGen;
+import com.oracle.truffle.erl.nodes.expression.ErlFloatDivideNodeGen;
+import com.oracle.truffle.erl.nodes.expression.ErlIntegerDivideNodeGen;
+import com.oracle.truffle.erl.nodes.expression.ErlIntegerRemainderNodeGen;
+import com.oracle.truffle.erl.nodes.expression.ErlLessThanNodeGen;
+import com.oracle.truffle.erl.nodes.expression.ErlListAddNode;
+import com.oracle.truffle.erl.nodes.expression.ErlListSubtractNodeGen;
+import com.oracle.truffle.erl.nodes.expression.ErlLogicalAndNodeGen;
+import com.oracle.truffle.erl.nodes.expression.ErlLogicalNotNodeGen;
+import com.oracle.truffle.erl.nodes.expression.ErlLogicalOrNodeGen;
+import com.oracle.truffle.erl.nodes.expression.ErlLogicalXorNodeGen;
+import com.oracle.truffle.erl.nodes.expression.ErlMultiplyNodeGen;
+import com.oracle.truffle.erl.nodes.expression.ErlSendNodeGen;
+import com.oracle.truffle.erl.nodes.expression.ErlSubtractNodeGen;
+import com.oracle.truffle.erl.nodes.expression.ErlToBooleanNode;
+import com.oracle.truffle.erl.nodes.expression.ErlToBooleanNodeGen;
+import com.oracle.truffle.erl.nodes.expression.ErlUnaryBitwiseNotNodeGen;
+import com.oracle.truffle.erl.nodes.expression.ErlUnaryNegateNodeGen;
+import com.oracle.truffle.erl.nodes.local.ErlReadArgumentNode;
 import com.oracle.truffle.erl.runtime.ErlContext;
 
 public final class ErlangBuiltins {
@@ -339,5 +368,56 @@ public final class ErlangBuiltins {
         context.installBuiltin(PortCommand3BuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(PortControlBuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(PortCloseBuiltinFactory.getInstance(), registerRootNodes);
+
+        final SourceSection src = SourceSection.createUnavailable("Erlang builtin", "wrapped operator");
+
+        context.installWrappedExpressionBuiltin(fun("+", 2), ErlAddNodeGen.create(src, arg(0), arg(1)), registerRootNodes);
+        context.installWrappedExpressionBuiltin(fun("bsl", 2), ErlBitshiftLeftNodeGen.create(src, arg(0), arg(1)), registerRootNodes);
+        context.installWrappedExpressionBuiltin(fun("bsr", 2), ErlBitshiftRightNodeGen.create(src, arg(0), arg(1)), registerRootNodes);
+        context.installWrappedExpressionBuiltin(fun("band", 2), ErlBitwiseAndNodeGen.create(src, arg(0), arg(1)), registerRootNodes);
+        context.installWrappedExpressionBuiltin(fun("bor", 2), ErlBitwiseOrNodeGen.create(src, arg(0), arg(1)), registerRootNodes);
+        context.installWrappedExpressionBuiltin(fun("bxor", 2), ErlBitwiseXorNodeGen.create(src, arg(0), arg(1)), registerRootNodes);
+        context.installWrappedExpressionBuiltin(fun("==", 2), ErlEqualNodeGen.create(src, arg(0), arg(1)), registerRootNodes);
+        context.installWrappedExpressionBuiltin(fun("=:=", 2), ErlExactEqualNodeGen.create(src, arg(0), arg(1)), registerRootNodes);
+        context.installWrappedExpressionBuiltin(fun("/=", 2), ErlLogicalNotNodeGen.create(src, toBool(ErlEqualNodeGen.create(src, arg(0), arg(1)))), registerRootNodes);
+        context.installWrappedExpressionBuiltin(fun("=/=", 2), ErlLogicalNotNodeGen.create(src, toBool(ErlExactEqualNodeGen.create(src, arg(0), arg(1)))), registerRootNodes);
+        context.installWrappedExpressionBuiltin(fun("/", 2), ErlFloatDivideNodeGen.create(src, arg(0), arg(1)), registerRootNodes);
+        context.installWrappedExpressionBuiltin(fun("div", 2), ErlIntegerDivideNodeGen.create(src, arg(0), arg(1)), registerRootNodes);
+        context.installWrappedExpressionBuiltin(fun("rem", 2), ErlIntegerRemainderNodeGen.create(src, arg(0), arg(1)), registerRootNodes);
+        context.installWrappedExpressionBuiltin(fun("<", 2), ErlLessThanNodeGen.create(src, arg(0), arg(1)), registerRootNodes);
+        context.installWrappedExpressionBuiltin(fun(">=", 2), ErlLogicalNotNodeGen.create(src, toBool(ErlLessThanNodeGen.create(src, arg(0), arg(1)))), registerRootNodes);
+        context.installWrappedExpressionBuiltin(fun(">", 2), ErlLessThanNodeGen.create(src, arg(1), arg(0)), registerRootNodes);
+        context.installWrappedExpressionBuiltin(fun("=<", 2), ErlLogicalNotNodeGen.create(src, toBool(ErlLessThanNodeGen.create(src, arg(1), arg(0)))), registerRootNodes);
+        context.installWrappedExpressionBuiltin(fun("++", 2), new ErlListAddNode(src, arg(0), arg(1)), registerRootNodes);
+        context.installWrappedExpressionBuiltin(fun("--", 2), ErlListSubtractNodeGen.create(src, arg(0), arg(1)), registerRootNodes);
+        context.installWrappedExpressionBuiltin(fun("and", 2), ErlLogicalAndNodeGen.create(src, aBool(0), aBool(1)), registerRootNodes);
+        context.installWrappedExpressionBuiltin(fun("andalso", 2), ErlLogicalAndNodeGen.create(src, aBool(0), aBool(1)), registerRootNodes);
+        context.installWrappedExpressionBuiltin(fun("or", 2), ErlLogicalOrNodeGen.create(src, aBool(0), aBool(1)), registerRootNodes);
+        context.installWrappedExpressionBuiltin(fun("orelse", 2), ErlLogicalOrNodeGen.create(src, aBool(0), aBool(1)), registerRootNodes);
+        context.installWrappedExpressionBuiltin(fun("xor", 2), ErlLogicalXorNodeGen.create(src, aBool(0), aBool(1)), registerRootNodes);
+        context.installWrappedExpressionBuiltin(fun("not", 1), ErlLogicalNotNodeGen.create(src, aBool(0)), registerRootNodes);
+        context.installWrappedExpressionBuiltin(fun("*", 2), ErlMultiplyNodeGen.create(src, arg(0), arg(1)), registerRootNodes);
+        context.installWrappedExpressionBuiltin(fun("!", 2), ErlSendNodeGen.create(src, arg(0), arg(1)), registerRootNodes);
+        context.installWrappedExpressionBuiltin(fun("-", 2), ErlSubtractNodeGen.create(src, arg(0), arg(1)), registerRootNodes);
+        context.installWrappedExpressionBuiltin(fun("bnot", 1), ErlUnaryBitwiseNotNodeGen.create(src, arg(0)), registerRootNodes);
+        context.installWrappedExpressionBuiltin(fun("-", 1), ErlUnaryNegateNodeGen.create(src, arg(0)), registerRootNodes);
+    }
+
+    private static MFA fun(String name, int arity) {
+        return new MFA("erlang", name, arity);
+    }
+
+    private static final SourceSection builtinArgumentSourceSection = SourceSection.createUnavailable("Erlang builtin", "read argument");
+
+    private static ErlReadArgumentNode arg(int index) {
+        return new ErlReadArgumentNode(builtinArgumentSourceSection, index);
+    }
+
+    private static ErlToBooleanNode toBool(ErlExpressionNode expr) {
+        return ErlToBooleanNodeGen.create(builtinArgumentSourceSection, expr);
+    }
+
+    private static ErlToBooleanNode aBool(int index) {
+        return toBool(arg(index));
     }
 }
