@@ -166,7 +166,10 @@ public abstract class ErlPort implements TruffleObject, Registrable {
 
     protected void onClosed() {
         final ErlTuple msg = new ErlTuple(this, ErlAtom.CLOSED);
-        ErlProcess.getCurrentProcess().send(sendClosedTo, msg, false, false);
+        final ErlProcess proc = ErlProcess.getCurrentProcess();
+        if (null != proc) {
+            proc.send(sendClosedTo, msg, false, false);
+        }
         cleanup();
     }
 

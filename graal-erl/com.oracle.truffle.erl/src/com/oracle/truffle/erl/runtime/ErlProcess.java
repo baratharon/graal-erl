@@ -443,7 +443,12 @@ public final class ErlProcess implements Callable<Object>, Registrable {
     }
 
     public static boolean unregister(String name) {
-        return getCurrentProcess().processManager.unregister(name);
+        final ErlProcess proc = getCurrentProcess();
+        if (null != proc) {
+            return proc.processManager.unregister(name);
+        } else {
+            return false;
+        }
     }
 
     public static Set<String> getRegisteredNames() {
@@ -1001,10 +1006,15 @@ public final class ErlProcess implements Callable<Object>, Registrable {
 
     public static void removePort(ErlPort port) {
 
-        final ProcessManager pm = getCurrentProcess().processManager;
+        final ErlProcess proc = getCurrentProcess();
 
-        synchronized (pm.processes) {
-            pm.ports.remove(port);
+        if (null != proc) {
+
+            final ProcessManager pm = proc.processManager;
+
+            synchronized (pm.processes) {
+                pm.ports.remove(port);
+            }
         }
     }
 }
