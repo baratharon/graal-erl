@@ -221,8 +221,12 @@ class ErlAstParser {
 
     private long nextUniqueId = 1;
 
+    private String generateUniqueId() {
+        return "" + (nextUniqueId++);
+    }
+
     private String generateUniqueName() {
-        return "_" + SEPARATOR + (nextUniqueId++);
+        return "_" + SEPARATOR + generateUniqueId();
     }
 
     private void readNext() {
@@ -421,7 +425,6 @@ class ErlAstParser {
         StackableSet.CollectAccessOf<String> accessOf = new StackableSet.CollectAccessOf<>(boundVariables.get());
         boundVariables.monitorAdd(accessOf);
 
-        final String name = "fun" + generateUniqueName();
         int arity = ErlFunction.UNRESOLVED_ARITY;
         accept(',');
 
@@ -435,6 +438,7 @@ class ErlAstParser {
 
         // correct the arity
         arity = refArity[0];
+        final String name = "-fun-anon-" + generateUniqueId() + "-" + arity + "-";
 
         final ErlExpressionNode preludeNode = createPreludeNode(accessOf.access, fd);
         final ErlFunctionBodyNode bodyNode = new ErlFunctionBodyNode(null, preludeNode, selector);
@@ -1266,9 +1270,9 @@ class ErlAstParser {
         StackableSet.CollectAccessOf<String> accessOf = new StackableSet.CollectAccessOf<>(boundVariables.get());
         boundVariables.monitorAdd(accessOf);
 
-        final String name = "fun" + SEPARATOR + generateUniqueName();
         int arity = ErlFunction.UNRESOLVED_ARITY;
         int refArity[] = new int[]{arity};
+        final String name = "-fun/" + funName + "-" + generateUniqueId() + "-" + arity + "-";
 
         FrameDescriptor fd = fd0.shallowCopy();
         FrameSlot slot = fd.findOrAddFrameSlot(funName);
