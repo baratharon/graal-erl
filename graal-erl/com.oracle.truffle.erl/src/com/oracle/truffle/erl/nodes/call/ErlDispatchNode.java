@@ -47,6 +47,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.runtime.ErlFunction;
 
 public abstract class ErlDispatchNode extends Node {
@@ -56,8 +57,8 @@ public abstract class ErlDispatchNode extends Node {
     public abstract Object executeDispatch(VirtualFrame frame, ErlFunction function, Object[] arguments);
 
     @Specialization(guards = "function.getCallTarget() == null")
-    protected Object doUndefinedFunction(ErlFunction function, @SuppressWarnings("unused") Object[] arguments) {
-        throw new ErlUndefinedFunctionException(function.getModule(), function.getName(), function.getArity());
+    protected Object doUndefinedFunction(@SuppressWarnings("unused") ErlFunction function, @SuppressWarnings("unused") Object[] arguments) {
+        throw ErlControlException.makeUndef();
     }
 
     /**
