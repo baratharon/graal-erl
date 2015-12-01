@@ -82,6 +82,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         private final HashMap<ErlPid, ErlProcess> processes = new HashMap<>();
         private final HashMap<String, Registrable> registry = new HashMap<>();
         private final HashMap<ErlRef, TimerRef> timers = new HashMap<>();
+        private final HashSet<ErlPort> ports = new HashSet<>();
         private final Object processCountLock = new Object();
 
         private static final ThreadLocal<ErlProcess> currentProcess = new ThreadLocal<>();
@@ -98,12 +99,18 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         }
 
         public void close() {
+            close(null);
+        }
+
+        void close(final ErlProcess excludedProcess) {
             synchronized (processes) {
 
                 processes.forEach(new BiConsumer<ErlPid, ErlProcess>() {
 
                     public void accept(ErlPid pid, ErlProcess proc) {
-                        proc.future.cancel(true);
+                        if (excludedProcess != proc) {
+                            proc.future.cancel(true);
+                        }
                     }
                 });
 
@@ -114,9 +121,15 @@ public final class ErlProcess implements Callable<Object>, Registrable {
                     }
                 });
 
+                final ArrayList<ErlPort> portList = new ArrayList<>(ports);
+                for (ErlPort port : portList) {
+                    port.closeSync();
+                }
+
                 processes.clear();
                 timers.clear();
                 registry.clear();
+                ports.clear();
             }
 
             threadPool.shutdown();
@@ -338,7 +351,8 @@ public final class ErlProcess implements Callable<Object>, Registrable {
     }
 
     public static void halt() {
-        getCurrentProcess().processManager.close();
+        final ErlProcess proc = getCurrentProcess();
+        proc.processManager.close(proc);
     }
 
     public ErlPid getGroupLeader() {
@@ -537,11 +551,15 @@ public final class ErlProcess implements Callable<Object>, Registrable {
     }
 
     public static ErlRef sendAfter(long timeout, ErlPid destPid, Object msg) {
+
         SendAfter sa = new SendAfter(timeout, destPid, msg);
         final ProcessManager pm = getCurrentProcess().processManager;
         final Future<Object> future = pm.threadPool.submit(sa);
-        pm.timers.put(sa.ref, new TimerRef(future, timeout));
-        return sa.ref;
+
+        synchronized (pm.processes) {
+            pm.timers.put(sa.ref, new TimerRef(future, timeout));
+            return sa.ref;
+        }
     }
 
     public static ErlRef sendAfter(long timeout, ErlAtom destName, Object msg) {
@@ -558,14 +576,16 @@ public final class ErlProcess implements Callable<Object>, Registrable {
 
     public static Long cancelTimer(ErlRef ref) {
         final ProcessManager pm = getCurrentProcess().processManager;
-        final TimerRef timer = pm.timers.remove(ref);
+        synchronized (pm.processes) {
+            final TimerRef timer = pm.timers.remove(ref);
 
-        if (null != timer) {
-            timer.future.cancel(true);
-            return timer.getTimeLeft();
+            if (null != timer) {
+                timer.future.cancel(true);
+                return timer.getTimeLeft();
+            }
+
+            return null;
         }
-
-        return null;
     }
 
     public Object send(ErlPid destPid, Object msg, boolean nosuspend, boolean noconnect) {
@@ -967,6 +987,24 @@ public final class ErlProcess implements Callable<Object>, Registrable {
                 System.err.println("" + pid + " exited with " + exitReason);
             }
             processManager.processExit(this, exitReason);
+        }
+    }
+
+    public static void addPort(ErlPort port) {
+
+        final ProcessManager pm = getCurrentProcess().processManager;
+
+        synchronized (pm.processes) {
+            pm.ports.add(port);
+        }
+    }
+
+    public static void removePort(ErlPort port) {
+
+        final ProcessManager pm = getCurrentProcess().processManager;
+
+        synchronized (pm.processes) {
+            pm.ports.remove(port);
         }
     }
 }

@@ -73,6 +73,8 @@ public abstract class ErlPort implements TruffleObject, Registrable {
         this.ownerPid = ErlProcess.getSelfPid();
         this.sendClosedTo = this.ownerPid;
         this.links.add(this.ownerPid);
+
+        ErlProcess.addPort(this);
     }
 
     public static ErlPort fromObject(Object arg) {
@@ -136,6 +138,7 @@ public abstract class ErlPort implements TruffleObject, Registrable {
 
     private void cleanup() {
         links.clear();
+        ErlProcess.removePort(this);
         ErlProcess.unregister(registeredName);
     }
 
