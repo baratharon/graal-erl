@@ -46,6 +46,7 @@ import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
+import com.oracle.truffle.erl.runtime.misc.FunInfoItem;
 
 /**
  * Represents an Erlang function. On the Truffle level, a callable element is represented by a
@@ -173,17 +174,50 @@ public class ErlFunction implements TruffleObject {
 
     public int compare(ErlFunction rhs) {
 
-        final int m = module.compareTo(rhs.module);
-        if (0 != m) {
-            return m;
+        int res;
+
+        if (0 != (res = Integer.compare(arity, rhs.arity))) {
+            return res;
         }
 
-        final int n = name.compareTo(rhs.name);
-        if (0 != n) {
-            return n;
+        if (0 != (res = module.compareTo(rhs.module))) {
+            return res;
         }
 
-        return arity - rhs.arity;
+        if (0 != (res = name.compareTo(rhs.name))) {
+            return res;
+        }
+
+        return 0;
+    }
+
+    public ErlTuple getInfo(FunInfoItem item) {
+        switch (item) {
+            case TYPE: {
+                // hack: assume all functions are external functions, so now we don't have to
+                // provide lot of (currently) unknown information
+                return new ErlTuple(item.atom, ErlAtom.EXTERNAL);
+            }
+
+            case NAME: {
+                return new ErlTuple(item.atom, new ErlAtom(name));
+            }
+
+            case MODULE: {
+                return new ErlTuple(item.atom, new ErlAtom(module));
+            }
+
+            case ARITY: {
+                return new ErlTuple(item.atom, (long) arity);
+            }
+
+            case ENV: {
+                return new ErlTuple(item.atom, ErlList.NIL);
+            }
+
+            default:
+                return null;
+        }
     }
 
     /**

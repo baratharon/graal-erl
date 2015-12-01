@@ -159,6 +159,14 @@ public final class ErlAtom implements TruffleObject {
     public static final ErlAtom KILLED = new ErlAtom("killed");
     public static final ErlAtom COMMAND = new ErlAtom("command");
     public static final ErlAtom CONNECT = new ErlAtom("connect");
+    public static final ErlAtom ARITY = new ErlAtom("arity");
+    public static final ErlAtom ENV = new ErlAtom("env");
+    public static final ErlAtom UNIQ = new ErlAtom("uniq");
+    public static final ErlAtom NEW_UNIQ = new ErlAtom("new_uniq");
+    public static final ErlAtom NEW_INDEX = new ErlAtom("new_index");
+    public static final ErlAtom NAME = new ErlAtom("name");
+    public static final ErlAtom PID = new ErlAtom("pid");
+    public static final ErlAtom TYPE = new ErlAtom("type");
     public static final ErlAtom VERSION = new ErlAtom("version");
     public static final ErlAtom ALL = new ErlAtom("all");
     public static final ErlAtom ALL_NAMES = new ErlAtom("all_names");
@@ -175,6 +183,8 @@ public final class ErlAtom implements TruffleObject {
     public static final ErlAtom NOMATCH = new ErlAtom("nomatch");
     public static final ErlAtom ANCHORED = new ErlAtom("anchored");
     public static final ErlAtom GLOBAL = new ErlAtom("global");
+    public static final ErlAtom LOCAL = new ErlAtom("local");
+    public static final ErlAtom EXTERNAL = new ErlAtom("external");
 
     public static ErlAtom fromBoolean(boolean value) {
         if (value) {
