@@ -138,6 +138,10 @@ public class ErlFunction implements TruffleObject {
         return null;
     }
 
+    protected int getContextHash() {
+        return 0;
+    }
+
     public ErlFunction withContext(Object[] context) {
         if (Origin.ANONYMOUS == origin) {
             return new ErlFunctionWithContext(this, context);
@@ -189,6 +193,10 @@ public class ErlFunction implements TruffleObject {
         }
 
         if (0 != (res = name.compareTo(rhs.name))) {
+            return res;
+        }
+
+        if (0 != (res = Integer.compare(getContextHash(), rhs.getContextHash()))) {
             return res;
         }
 

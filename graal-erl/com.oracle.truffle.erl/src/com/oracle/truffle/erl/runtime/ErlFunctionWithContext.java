@@ -61,6 +61,14 @@ public final class ErlFunctionWithContext extends ErlFunction {
     }
 
     @Override
+    protected int getContextHash() {
+        if (null != context) {
+            return context.hashCode();
+        }
+        return super.getContextHash();
+    }
+
+    @Override
     public ErlFunction withContext(Object[] newContext) {
         return new ErlFunctionWithContext(this, newContext);
     }
