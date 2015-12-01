@@ -193,42 +193,24 @@ public abstract class Driver extends ErlPort {
 
     protected static int extractIntMSB(final byte[] data, final int offset) {
 
-        // unrolled loop by hand: probably this is the fastest way
+        int acc = Byte.toUnsignedInt(data[offset]);
 
-        int acc;
-
-        acc = Byte.toUnsignedInt(data[offset + 0]);
-        acc <<= 8;
-        acc |= Byte.toUnsignedInt(data[offset + 1]);
-        acc <<= 8;
-        acc |= Byte.toUnsignedInt(data[offset + 2]);
-        acc <<= 8;
-        acc |= Byte.toUnsignedInt(data[offset + 3]);
+        for (int i = 1; i < 4; ++i) {
+            acc <<= 8;
+            acc |= Byte.toUnsignedInt(data[offset + i]);
+        }
 
         return acc;
     }
 
     protected static long extractLongMSB(final byte[] data, final int offset) {
 
-        // unrolled loop by hand: probably this is the fastest way
+        long acc = Byte.toUnsignedLong(data[offset]);
 
-        long acc;
-
-        acc = Byte.toUnsignedLong(data[offset + 0]);
-        acc <<= 8;
-        acc |= Byte.toUnsignedLong(data[offset + 1]);
-        acc <<= 8;
-        acc |= Byte.toUnsignedLong(data[offset + 2]);
-        acc <<= 8;
-        acc |= Byte.toUnsignedLong(data[offset + 3]);
-        acc <<= 8;
-        acc |= Byte.toUnsignedLong(data[offset + 4]);
-        acc <<= 8;
-        acc |= Byte.toUnsignedLong(data[offset + 5]);
-        acc <<= 8;
-        acc |= Byte.toUnsignedLong(data[offset + 6]);
-        acc <<= 8;
-        acc |= Byte.toUnsignedLong(data[offset + 7]);
+        for (int i = 1; i < 8; ++i) {
+            acc <<= 8;
+            acc |= Byte.toUnsignedLong(data[offset + i]);
+        }
 
         return acc;
     }
