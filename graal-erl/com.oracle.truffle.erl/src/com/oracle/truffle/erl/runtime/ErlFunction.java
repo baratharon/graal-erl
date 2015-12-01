@@ -163,6 +163,10 @@ public class ErlFunction implements TruffleObject {
         return callTargetStable.getAssumption();
     }
 
+    public boolean isCallable() {
+        return null != callTarget;
+    }
+
     /**
      * This method is, e.g., called when using a function literal in a string concatenation. So
      * changing it has an effect on Erlang programs.

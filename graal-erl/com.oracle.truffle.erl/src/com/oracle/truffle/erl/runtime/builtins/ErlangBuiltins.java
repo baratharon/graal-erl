@@ -126,6 +126,7 @@ import com.oracle.truffle.erl.builtins.erlang.ListToInteger2BuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.ListToTupleBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.LocaltimeBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.LocaltimeToUniversaltimeBuiltinFactory;
+import com.oracle.truffle.erl.builtins.erlang.MakeFunBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.MakeRefBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.MakeTuple2BuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.MakeTuple3BuiltinFactory;
@@ -318,6 +319,7 @@ public final class ErlangBuiltins {
         context.installBuiltin(FunToListBuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(FunInfo1BuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(FunInfo2BuiltinFactory.getInstance(), registerRootNodes);
+        context.installBuiltin(MakeFunBuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(FunctionExportedBuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(DisplayBuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(TermToBinary1BuiltinFactory.getInstance(), registerRootNodes);

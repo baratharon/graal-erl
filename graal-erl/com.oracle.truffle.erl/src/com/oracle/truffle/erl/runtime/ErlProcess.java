@@ -933,9 +933,6 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         return "" + pid + "/" + registeredName + " (initial=" + initialFunction + ", reason=" + exitReason + ")";
     }
 
-    ErlFunction func;
-    Object[] args;
-
     @Override
     public Object call() {
         if (LOG_LEVEL >= 1) {
@@ -944,12 +941,12 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         ProcessManager.processEntry(this);
         try {
 
-            if (null != initialFunction && null != initialFunction.getCallTarget()) {
+            ErlFunction func = initialFunction;
+            Object[] args = initialArguments;
 
-                /* ErlFunction */ func = initialFunction;
-                /* Object[] */ args = initialArguments;
+            for (;;) {
 
-                for (;;) {
+                if (null != func && func.isCallable()) {
 
                     try {
                         return func.getCallTarget().call(args);
@@ -960,14 +957,15 @@ public final class ErlProcess implements Callable<Object>, Registrable {
                         args = Arrays.copyOf(args, args.length + 1);
                         args[args.length - 1] = func.getContext();
                     }
-                }
 
-            } else {
-                ErlList desc = new ErlList(new ErlTuple(initialModuleName, initialFunctionName, getArity()), ErlList.NIL);
-                ErlControlException ex = ErlControlException.makeUndef(desc);
-                exitReason = ex.getDescribingTerm();
-                throw ex;
+                } else {
+                    ErlList desc = new ErlList(new ErlTuple(initialModuleName, initialFunctionName, getArity()), ErlList.NIL);
+                    ErlControlException ex = ErlControlException.makeUndef(desc);
+                    exitReason = ex.getDescribingTerm();
+                    throw ex;
+                }
             }
+
         } catch (ErlExitProcessException ex) {
             return null;
         } catch (ErlControlException ex) {

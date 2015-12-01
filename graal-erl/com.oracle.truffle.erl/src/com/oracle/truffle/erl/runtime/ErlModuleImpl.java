@@ -96,14 +96,19 @@ public class ErlModuleImpl implements ErlModule {
 
             for (;;) {
 
-                try {
-                    return func.getCallTarget().call(args);
-                } catch (ErlTailCallException tailCallEx) {
+                if (null != func && func.isCallable()) {
 
-                    func = tailCallEx.getFunction();
-                    args = tailCallEx.getArguments();
-                    args = Arrays.copyOf(args, args.length + 1);
-                    args[args.length - 1] = func.getContext();
+                    try {
+                        return func.getCallTarget().call(args);
+                    } catch (ErlTailCallException tailCallEx) {
+
+                        func = tailCallEx.getFunction();
+                        args = tailCallEx.getArguments();
+                        args = Arrays.copyOf(args, args.length + 1);
+                        args[args.length - 1] = func.getContext();
+                    }
+                } else {
+                    return null;
                 }
             }
         }

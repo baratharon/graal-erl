@@ -125,6 +125,20 @@ public final class ErlModuleRegistry {
     }
 
     /**
+     * Makes a function reference. The returned function is not necessarily callable.
+     */
+    public synchronized ErlFunction makeFunction(String module, String func, int arity) {
+
+        final ErlFunction fun = functionLookup(new MFA(module, func, arity));
+
+        if (null != fun) {
+            return fun;
+        }
+
+        return new ErlFunction(module, func, arity, ErlFunction.Origin.REGULAR);
+    }
+
+    /**
      * Returns an unmodifiable set of the pre-loaded module names.
      */
     public synchronized Set<String> getPreLoadedModuleNames() {
