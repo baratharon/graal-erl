@@ -73,6 +73,7 @@ import com.oracle.truffle.erl.runtime.builtins.FileBuiltins;
 import com.oracle.truffle.erl.runtime.builtins.IOBuiltins;
 import com.oracle.truffle.erl.runtime.builtins.ListsBuiltins;
 import com.oracle.truffle.erl.runtime.builtins.MapsBuiltins;
+import com.oracle.truffle.erl.runtime.builtins.MathBuiltins;
 import com.oracle.truffle.erl.runtime.builtins.NetKernelBuiltins;
 import com.oracle.truffle.erl.runtime.builtins.OSBuiltins;
 import com.oracle.truffle.erl.runtime.builtins.PrimFileBuiltins;
@@ -165,6 +166,7 @@ public final class ErlContext extends ExecutionContext {
         OSBuiltins.install(this, registerRootNodes);
         IOBuiltins.install(this, registerRootNodes);
         ReBuiltins.install(this, registerRootNodes);
+        MathBuiltins.install(this, registerRootNodes);
     }
 
     public static ErlBuiltinNode makeBuiltin(NodeFactory<? extends ErlBuiltinNode> factory) {
@@ -430,6 +432,24 @@ public final class ErlContext extends ExecutionContext {
         if (obj instanceof Double) {
 
             return (double) obj;
+        }
+
+        throw ErlControlException.makeBadarg();
+    }
+
+    public static double toDouble(Object obj) {
+
+        if (obj instanceof Double) {
+
+            return (double) obj;
+
+        } else if (obj instanceof Long) {
+
+            return (long) obj;
+
+        } else if (obj instanceof BigInteger) {
+
+            return ((BigInteger) obj).doubleValue();
         }
 
         throw ErlControlException.makeBadarg();
