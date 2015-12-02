@@ -17,3 +17,5 @@ bin
 src_gen
 savedDeps
 erl_crash.dump
+erlang/*.erl
+erlang/*.ast
