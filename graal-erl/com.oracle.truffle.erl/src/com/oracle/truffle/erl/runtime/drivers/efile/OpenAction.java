@@ -71,9 +71,9 @@ public class OpenAction extends AsyncActionSingle {
         }
 
         try {
-            final File file = new File(name);
+            final File file = new File(name).getAbsoluteFile();
 
-            if (file.exists() && !file.isFile()) {
+            if (null == file || (file.exists() && !file.isFile())) {
                 addResult(new ErlList((long) Driver.FILE_RESP_ERROR, Driver.EISDIR));
                 return Result.ERROR;
             }
@@ -96,7 +96,7 @@ public class OpenAction extends AsyncActionSingle {
                 openMode = null;
             }
 
-            if (write && !file.exists() && !file.getParentFile().canWrite()) {
+            if (write && !file.exists() && (null == file.getParentFile() || !file.getParentFile().canWrite())) {
                 addResult(new ErlList((long) Driver.FILE_RESP_ERROR, Driver.EPERM));
                 return Result.ERROR;
             }
