@@ -1272,7 +1272,6 @@ class ErlAstParser {
 
         int arity = ErlFunction.UNRESOLVED_ARITY;
         int refArity[] = new int[]{arity};
-        final String name = "-fun/" + funName + "-" + generateUniqueId() + "-" + arity + "-";
 
         FrameDescriptor fd = fd0.shallowCopy();
         FrameSlot slot = fd.findOrAddFrameSlot(funName);
@@ -1283,6 +1282,7 @@ class ErlAstParser {
         // correct the arity
         arity = refArity[0];
 
+        final String name = "-fun/" + funName + "-" + generateUniqueId() + "-" + arity + "-";
         boundVariables.monitorRemove(accessOf);
         accessOf.access.remove(funName);
 
