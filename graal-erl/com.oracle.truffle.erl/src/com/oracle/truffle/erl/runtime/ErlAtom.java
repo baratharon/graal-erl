@@ -173,6 +173,9 @@ public final class ErlAtom implements TruffleObject {
     public static final ErlAtom ALL_BUT_FIRST = new ErlAtom("all_but_first");
     public static final ErlAtom FIRST = new ErlAtom("first");
     public static final ErlAtom LAST = new ErlAtom("last");
+    public static final ErlAtom COMPACT = new ErlAtom("compact");
+    public static final ErlAtom SCIENTIFIC = new ErlAtom("scientific");
+    public static final ErlAtom DECIMALS = new ErlAtom("decimals");
     public static final ErlAtom RE_PATTERN = new ErlAtom("re_pattern");
     public static final ErlAtom CR = new ErlAtom("cr");
     public static final ErlAtom LF = new ErlAtom("lf");

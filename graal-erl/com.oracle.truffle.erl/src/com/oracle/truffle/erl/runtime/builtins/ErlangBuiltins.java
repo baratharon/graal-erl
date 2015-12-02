@@ -77,6 +77,8 @@ import com.oracle.truffle.erl.builtins.erlang.Error2BuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.Exit1BuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.Exit2BuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.FloatBuiltinFactory;
+import com.oracle.truffle.erl.builtins.erlang.FloatToList1BuiltinFactory;
+import com.oracle.truffle.erl.builtins.erlang.FloatToList2BuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.FunInfo1BuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.FunInfo2BuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.FunToListBuiltinFactory;
@@ -305,6 +307,8 @@ public final class ErlangBuiltins {
         context.installBuiltin(IntegerToList2BuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(SelfBuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(ListToFloatBuiltinFactory.getInstance(), registerRootNodes);
+        context.installBuiltin(FloatToList1BuiltinFactory.getInstance(), registerRootNodes);
+        context.installBuiltin(FloatToList2BuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(Node0BuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(Node1BuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(YieldBuiltinFactory.getInstance(), registerRootNodes);

@@ -425,6 +425,16 @@ public final class ErlContext extends ExecutionContext {
         throw ErlControlException.makeBadarg();
     }
 
+    public static double decodeDouble(Object obj) {
+
+        if (obj instanceof Double) {
+
+            return (double) obj;
+        }
+
+        throw ErlControlException.makeBadarg();
+    }
+
     public static long decodeLong(Object obj) {
 
         if (obj instanceof Long) {
