@@ -48,6 +48,10 @@ import com.oracle.truffle.erl.runtime.ErlList;
 
 public final class IntegerConvert {
 
+    // don't instantiate this
+    private IntegerConvert() {
+    }
+
     public static Object listToInteger(ErlList list_, final BigInteger biBase, final long lBase) {
 
         if (lBase < 2 || lBase > 36) {
