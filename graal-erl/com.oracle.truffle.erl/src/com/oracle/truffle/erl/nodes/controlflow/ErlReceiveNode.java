@@ -121,9 +121,10 @@ public final class ErlReceiveNode extends ErlExpressionNode {
             return afterNode.executeGeneric(frame);
         }
 
-        final long endTime = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeout);
+        final long startTime = System.nanoTime();
+        final long timeoutNanos = TimeUnit.MILLISECONDS.toNanos(timeout);
 
-        while (timeout < 0 || System.nanoTime() < endTime) {
+        while (timeout < 0 || (System.nanoTime() - startTime) <= timeoutNanos) {
 
             Object receivedTerm;
 
@@ -132,7 +133,7 @@ public final class ErlReceiveNode extends ErlExpressionNode {
                 receivedTerm = proc.receiveMessage();
             } else {
                 // System.err.println("" + ErlProcess.getSelfPid() + " #### wait time " + timeout);
-                receivedTerm = proc.receiveMessage(TimeUnit.NANOSECONDS.toMillis(endTime - System.nanoTime()));
+                receivedTerm = proc.receiveMessage(TimeUnit.NANOSECONDS.toMillis(startTime + timeoutNanos - System.nanoTime()));
             }
 
             if (null == receivedTerm) {

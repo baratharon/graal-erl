@@ -76,6 +76,7 @@ import com.oracle.truffle.erl.runtime.builtins.MapsBuiltins;
 import com.oracle.truffle.erl.runtime.builtins.MathBuiltins;
 import com.oracle.truffle.erl.runtime.builtins.NetKernelBuiltins;
 import com.oracle.truffle.erl.runtime.builtins.OSBuiltins;
+import com.oracle.truffle.erl.runtime.builtins.PrimEvalBuiltins;
 import com.oracle.truffle.erl.runtime.builtins.PrimFileBuiltins;
 import com.oracle.truffle.erl.runtime.builtins.ReBuiltins;
 import com.oracle.truffle.erl.runtime.builtins.TruffleBuiltins;
@@ -167,6 +168,7 @@ public final class ErlContext extends ExecutionContext {
         IOBuiltins.install(this, registerRootNodes);
         ReBuiltins.install(this, registerRootNodes);
         MathBuiltins.install(this, registerRootNodes);
+        PrimEvalBuiltins.install(this, registerRootNodes);
     }
 
     public static ErlBuiltinNode makeBuiltin(NodeFactory<? extends ErlBuiltinNode> factory) {

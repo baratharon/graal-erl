@@ -68,6 +68,7 @@ public final class ErlAtom implements TruffleObject {
     public static final ErlAtom CLOSE = new ErlAtom("close");
     public static final ErlAtom CLOSED = new ErlAtom("closed");
     public static final ErlAtom UNDEFINED = new ErlAtom("undefined");
+    public static final ErlAtom TIMEOUT = new ErlAtom("timeout");
     public static final ErlAtom OK = new ErlAtom("ok");
     public static final ErlAtom NORMAL = new ErlAtom("normal");
     public static final ErlAtom LOW = new ErlAtom("low");

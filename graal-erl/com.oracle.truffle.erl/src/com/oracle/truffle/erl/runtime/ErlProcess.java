@@ -303,8 +303,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         this.context = context;
         this.pid = ErlPid.make();
         this.initialFunction = function;
-        this.initialArguments = Arrays.copyOf(arguments, arguments.length + 1);
-        this.initialArguments[this.initialArguments.length - 1] = function.getContext();
+        this.initialArguments = arguments;
         this.processManager = context.getProcessManager();
 
         if (null != linkWith) {
@@ -1008,13 +1007,14 @@ public final class ErlProcess implements Callable<Object>, Registrable {
                 if (null != func && func.isCallable()) {
 
                     try {
+                        args = Arrays.copyOf(args, args.length + 1);
+                        args[args.length - 1] = func.getContext();
+
                         return func.getCallTarget().call(args);
                     } catch (ErlTailCallException tailCallEx) {
 
                         func = tailCallEx.getFunction();
                         args = tailCallEx.getArguments();
-                        args = Arrays.copyOf(args, args.length + 1);
-                        args[args.length - 1] = func.getContext();
                     }
 
                 } else {
