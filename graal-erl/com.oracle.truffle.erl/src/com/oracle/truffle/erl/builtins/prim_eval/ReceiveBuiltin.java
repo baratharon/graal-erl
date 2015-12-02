@@ -40,7 +40,6 @@
  */
 package com.oracle.truffle.erl.builtins.prim_eval;
 
-import java.math.BigInteger;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -71,6 +70,9 @@ public abstract class ReceiveBuiltin extends ErlBuiltinNode {
     }
 
     private static final class MatchFoundException extends RuntimeException {
+
+        private static final long serialVersionUID = 3704564919737216241L;
+
         final Object term;
 
         MatchFoundException(Object term) {
