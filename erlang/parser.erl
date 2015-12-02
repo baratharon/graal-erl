@@ -10,6 +10,8 @@
 -define(TRACE(Fmt, Args),ok).
 -endif.
 
+% ??Value
+
 main() ->
 	ast(parser, "/tmp/parser.ast", "/home/aron/jku/erlang/parser.erl").
 
@@ -75,6 +77,8 @@ parse(FileName) ->
 	#{
 		macros  =>
 		#{
+			'FILE'             => [{string, -1, filename:basename(FileName)}],
+			'MACHINE'          => [{string, -1, "BEAM"}],
 			erlang_daemon_port => [{integer, -1, 4369}],
 			epmd_dist_high     => [{integer, -1, 5}],
 			epmd_dist_low      => [{integer, -1, 5}],
@@ -339,6 +343,11 @@ collect_parametric_params(MacroName, Overloads, Actuals, Acc, Level, [Token={Tok
 collect_parametric_params(MacroName, Overloads, Actuals, Acc, Level, [Token | RestTokens]) ->
 	collect_parametric_params(MacroName, Overloads, Actuals, [Token | Acc], Level, RestTokens).
 
+replace_parametric_macro(ParamMap, Acc, [Q1={'?', _}, Q2={'?', _}, Tok={var, _, Var} | RepTokens], RestTokens) ->
+	case maps:find(Var, ParamMap) of
+		{ok, ParamValue} -> replace_parametric_macro(ParamMap, to_string(ParamValue) ++ Acc, RepTokens, RestTokens);
+		_                -> replace_parametric_macro(ParamMap, [Tok, Q2, Q1 | Acc], RepTokens, RestTokens)
+	end;
 replace_parametric_macro(ParamMap, Acc, [Tok={var, _, Var} | RepTokens], RestTokens) ->
 	case maps:find(Var, ParamMap) of
 		{ok, ParamValue} -> replace_parametric_macro(ParamMap, ParamValue ++ Acc, RepTokens, RestTokens);
@@ -955,3 +964,19 @@ simplify_simplify_step([_RevHead | RevTail], [".." | Tail]) ->
 	simplify_simplify_step(RevTail, Tail);
 simplify_simplify_step(Rev, List) ->
 	{Rev, List}.
+
+to_string(Tokens) ->
+	[{string, -1, string:join(to_string_impl([], Tokens), " ")}].
+
+to_string_impl(Acc, [{VarOrAtom, _, Atom} | Tail]) when atom == VarOrAtom; var == VarOrAtom ->
+	to_string_impl([atom_to_list(Atom) | Acc], Tail);
+to_string_impl(Acc, [{string, _, String} | Tail]) ->
+	to_string_impl([String | Acc], Tail);
+to_string_impl(Acc, [{integer, _, Integer} | Tail]) ->
+	to_string_impl([integer_to_list(Integer) | Acc], Tail);
+to_string_impl(Acc, [{float, _, Float} | Tail]) ->
+	to_string_impl([float_to_list(Float) | Acc], Tail);
+to_string_impl(Acc, [{Special, _} | Tail]) ->
+	to_string_impl([atom_to_list(Special) | Acc], Tail);
+to_string_impl(Acc, []) ->
+	Acc.
