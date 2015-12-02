@@ -901,6 +901,29 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         return pid.hashCode();
     }
 
+    public static void addPort(ErlPort port) {
+
+        final ProcessManager pm = getCurrentProcess().processManager;
+
+        synchronized (pm.processes) {
+            pm.ports.add(port);
+        }
+    }
+
+    public static void removePort(ErlPort port) {
+
+        final ErlProcess proc = getCurrentProcess();
+
+        if (null != proc) {
+
+            final ProcessManager pm = proc.processManager;
+
+            synchronized (pm.processes) {
+                pm.ports.remove(port);
+            }
+        }
+    }
+
     public static ErlList buildBackTraceAsList() {
         ErlList result = ErlList.NIL;
 
@@ -946,6 +969,10 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         return "" + pid + "/" + registeredName + " (initial=" + initialFunction + ", reason=" + exitReason + ")";
     }
 
+    public static Object evaluate(ErlFunction function, Object... arguments) {
+        return getCurrentProcess().evaluateFun(function, arguments);
+    }
+
     @Override
     public Object call() {
         if (LOG_LEVEL >= 1) {
@@ -953,9 +980,22 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         }
         ProcessManager.processEntry(this);
         try {
+            return evaluateFun(initialFunction, initialArguments);
+        } catch (ErlExitProcessException ex) {
+            return null;
+        } finally {
+            if (LOG_LEVEL >= 1) {
+                System.err.println("" + pid + " exited with " + exitReason);
+            }
+            processManager.processExit(this, exitReason);
+        }
+    }
 
-            ErlFunction func = initialFunction;
-            Object[] args = initialArguments;
+    private Object evaluateFun(ErlFunction function, Object... arguments) {
+        try {
+
+            ErlFunction func = function;
+            Object[] args = arguments;
 
             for (;;) {
 
@@ -972,49 +1012,19 @@ public final class ErlProcess implements Callable<Object>, Registrable {
                     }
 
                 } else {
-                    ErlList desc = new ErlList(new ErlTuple(initialFunction.getModule(), initialFunction.getName(), initialFunction.getArity()), ErlList.NIL);
+                    ErlList desc = new ErlList(new ErlTuple(func.getModule(), func.getName(), func.getArity()), ErlList.NIL);
                     ErlControlException ex = ErlControlException.makeUndef(desc);
                     exitReason = ex.getDescribingTerm();
                     throw ex;
                 }
             }
 
-        } catch (ErlExitProcessException ex) {
-            return null;
         } catch (ErlControlException ex) {
             exitReason = ex.getDescribingTerm();
             throw ex;
         } catch (Exception ex) {
             ex.printStackTrace();
             throw ex;
-        } finally {
-            if (LOG_LEVEL >= 1) {
-                System.err.println("" + pid + " exited with " + exitReason);
-            }
-            processManager.processExit(this, exitReason);
-        }
-    }
-
-    public static void addPort(ErlPort port) {
-
-        final ProcessManager pm = getCurrentProcess().processManager;
-
-        synchronized (pm.processes) {
-            pm.ports.add(port);
-        }
-    }
-
-    public static void removePort(ErlPort port) {
-
-        final ErlProcess proc = getCurrentProcess();
-
-        if (null != proc) {
-
-            final ProcessManager pm = proc.processManager;
-
-            synchronized (pm.processes) {
-                pm.ports.remove(port);
-            }
         }
     }
 }
