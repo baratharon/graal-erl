@@ -64,17 +64,8 @@ public abstract class AtomToListBuiltin extends ErlBuiltinNode {
     }
 
     @Specialization
-    @Deprecated
     public ErlList atomToList(ErlAtom atom) {
-
-        ErlList result = ErlList.NIL;
-        final String str = atom.getValue();
-
-        for (int i = str.length() - 1; i >= 0; --i) {
-            result = new ErlList((long) str.charAt(i), result);
-        }
-
-        return result;
+        return ErlList.fromString(atom.getValue());
     }
 
     @Specialization
