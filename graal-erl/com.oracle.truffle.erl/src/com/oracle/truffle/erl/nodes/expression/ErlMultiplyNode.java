@@ -81,4 +81,23 @@ public abstract class ErlMultiplyNode extends ErlBinaryNode {
         return left * right;
     }
 
+    @Specialization
+    protected double multiply(long left, double right) {
+        return left * right;
+    }
+
+    @Specialization
+    protected double multiply(double left, long right) {
+        return left * right;
+    }
+
+    @Specialization
+    protected double multiply(BigInteger left, double right) {
+        return left.doubleValue() * right;
+    }
+
+    @Specialization
+    protected double multiply(double left, BigInteger right) {
+        return left * right.doubleValue();
+    }
 }

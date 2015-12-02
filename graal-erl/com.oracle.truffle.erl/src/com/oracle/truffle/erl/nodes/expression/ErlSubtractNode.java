@@ -81,4 +81,23 @@ public abstract class ErlSubtractNode extends ErlBinaryNode {
         return left - right;
     }
 
+    @Specialization
+    protected double subtract(long left, double right) {
+        return left - right;
+    }
+
+    @Specialization
+    protected double subtract(double left, long right) {
+        return left - right;
+    }
+
+    @Specialization
+    protected double subtract(BigInteger left, double right) {
+        return left.doubleValue() - right;
+    }
+
+    @Specialization
+    protected double subtract(double left, BigInteger right) {
+        return left - right.doubleValue();
+    }
 }

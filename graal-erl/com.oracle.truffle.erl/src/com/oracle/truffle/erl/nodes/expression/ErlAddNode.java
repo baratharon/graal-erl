@@ -111,4 +111,23 @@ public abstract class ErlAddNode extends ErlBinaryNode {
         return left + right;
     }
 
+    @Specialization
+    protected double add(long left, double right) {
+        return left + right;
+    }
+
+    @Specialization
+    protected double add(double left, long right) {
+        return left + right;
+    }
+
+    @Specialization
+    protected double add(BigInteger left, double right) {
+        return left.doubleValue() + right;
+    }
+
+    @Specialization
+    protected double add(double left, BigInteger right) {
+        return left + right.doubleValue();
+    }
 }
