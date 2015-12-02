@@ -42,6 +42,7 @@ package com.oracle.truffle.erl.runtime.drivers;
 
 import java.util.ArrayList;
 
+import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.erl.runtime.ErlAtom;
 import com.oracle.truffle.erl.runtime.ErlList;
 import com.oracle.truffle.erl.runtime.ErlPid;
@@ -178,6 +179,7 @@ public abstract class Driver extends ErlPort {
 
     protected abstract void closeDriver();
 
+    @ExplodeLoop
     public static ErlList makeNumberResponse(long number) {
 
         ErlList list = ErlList.NIL;
@@ -191,6 +193,7 @@ public abstract class Driver extends ErlPort {
         return new ErlList((long) FILE_RESP_NUMBER, list);
     }
 
+    @ExplodeLoop
     protected static int extractIntMSB(final byte[] data, final int offset) {
 
         int acc = Byte.toUnsignedInt(data[offset]);
