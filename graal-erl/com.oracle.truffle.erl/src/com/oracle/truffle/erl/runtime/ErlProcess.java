@@ -970,7 +970,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
     }
 
     public static Object evaluate(ErlFunction function, Object... arguments) {
-        return getCurrentProcess().evaluateFun(function, arguments);
+        return getCurrentProcess().evaluateInProcess(function, arguments);
     }
 
     @Override
@@ -980,9 +980,12 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         }
         ProcessManager.processEntry(this);
         try {
-            return evaluateFun(initialFunction, initialArguments);
+            return evaluateInProcess(initialFunction, initialArguments);
         } catch (ErlExitProcessException ex) {
             return null;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw ex;
         } finally {
             if (LOG_LEVEL >= 1) {
                 System.err.println("" + pid + " exited with " + exitReason);
@@ -991,7 +994,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         }
     }
 
-    private Object evaluateFun(ErlFunction function, Object... arguments) {
+    private Object evaluateInProcess(ErlFunction function, Object... arguments) {
         try {
 
             ErlFunction func = function;
@@ -1021,9 +1024,6 @@ public final class ErlProcess implements Callable<Object>, Registrable {
 
         } catch (ErlControlException ex) {
             exitReason = ex.getDescribingTerm();
-            throw ex;
-        } catch (Exception ex) {
-            ex.printStackTrace();
             throw ex;
         }
     }
