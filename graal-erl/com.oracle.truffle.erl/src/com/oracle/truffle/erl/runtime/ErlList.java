@@ -324,6 +324,21 @@ public final class ErlList implements TruffleObject {
         return sbRaw.toString();
     }
 
+    public String toUnquotedString() {
+        final StringBuilder sb = new StringBuilder();
+
+        for (ErlList list = this; NIL != list; list = list.getTailList()) {
+            final int codepoint = ErlContext.decodeInt(list.head);
+            if (0 < codepoint && codepoint <= 255) {
+                sb.append((char) codepoint);
+            } else {
+                throw ErlControlException.makeBadarg();
+            }
+        }
+
+        return sb.toString();
+    }
+
     public Object getHead() {
         return head;
     }

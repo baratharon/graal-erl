@@ -123,6 +123,7 @@ import com.oracle.truffle.erl.builtins.erlang.LengthBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.LinkBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.ListToAtomBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.ListToBinaryBuiltinFactory;
+import com.oracle.truffle.erl.builtins.erlang.ListToFloatBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.ListToInteger1BuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.ListToInteger2BuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.ListToTupleBuiltinFactory;
@@ -303,6 +304,7 @@ public final class ErlangBuiltins {
         context.installBuiltin(IntegerToList1BuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(IntegerToList2BuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(SelfBuiltinFactory.getInstance(), registerRootNodes);
+        context.installBuiltin(ListToFloatBuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(Node0BuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(Node1BuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(YieldBuiltinFactory.getInstance(), registerRootNodes);
