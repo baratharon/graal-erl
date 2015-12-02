@@ -981,6 +981,9 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         ProcessManager.processEntry(this);
         try {
             return evaluateInProcess(initialFunction, initialArguments);
+        } catch (ErlControlException ex) {
+            exitReason = ex.getDescribingTerm();
+            throw ex;
         } catch (ErlExitProcessException ex) {
             return null;
         } catch (Exception ex) {
