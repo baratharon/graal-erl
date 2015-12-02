@@ -1287,7 +1287,8 @@ class ErlAstParser {
         accessOf.access.remove(funName);
 
         final ErlFunctionLiteralNode funclitNode = new ErlFunctionLiteralNode(null, moduleName, name, arity);
-        final ErlExpressionNode bindFunNode = new ErlMatchNode(null, variableNode, funclitNode);
+        final ErlExpressionNode funclitReplacementNode = createCaptureNode(funclitNode, accessOf.access, fd0);
+        final ErlExpressionNode bindFunNode = new ErlMatchNode(null, variableNode, funclitReplacementNode);
         final ErlExpressionNode preludeNode = createPreludeNode(accessOf.access, fd, bindFunNode);
         ErlFunctionBodyNode bodyNode = new ErlFunctionBodyNode(null, preludeNode, selector);
         bodyNode.markAsTail();
@@ -1300,7 +1301,7 @@ class ErlAstParser {
         assert func.getName().equals(name);
         assert func.getArity() == arity;
 
-        return createCaptureNode(funclitNode, accessOf.access, fd0);
+        return funclitReplacementNode;
     }
 
     private ErlExpressionNode parseFunAsFunction(FrameDescriptor fd) {
