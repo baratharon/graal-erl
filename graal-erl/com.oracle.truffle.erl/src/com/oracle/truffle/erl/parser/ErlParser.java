@@ -156,11 +156,11 @@ public class ErlParser {
                 astFile.delete();
                 astFile = null;
 
-                throw new RuntimeException("Failed to parse Erlang source.");
+                exitCode = Integer.MIN_VALUE;
             }
 
             if (0 != exitCode) {
-                throw new RuntimeException("Failed to parse Erlang source.");
+                throw new RuntimeException("Failed to parse Erlang source. Is \"erl\" accessable? Is \"parser.erl\" compiled and accessable?");
             }
 
             sourceFile.delete();
