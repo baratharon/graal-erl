@@ -88,6 +88,11 @@ used what the "erl" command takes.
 $ mx erl -init_debug -pa ~/graal-erl/erlang/test -run erlparse03 main "lists:seq(1,100)." -run init stop -noshell
 ````
 
+To try the benchmarks, use this example:
+````
+$ mx erl -p1 ~/graal-erl/erlang/bg -run pidigits main 1000 -run init stop -noshell
+````
+
 #### Independent
 
 The "independent" refers to the independence from the OTP ring0 startup.
