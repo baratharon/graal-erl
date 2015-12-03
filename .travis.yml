@@ -6,6 +6,9 @@ before_script:
     - hg clone https://bitbucket.org/allr/mx
     - mx/mx sclone http://hg.openjdk.java.net/graal/graal-compiler graal
     - cd graal-erl
+    - cd erlang
+    - erlc parser.erl
+    - cd ..
 script:
     - ../mx/mx build
     - ../mx/mx unittest
