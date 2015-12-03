@@ -47,6 +47,7 @@ public enum ModuleInfoItem {
     MODULE(ErlAtom.MODULE),
     FUNCTIONS(ErlAtom.FUNCTIONS),
     EXPORTS(ErlAtom.EXPORTS),
+    MD5(ErlAtom.MD5),
     ATTRIBUTES(ErlAtom.ATTRIBUTES),
     NATIVE(ErlAtom.NATIVE),
     COMPILE(ErlAtom.COMPILE);

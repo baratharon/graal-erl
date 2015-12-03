@@ -19,6 +19,7 @@ import com.oracle.truffle.erl.builtins._module.ModuleInfo1BuiltinFactory;
 import com.oracle.truffle.erl.nodes.ErlRootNode;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.nodes.controlflow.ErlTailCallException;
+import com.oracle.truffle.erl.runtime.misc.MD5;
 import com.oracle.truffle.erl.runtime.misc.ModuleInfoItem;
 
 public class ErlModuleImpl implements ErlModule {
@@ -28,6 +29,7 @@ public class ErlModuleImpl implements ErlModule {
     private final HashMap<FA, ErlFunction> functions = new HashMap<>();
     private final HashSet<FA> onLoadFuntions = new HashSet<>();
     private ErlAtom cachedModuleNameAtom = null;
+    private ErlBinary cachedModuleMD5Binary = null;
 
     public ErlModuleImpl(final String moduleName, boolean preLoaded) {
         super();
@@ -214,6 +216,20 @@ public class ErlModuleImpl implements ErlModule {
 
             case NATIVE: {
                 return false;
+            }
+
+            case MD5: {
+                if (null == cachedModuleMD5Binary) {
+                    synchronized (this) {
+                        if (null == cachedModuleMD5Binary) {
+                            final MD5 md5 = new MD5();
+                            md5.update(moduleName.getBytes());
+                            cachedModuleMD5Binary = ErlBinary.fromArray(md5.digest());
+                        }
+                    }
+                }
+
+                return cachedModuleMD5Binary;
             }
         }
 
