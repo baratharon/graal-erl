@@ -1,6 +1,7 @@
 language: erlang
 otp_release:
    - 18.0
+   - 17.5
 language: java
 jdk:
   - oraclejdk8
