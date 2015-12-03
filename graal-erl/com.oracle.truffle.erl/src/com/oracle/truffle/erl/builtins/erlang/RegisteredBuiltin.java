@@ -45,6 +45,7 @@ import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.erl.MFA;
 import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
+import com.oracle.truffle.erl.runtime.ErlAtom;
 import com.oracle.truffle.erl.runtime.ErlList;
 import com.oracle.truffle.erl.runtime.ErlProcess;
 
@@ -64,7 +65,14 @@ public abstract class RegisteredBuiltin extends ErlBuiltinNode {
     }
 
     @Specialization
-    public Object registered() {
-        return ErlList.fromIterator(ErlProcess.getRegisteredNames().iterator());
+    public ErlList registered() {
+
+        ErlList result = ErlList.NIL;
+
+        for (String name : ErlProcess.getRegisteredNames()) {
+            result = new ErlList(new ErlAtom(name), result);
+        }
+
+        return result;
     }
 }
