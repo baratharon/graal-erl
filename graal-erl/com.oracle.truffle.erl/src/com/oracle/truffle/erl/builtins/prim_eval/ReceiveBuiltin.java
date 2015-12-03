@@ -40,9 +40,6 @@
  */
 package com.oracle.truffle.erl.builtins.prim_eval;
 
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
@@ -53,6 +50,7 @@ import com.oracle.truffle.erl.runtime.ErlAtom;
 import com.oracle.truffle.erl.runtime.ErlContext;
 import com.oracle.truffle.erl.runtime.ErlFunction;
 import com.oracle.truffle.erl.runtime.ErlProcess;
+import com.oracle.truffle.erl.runtime.ErlProcess.MessageConsumer;
 
 /**
  * wrapper
@@ -67,17 +65,6 @@ public abstract class ReceiveBuiltin extends ErlBuiltinNode {
     @Override
     public MFA getName() {
         return new MFA("prim_eval", "receive", 2);
-    }
-
-    private static final class MatchFoundException extends RuntimeException {
-
-        private static final long serialVersionUID = 3704564919737216241L;
-
-        final Object term;
-
-        MatchFoundException(Object term) {
-            this.term = term;
-        }
     }
 
     @Specialization
@@ -98,45 +85,20 @@ public abstract class ReceiveBuiltin extends ErlBuiltinNode {
             }
         }
 
-        final ErlProcess proc = ErlProcess.getCurrentProcess();
+        final Object result = ErlProcess.receiveMessage(timeout, new MessageConsumer() {
 
-        try {
-            ErlProcess.forEachMessages(new Consumer<Object>() {
-                public void accept(Object message) {
-                    final Object term = ErlProcess.evaluate(fun, message);
-                    if (!ErlAtom.NOMATCH.equals(term)) {
-                        proc.removeSpecificMessage(message);
-                        throw new MatchFoundException(term);
-                    }
+            public Object accept(Object msg) {
+                final Object term = ErlProcess.evaluate(fun, msg);
+                if (!ErlAtom.NOMATCH.equals(term)) {
+                    return term;
+                } else {
+                    return null;
                 }
-            });
-        } catch (MatchFoundException ex) {
-            return ex.term;
-        }
-
-        final long startTime = System.nanoTime();
-        final long timeoutNanos = TimeUnit.MILLISECONDS.toNanos(timeout);
-
-        while (timeout < 0 || (System.nanoTime() - startTime) <= timeoutNanos) {
-
-            Object receivedTerm;
-
-            if (timeout < 0) {
-                receivedTerm = proc.receiveMessage();
-            } else {
-                receivedTerm = proc.receiveMessage(TimeUnit.NANOSECONDS.toMillis(startTime + timeoutNanos - System.nanoTime()));
             }
+        });
 
-            if (null == receivedTerm) {
-                continue;
-            }
-
-            final Object term = ErlProcess.evaluate(fun, receivedTerm);
-
-            if (!ErlAtom.NOMATCH.equals(term)) {
-                proc.removeSpecificMessage(receivedTerm);
-                return term;
-            }
+        if (null != result) {
+            return result;
         }
 
         return ErlAtom.TIMEOUT;

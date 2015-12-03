@@ -40,8 +40,6 @@
  */
 package com.oracle.truffle.erl.nodes.controlflow;
 
-import java.util.concurrent.TimeUnit;
-
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
@@ -49,6 +47,7 @@ import com.oracle.truffle.erl.nodes.ErlExpressionNode;
 import com.oracle.truffle.erl.runtime.ErlAtom;
 import com.oracle.truffle.erl.runtime.ErlContext;
 import com.oracle.truffle.erl.runtime.ErlProcess;
+import com.oracle.truffle.erl.runtime.ErlProcess.MessageConsumer;
 
 /**
  * The node that implements the <code>receive</code> construction in Erlang.
@@ -93,75 +92,35 @@ public final class ErlReceiveNode extends ErlExpressionNode {
 
         final long timeout = evalTimeout(frame);
 
-        ErlProcess proc = ErlProcess.getCurrentProcess();
-
-        // First we need to check whether an already received message fulfills the selector
-
         if (null != clauseSelector) {
-            for (Object msg : proc.receivedMessages()) {
 
-                proc.removeSpecificMessage(msg);
+            final Object term = ErlProcess.receiveMessage(timeout, new MessageConsumer() {
 
-                try {
-                    return clauseSelector.doSelect(frame, new Object[]{msg});
-                } catch (ErlNoClauseMatchedException ex) {
-                    proc.ungetMessage(msg);
-
-                    // ignore, and loop will continue
+                public Object accept(Object msg) {
+                    try {
+                        return clauseSelector.doSelect(frame, new Object[]{msg});
+                    } catch (ErlNoClauseMatchedException ex) {
+                        // received message did not matched
+                        return null;
+                    }
                 }
+            });
+
+            if (null != term) {
+                return term;
             }
-        }
-
-        // After all pending messages are checked (if there was a clause selector), and no message
-        // matched, check for zero timeout. If the timeout value is not infinity, then there must be
-        // an afterNode.
-
-        if (0 == timeout) {
-            assert null != afterNode;
-            return afterNode.executeGeneric(frame);
-        }
-
-        final long startTime = System.nanoTime();
-        final long timeoutNanos = TimeUnit.MILLISECONDS.toNanos(timeout);
-
-        while (timeout < 0 || (System.nanoTime() - startTime) <= timeoutNanos) {
-
-            Object receivedTerm;
-
-            if (timeout < 0) {
-                // System.err.println("" + ErlProcess.getSelfPid() + " #### wait infinity");
-                receivedTerm = proc.receiveMessage();
-            } else {
-                // System.err.println("" + ErlProcess.getSelfPid() + " #### wait time " + timeout);
-                receivedTerm = proc.receiveMessage(TimeUnit.NANOSECONDS.toMillis(startTime + timeoutNanos - System.nanoTime()));
-            }
-
-            if (null == receivedTerm) {
-                // System.err.println("" + ErlProcess.getSelfPid() + " #### no receive after " +
-                // timeout);
-                continue;
-            }
-
-            proc.removeSpecificMessage(receivedTerm);
-
+        } else {
             try {
-
-                if (null != clauseSelector) {
-                    return clauseSelector.doSelect(frame, new Object[]{receivedTerm});
-                } else if (null != afterNode) {
-                    return afterNode.executeGeneric(frame);
-                }
-
-            } catch (ErlNoClauseMatchedException ex) {
-
-                proc.ungetMessage(receivedTerm);
-                // continue the loop
+                Thread.sleep(timeout);
+            } catch (InterruptedException e) {
+                throw ErlExitProcessException.INSTANCE;
             }
         }
 
         // If there is no afterNode, then the timeout shall be infinity, so the control flow won't
         // reach this.
 
+        assert 0 <= timeout;
         assert null != afterNode;
         return afterNode.executeGeneric(frame);
     }

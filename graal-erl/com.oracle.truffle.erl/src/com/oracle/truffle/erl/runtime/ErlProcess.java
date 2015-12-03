@@ -278,12 +278,22 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         }
     }
 
+    private final class Message {
+        boolean present;
+        final Object term;
+
+        Message(Object term) {
+            this.present = true;
+            this.term = term;
+        }
+    }
+
     private final ErlContext context;
     private final ErlPid pid;
     private final ErlFunction initialFunction;
     private final Object[] initialArguments;
     private final LinkedBlockingDeque<Object> messageQueueIn = new LinkedBlockingDeque<>();
-    private final LinkedList<Object> messageQueue = new LinkedList<>();
+    private final LinkedList<Message> messageQueue = new LinkedList<>();
     private final HashSet<ErlProcess> links = new HashSet<>();
     private final HashSet<ErlTable> tables = new HashSet<>();
     private final TreeMap<Object, Object> dictionary = new TreeMap<>(ErlContext.TERM_COMPARATOR_EXACT);
@@ -646,45 +656,117 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         }
     }
 
-    public Object receiveMessage() {
+    private Message receiveMessage() {
         try {
-            Object msg = messageQueueIn.takeFirst();
-            if (null != msg) {
+            final Object term = messageQueueIn.takeFirst();
+            if (null != term) {
                 // System.err.println("" + pid + " ** received: " + msg);
+                final Message msg = new Message(term);
                 messageQueue.addLast(msg);
+                return msg;
             }
-            return msg;
+            return null;
         } catch (InterruptedException e) {
             throw ErlExitProcessException.INSTANCE;
         }
     }
 
-    public Object receiveMessage(long msec) {
+    private Message receiveMessage(long msec) {
         try {
-            Object msg = messageQueueIn.pollFirst(msec, TimeUnit.MILLISECONDS);
-            if (null != msg) {
+            final Object term = messageQueueIn.pollFirst(msec, TimeUnit.MILLISECONDS);
+            if (null != term) {
                 // System.err.println("" + pid + " ** received: " + msg);
+                final Message msg = new Message(term);
                 messageQueue.addLast(msg);
+                return msg;
             }
-            return msg;
+            return null;
         } catch (InterruptedException e) {
             throw ErlExitProcessException.INSTANCE;
         }
     }
 
-    public List<Object> receivedMessages() {
-        // System.err.println("" + pid + " ** msgQueue: " + messageQueue);
-        return Collections.unmodifiableList(new ArrayList<>(messageQueue));
+    public static interface MessageConsumer {
+
+        /**
+         * Inspect the message, and transform it (consumes it).
+         *
+         * @param msg The received message.
+         * @return <code>null</code> if the message is not important; non-null if it is consumed
+         */
+        public Object accept(Object msg);
     }
 
-    public void ungetMessage(Object msg) {
-        messageQueue.addFirst(msg);
-    }
+    /**
+     * Receives a message. Can wait for the desired timeout.
+     *
+     * @param timeoutMsec timeout value in milliseconds; -1 if infinity
+     * @param consumer the consumer that decides the message is needed or not
+     * @return the transformed value by the consumer
+     */
+    public static Object receiveMessage(long timeoutMsec, MessageConsumer consumer) {
 
-    public void removeSpecificMessage(Object msg) {
-        // System.err.println("" + pid + " ** forget: " + msg);
-        messageQueue.remove(msg);
-        // System.err.println("" + pid + " ** after: " + messageQueue + " / " + messageQueueIn);
+        ErlProcess proc = ProcessManager.getCurrentProcess();
+
+        if (!proc.messageQueueIn.isEmpty()) {
+            while (null != proc.receiveMessage(0)) {
+                // just move the freshly received messages into the permanent queue
+            }
+        }
+
+        for (Iterator<Message> iter = proc.messageQueue.iterator(); iter.hasNext();) {
+            final Message msg = iter.next();
+            if (msg.present) {
+                msg.present = false;
+                try {
+                    final Object result = consumer.accept(msg.term);
+                    if (null != result) {
+                        proc.messageQueue.remove(msg);
+                        return result;
+                    } else {
+                        msg.present = true;
+                    }
+                } catch (ErlTailCallException ex) {
+                    proc.messageQueue.remove(msg);
+                    throw ex;
+                }
+            }
+        }
+
+        final long startTime = System.nanoTime();
+        final long timeoutNanos = TimeUnit.MILLISECONDS.toNanos(timeoutMsec);
+
+        while (timeoutMsec < 0 || (System.nanoTime() - startTime) <= timeoutNanos) {
+
+            final Message msg;
+
+            if (timeoutMsec < 0) {
+                msg = proc.receiveMessage();
+            } else {
+                msg = proc.receiveMessage(TimeUnit.NANOSECONDS.toMillis(startTime + timeoutNanos - System.nanoTime()));
+            }
+
+            if (null == msg) {
+                continue;
+            }
+
+            msg.present = false;
+
+            try {
+                final Object result = consumer.accept(msg.term);
+                if (null != result) {
+                    proc.messageQueue.remove(msg);
+                    return result;
+                } else {
+                    msg.present = true;
+                }
+            } catch (ErlTailCallException ex) {
+                proc.messageQueue.remove(msg);
+                throw ex;
+            }
+        }
+
+        return null;
     }
 
     public static void forEachMessages(Consumer<Object> action) {
@@ -697,8 +779,11 @@ public final class ErlProcess implements Callable<Object>, Registrable {
             }
         }
 
-        for (Iterator<Object> iter = proc.messageQueue.iterator(); iter.hasNext();) {
-            action.accept(iter.next());
+        for (Iterator<Message> iter = proc.messageQueue.iterator(); iter.hasNext();) {
+            final Message msg = iter.next();
+            if (msg.present) {
+                action.accept(msg.term);
+            }
         }
     }
 
@@ -827,16 +912,16 @@ public final class ErlProcess implements Callable<Object>, Registrable {
                 }
             }
 
-            for (Iterator<Object> iter = curr.messageQueue.iterator(); iter.hasNext();) {
+            for (Iterator<Message> iter = curr.messageQueue.iterator(); iter.hasNext();) {
 
-                Object msg = iter.next();
+                final Message msg = iter.next();
 
-                if (msg instanceof ErlTuple) {
+                if (msg.present && msg.term instanceof ErlTuple) {
 
-                    ErlTuple tuple = (ErlTuple) msg;
+                    ErlTuple tuple = (ErlTuple) msg.term;
 
                     if (5 == tuple.getSize() && (tuple.getElement(2) instanceof ErlRef) && 0 == ref.compare((ErlRef) tuple.getElement(2))) {
-                        curr.removeSpecificMessage(msg);
+                        curr.messageQueue.remove(msg);
                         flushed = true;
                         break;
                     }
