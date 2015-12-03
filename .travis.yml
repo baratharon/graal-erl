@@ -1,0 +1,11 @@
+language: java
+jdk:
+  - oraclejdk8
+before_script:
+    - cd ..
+    - hg clone https://bitbucket.org/allr/mx
+    - mx/mx sclone http://hg.openjdk.java.net/graal/graal-compiler graal
+    - cd graal-erl
+script:
+    - ../mx/mx build
+    - ../mx/mx unittest
