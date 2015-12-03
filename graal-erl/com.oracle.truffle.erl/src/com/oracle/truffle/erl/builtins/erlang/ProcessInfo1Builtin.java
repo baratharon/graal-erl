@@ -38,51 +38,55 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.oracle.truffle.erl.builtins._module;
+package com.oracle.truffle.erl.builtins.erlang;
 
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.erl.MFA;
 import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
-import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.runtime.ErlAtom;
-import com.oracle.truffle.erl.runtime.ErlModuleImpl;
-import com.oracle.truffle.erl.runtime.misc.ModuleInfoItem;
+import com.oracle.truffle.erl.runtime.ErlList;
+import com.oracle.truffle.erl.runtime.ErlPid;
+import com.oracle.truffle.erl.runtime.ErlProcess;
+import com.oracle.truffle.erl.runtime.misc.ProcInfoItem;
 
 /**
- * The call module_info(Key), where Key is an atom, returns a single piece of information about the
- * module.
+ * Returns a list containing InfoTuples with miscellaneous information about the process identified
+ * by Pid, or undefined if the process is not alive.
  */
-@NodeInfo(shortName = "moduleInfo")
-public abstract class ModuleInfo1Builtin extends ErlBuiltinNode {
+@NodeInfo(shortName = "processInfo")
+public abstract class ProcessInfo1Builtin extends ErlBuiltinNode {
 
-    private final ErlModuleImpl module;
-
-    public ModuleInfo1Builtin(ErlModuleImpl module) {
-        super(SourceSection.createUnavailable("Erlang builtin", "module_info"));
-        this.module = module;
+    public ProcessInfo1Builtin() {
+        super(SourceSection.createUnavailable("Erlang builtin", "process_info"));
     }
 
     @Override
     public MFA getName() {
-        return new MFA(module.getModuleName(), "module_info", 1);
+        return new MFA("erlang", "process_info", 1);
     }
 
     @Specialization
-    public Object moduleInfo(ErlAtom atom) {
+    public Object processInfo(ErlPid pid) {
 
-        for (ModuleInfoItem item : ModuleInfoItem.values()) {
-            if (item.atom.equals(atom)) {
-                return module.getInfo(item);
-            }
+        ErlProcess proc = ErlProcess.findProcess(pid);
+
+        if (null == proc) {
+            return ErlAtom.UNDEFINED;
         }
 
-        throw ErlControlException.makeBadarg();
+        ErlList result = ErlList.NIL;
+
+        for (ProcInfoItem item : ProcInfoItem.values()) {
+            result = new ErlList(proc.getInfo(item), result);
+        }
+
+        return result;
     }
 
     @Specialization
-    public Object moduleInfo(Object arg1) {
-        return moduleInfo(ErlAtom.fromObject(arg1));
+    public Object processInfo(Object arg1) {
+        return processInfo(ErlPid.fromObject(arg1));
     }
 }

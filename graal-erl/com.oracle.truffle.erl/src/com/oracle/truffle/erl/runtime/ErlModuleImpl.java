@@ -14,9 +14,12 @@ import com.oracle.truffle.erl.ErlModule;
 import com.oracle.truffle.erl.FA;
 import com.oracle.truffle.erl.MFA;
 import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
+import com.oracle.truffle.erl.builtins._module.ModuleInfo0BuiltinFactory;
 import com.oracle.truffle.erl.builtins._module.ModuleInfo1BuiltinFactory;
 import com.oracle.truffle.erl.nodes.ErlRootNode;
+import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.nodes.controlflow.ErlTailCallException;
+import com.oracle.truffle.erl.runtime.misc.ModuleInfoItem;
 
 public class ErlModuleImpl implements ErlModule {
 
@@ -24,6 +27,7 @@ public class ErlModuleImpl implements ErlModule {
     private final boolean preLoaded;
     private final HashMap<FA, ErlFunction> functions = new HashMap<>();
     private final HashSet<FA> onLoadFuntions = new HashSet<>();
+    private ErlAtom cachedModuleNameAtom = null;
 
     public ErlModuleImpl(final String moduleName, boolean preLoaded) {
         super();
@@ -35,9 +39,16 @@ public class ErlModuleImpl implements ErlModule {
          * generated be the Erlang compiler, we implemented as a built-in. However, to make it
          * compatible, we register the function as a {@link ErlFunction.Origin.REGULAR} function.
          */
-        final ErlBuiltinNode moduleInfoBIF = ErlContext.makeBuiltin(this, ModuleInfo1BuiltinFactory.getInstance());
-        final MFA mfa = moduleInfoBIF.getName();
-        register(mfa.getFunction(), mfa.getArity(), ErlContext.wrapBuiltinBodyNode(moduleInfoBIF, mfa), ErlFunction.Origin.REGULAR);
+        {
+            final ErlBuiltinNode bif = ErlContext.makeBuiltin(this, ModuleInfo0BuiltinFactory.getInstance());
+            final MFA mfa = bif.getName();
+            register(mfa.getFunction(), mfa.getArity(), ErlContext.wrapBuiltinBodyNode(bif, mfa), ErlFunction.Origin.REGULAR);
+        }
+        {
+            final ErlBuiltinNode bif = ErlContext.makeBuiltin(this, ModuleInfo1BuiltinFactory.getInstance());
+            final MFA mfa = bif.getName();
+            register(mfa.getFunction(), mfa.getArity(), ErlContext.wrapBuiltinBodyNode(bif, mfa), ErlFunction.Origin.REGULAR);
+        }
     }
 
     public String getModuleName() {
@@ -86,17 +97,18 @@ public class ErlModuleImpl implements ErlModule {
         } else {
 
             ErlFunction func = functions.get(new FA(functionName, args0.length));
+            Object[] args = args0;
 
             if (null == func) {
                 return null;
             }
 
-            Object[] args = Arrays.copyOf(args0, args0.length + 1);
-            args[args.length - 1] = func.getContext();
-
             for (;;) {
 
                 if (null != func && func.isCallable()) {
+
+                    args = Arrays.copyOf(args, args.length + 1);
+                    args[args.length - 1] = func.getContext();
 
                     try {
                         return func.getCallTarget().call(args);
@@ -104,8 +116,6 @@ public class ErlModuleImpl implements ErlModule {
 
                         func = tailCallEx.getFunction();
                         args = tailCallEx.getArguments();
-                        args = Arrays.copyOf(args, args.length + 1);
-                        args[args.length - 1] = func.getContext();
                     }
                 } else {
                     return null;
@@ -146,12 +156,12 @@ public class ErlModuleImpl implements ErlModule {
         return Collections.unmodifiableCollection(functions.values());
     }
 
-    public ErlFunction register(final FA fa, final ErlFunction func) {
+    public synchronized ErlFunction register(final FA fa, final ErlFunction func) {
         functions.put(fa, func);
         return func;
     }
 
-    public ErlFunction register(String name, int arity, ErlRootNode rootNode, ErlFunction.Origin origin) {
+    public synchronized ErlFunction register(String name, int arity, ErlRootNode rootNode, ErlFunction.Origin origin) {
 
         final FA fa = new FA(name, arity);
 
@@ -164,5 +174,49 @@ public class ErlModuleImpl implements ErlModule {
         RootCallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
         function.setCallTarget(callTarget);
         return function;
+    }
+
+    public Object getInfo(ModuleInfoItem item) {
+
+        switch (item) {
+            case MODULE: {
+                if (null == cachedModuleNameAtom) {
+                    synchronized (this) {
+                        if (null == cachedModuleNameAtom) {
+                            cachedModuleNameAtom = new ErlAtom(moduleName);
+                        }
+                    }
+                }
+
+                return cachedModuleNameAtom;
+            }
+
+            case FUNCTIONS:
+            case EXPORTS: {
+                // TODO: for now, 'functions' and 'exports' are the same, but in real, it is
+                // different
+
+                ErlList result = ErlList.NIL;
+
+                synchronized (this) {
+                    for (FA fa : functions.keySet()) {
+                        result = new ErlList(new ErlTuple(new ErlAtom(fa.getFunction()), (long) fa.getArity()), result);
+                    }
+                }
+
+                return result;
+            }
+
+            case ATTRIBUTES:
+            case COMPILE: {
+                return ErlList.NIL;
+            }
+
+            case NATIVE: {
+                return false;
+            }
+        }
+
+        throw ErlControlException.makeBadarg();
     }
 }

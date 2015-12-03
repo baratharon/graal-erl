@@ -45,44 +45,40 @@ import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.erl.MFA;
 import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
-import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
-import com.oracle.truffle.erl.runtime.ErlAtom;
+import com.oracle.truffle.erl.runtime.ErlList;
 import com.oracle.truffle.erl.runtime.ErlModuleImpl;
+import com.oracle.truffle.erl.runtime.ErlTuple;
 import com.oracle.truffle.erl.runtime.misc.ModuleInfoItem;
 
 /**
- * The call module_info(Key), where Key is an atom, returns a single piece of information about the
- * module.
+ * The module_info/0 function in each module, returns a list of {Key,Value} tuples with information
+ * about the module. Currently, the list contain tuples with the following Keys: module, attributes,
+ * compile, exports, md5 and native. The order and number of tuples may change without prior notice.
  */
 @NodeInfo(shortName = "moduleInfo")
-public abstract class ModuleInfo1Builtin extends ErlBuiltinNode {
+public abstract class ModuleInfo0Builtin extends ErlBuiltinNode {
 
     private final ErlModuleImpl module;
 
-    public ModuleInfo1Builtin(ErlModuleImpl module) {
+    public ModuleInfo0Builtin(ErlModuleImpl module) {
         super(SourceSection.createUnavailable("Erlang builtin", "module_info"));
         this.module = module;
     }
 
     @Override
     public MFA getName() {
-        return new MFA(module.getModuleName(), "module_info", 1);
+        return new MFA(module.getModuleName(), "module_info", 0);
     }
 
     @Specialization
-    public Object moduleInfo(ErlAtom atom) {
+    public ErlList moduleInfo() {
+
+        ErlList result = ErlList.NIL;
 
         for (ModuleInfoItem item : ModuleInfoItem.values()) {
-            if (item.atom.equals(atom)) {
-                return module.getInfo(item);
-            }
+            result = new ErlList(new ErlTuple(item.atom, module.getInfo(item)), result);
         }
 
-        throw ErlControlException.makeBadarg();
-    }
-
-    @Specialization
-    public Object moduleInfo(Object arg1) {
-        return moduleInfo(ErlAtom.fromObject(arg1));
+        return result;
     }
 }

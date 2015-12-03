@@ -160,6 +160,7 @@ import com.oracle.truffle.erl.builtins.erlang.PosixtimeToUniversaltimeBuiltinFac
 import com.oracle.truffle.erl.builtins.erlang.PreLoadedBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.ProcessFlag2BuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.ProcessFlag3BuiltinFactory;
+import com.oracle.truffle.erl.builtins.erlang.ProcessInfo1BuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.ProcessInfo2BuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.ProcessesBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.PutBuiltinFactory;
@@ -246,6 +247,7 @@ public final class ErlangBuiltins {
         context.installBuiltin(IsRecord3BuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(IsProcessAliveBuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(IsAliveBuiltinFactory.getInstance(), registerRootNodes);
+        context.installBuiltin(ProcessInfo1BuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(ProcessInfo2BuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(MakeRefBuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(LengthBuiltinFactory.getInstance(), registerRootNodes);

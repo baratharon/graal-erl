@@ -140,6 +140,11 @@ public final class ErlAtom implements TruffleObject {
     public static final ErlAtom _ETS_TRANSFER = new ErlAtom("ETS-TRANSFER");
     public static final ErlAtom _END_OF_TABLE = new ErlAtom("$end_of_table");
     public static final ErlAtom MODULE = new ErlAtom("module");
+    public static final ErlAtom FUNCTIONS = new ErlAtom("functions");
+    public static final ErlAtom EXPORTS = new ErlAtom("exports");
+    public static final ErlAtom ATTRIBUTES = new ErlAtom("attributes");
+    public static final ErlAtom COMPILE = new ErlAtom("compile");
+    public static final ErlAtom NATIVE = new ErlAtom("native");
     public static final ErlAtom DICTIONARY = new ErlAtom("dictionary");
     public static final ErlAtom MESSAGES = new ErlAtom("messages");
     public static final ErlAtom LINKS = new ErlAtom("links");

@@ -38,51 +38,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.oracle.truffle.erl.builtins._module;
+package com.oracle.truffle.erl.runtime.misc;
 
-import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.nodes.NodeInfo;
-import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.erl.MFA;
-import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
-import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.runtime.ErlAtom;
-import com.oracle.truffle.erl.runtime.ErlModuleImpl;
-import com.oracle.truffle.erl.runtime.misc.ModuleInfoItem;
 
-/**
- * The call module_info(Key), where Key is an atom, returns a single piece of information about the
- * module.
- */
-@NodeInfo(shortName = "moduleInfo")
-public abstract class ModuleInfo1Builtin extends ErlBuiltinNode {
+public enum ProcInfoItem {
 
-    private final ErlModuleImpl module;
+    REGISTERED_NAME(ErlAtom.REGISTERED_NAME),
+    DICTIONARY(ErlAtom.DICTIONARY),
+    MESSAGES(ErlAtom.MESSAGES),
+    LINKS(ErlAtom.LINKS),
+    STATUS(ErlAtom.STATUS),
+    TRAP_EXIT(ErlAtom.TRAP_EXIT),
+    GROUP_LEADER(ErlAtom.GROUP_LEADER),
+    HEAP_SIZE(ErlAtom.HEAP_SIZE),
+    STACK_SIZE(ErlAtom.STACK_SIZE),
+    REDUCTIONS(ErlAtom.REDUCTIONS);
 
-    public ModuleInfo1Builtin(ErlModuleImpl module) {
-        super(SourceSection.createUnavailable("Erlang builtin", "module_info"));
-        this.module = module;
-    }
+    public final ErlAtom atom;
 
-    @Override
-    public MFA getName() {
-        return new MFA(module.getModuleName(), "module_info", 1);
-    }
-
-    @Specialization
-    public Object moduleInfo(ErlAtom atom) {
-
-        for (ModuleInfoItem item : ModuleInfoItem.values()) {
-            if (item.atom.equals(atom)) {
-                return module.getInfo(item);
-            }
-        }
-
-        throw ErlControlException.makeBadarg();
-    }
-
-    @Specialization
-    public Object moduleInfo(Object arg1) {
-        return moduleInfo(ErlAtom.fromObject(arg1));
+    ProcInfoItem(ErlAtom atom) {
+        this.atom = atom;
     }
 }

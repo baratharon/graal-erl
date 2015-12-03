@@ -49,11 +49,11 @@ import com.oracle.truffle.erl.MFA;
 import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.runtime.ErlAtom;
-import com.oracle.truffle.erl.runtime.ErlContext;
 import com.oracle.truffle.erl.runtime.ErlList;
 import com.oracle.truffle.erl.runtime.ErlPid;
 import com.oracle.truffle.erl.runtime.ErlProcess;
 import com.oracle.truffle.erl.runtime.ErlTuple;
+import com.oracle.truffle.erl.runtime.misc.ProcInfoItem;
 
 /**
  * Returns information about the process identified by Pid as specified by the Item or the ItemList,
@@ -78,68 +78,13 @@ public abstract class ProcessInfo2Builtin extends ErlBuiltinNode {
 
     private static ErlTuple getInfo(ErlProcess proc, ErlAtom item) {
 
-        Object value;
-
-        if (ErlAtom.REGISTERED_NAME.equals(item)) {
-            String name = proc.getRegisteredName();
-            if (null != name) {
-                value = new ErlAtom(name);
-            } else {
-                value = ErlList.NIL;
+        for (ProcInfoItem infoItem : ProcInfoItem.values()) {
+            if (infoItem.atom.equals(item)) {
+                return proc.getInfo(infoItem);
             }
-
-        } else if (ErlAtom.DICTIONARY.equals(item)) {
-
-            ErlContext.PairListBuilderBiConsumer builder = new ErlContext.PairListBuilderBiConsumer();
-            ErlProcess.dictForEach(builder);
-            value = builder.getResult();
-
-        } else if (ErlAtom.MESSAGES.equals(item)) {
-
-            ErlContext.ListBuilderConsumer builder = new ErlContext.ListBuilderConsumer();
-            ErlProcess.forEachMessages(builder);
-            value = builder.getResult();
-
-        } else if (ErlAtom.LINKS.equals(item)) {
-
-            ErlContext.ListBuilderConsumer builder = new ErlContext.ListBuilderConsumer();
-            ErlProcess.forEachLink(builder);
-            value = builder.getResult();
-
-        } else if (ErlAtom.STATUS.equals(item)) {
-
-            if (ErlProcess.getCurrentProcess() == proc) {
-                value = ErlAtom.RUNNING;
-            } else {
-                value = ErlAtom.RUNNABLE;
-            }
-
-        } else if (ErlAtom.TRAP_EXIT.equals(item)) {
-
-            value = ErlProcess.getTrapExit();
-
-        } else if (ErlAtom.GROUP_LEADER.equals(item)) {
-
-            value = ErlProcess.getCurrentProcess().getGroupLeader();
-
-        } else if (ErlAtom.HEAP_SIZE.equals(item)) {
-
-            value = (long) 50000;
-
-        } else if (ErlAtom.STACK_SIZE.equals(item)) {
-
-            value = (long) 42;
-
-        } else if (ErlAtom.REDUCTIONS.equals(item)) {
-
-            value = (long) 0;
-
-        } else {
-            ErlContext.notImplemented();
-            throw ErlControlException.makeBadarg();
         }
 
-        return new ErlTuple(item, value);
+        throw ErlControlException.makeBadarg();
     }
 
     @Specialization
@@ -184,10 +129,12 @@ public abstract class ProcessInfo2Builtin extends ErlBuiltinNode {
     @Specialization
     public Object processInfo(Object arg1, Object arg2) {
 
+        final ErlPid pid = ErlPid.fromObject(arg1);
+
         if (arg2 instanceof ErlList) {
-            return processInfo(ErlPid.fromObject(arg1), ErlList.fromObject(arg2));
+            return processInfo(pid, ErlList.fromObject(arg2));
         }
 
-        return processInfo(ErlPid.fromObject(arg1), ErlAtom.fromObject(arg2));
+        return processInfo(pid, ErlAtom.fromObject(arg2));
     }
 }

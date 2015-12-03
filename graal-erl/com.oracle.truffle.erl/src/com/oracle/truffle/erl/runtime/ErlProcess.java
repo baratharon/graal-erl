@@ -66,6 +66,7 @@ import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.nodes.controlflow.ErlExitProcessException;
 import com.oracle.truffle.erl.nodes.controlflow.ErlTailCallException;
 import com.oracle.truffle.erl.runtime.ets.ErlTable;
+import com.oracle.truffle.erl.runtime.misc.ProcInfoItem;
 import com.oracle.truffle.erl.runtime.misc.Registrable;
 
 /**
@@ -602,6 +603,85 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         }
     }
 
+    public ErlTuple getInfo(ProcInfoItem item) {
+
+        final Object value;
+
+        switch (item) {
+            case REGISTERED_NAME: {
+                final String name = getRegisteredName();
+                if (null != name) {
+                    value = new ErlAtom(name);
+                } else {
+                    value = ErlList.NIL;
+                }
+                break;
+            }
+
+            case DICTIONARY: {
+                ErlContext.PairListBuilderBiConsumer builder = new ErlContext.PairListBuilderBiConsumer();
+                dictForEachImpl(builder);
+                value = builder.getResult();
+                break;
+            }
+
+            case MESSAGES: {
+                ErlContext.ListBuilderConsumer builder = new ErlContext.ListBuilderConsumer();
+                forEachMessagesImpl(builder);
+                value = builder.getResult();
+                break;
+            }
+
+            case LINKS: {
+                ErlContext.ListBuilderConsumer builder = new ErlContext.ListBuilderConsumer();
+                forEachLinkImpl(builder);
+                value = builder.getResult();
+                break;
+            }
+
+            case STATUS: {
+                if (ErlProcess.getCurrentProcess() == this) {
+                    value = ErlAtom.RUNNING;
+                } else {
+                    value = ErlAtom.RUNNABLE;
+                }
+                break;
+            }
+
+            case TRAP_EXIT: {
+                value = trapExit;
+                break;
+            }
+
+            case GROUP_LEADER: {
+                value = groupLeader;
+                break;
+            }
+
+            case HEAP_SIZE: {
+                value = 50000L;
+                break;
+            }
+
+            case STACK_SIZE: {
+                value = 42L;
+                break;
+            }
+
+            case REDUCTIONS: {
+                value = 0L;
+                break;
+            }
+
+            default: {
+                ErlContext.notImplemented();
+                throw ErlControlException.makeBadarg();
+            }
+        }
+
+        return new ErlTuple(item.atom, value);
+    }
+
     public Object send(ErlPid destPid, Object msg, boolean nosuspend, boolean noconnect) {
 
         ErlProcess proc = processManager.findProcess(destPid);
@@ -770,16 +850,18 @@ public final class ErlProcess implements Callable<Object>, Registrable {
     }
 
     public static void forEachMessages(Consumer<Object> action) {
+        ProcessManager.getCurrentProcess().forEachMessagesImpl(action);
+    }
 
-        ErlProcess proc = ProcessManager.getCurrentProcess();
+    private void forEachMessagesImpl(Consumer<Object> action) {
 
-        if (!proc.messageQueueIn.isEmpty()) {
-            while (null != proc.receiveMessage(0)) {
+        if (!messageQueueIn.isEmpty()) {
+            while (null != receiveMessage(0)) {
                 // just move the freshly received messages into the permanent queue
             }
         }
 
-        for (Iterator<Message> iter = proc.messageQueue.iterator(); iter.hasNext();) {
+        for (Iterator<Message> iter = messageQueue.iterator(); iter.hasNext();) {
             final Message msg = iter.next();
             if (msg.present) {
                 action.accept(msg.term);
@@ -788,10 +870,12 @@ public final class ErlProcess implements Callable<Object>, Registrable {
     }
 
     public static void forEachLink(Consumer<Object> action) {
+        ProcessManager.getCurrentProcess().forEachLinkImpl(action);
+    }
 
-        ErlProcess proc = ProcessManager.getCurrentProcess();
+    private void forEachLinkImpl(Consumer<Object> action) {
 
-        for (Iterator<ErlProcess> iter = proc.links.iterator(); iter.hasNext();) {
+        for (Iterator<ErlProcess> iter = links.iterator(); iter.hasNext();) {
             action.accept(iter.next().getPid());
         }
     }
@@ -826,9 +910,12 @@ public final class ErlProcess implements Callable<Object>, Registrable {
     }
 
     public static void dictForEach(BiConsumer<Object, Object> action) {
-        ErlProcess proc = ProcessManager.getCurrentProcess();
-        synchronized (proc.dictionary) {
-            proc.dictionary.forEach(action);
+        ProcessManager.getCurrentProcess().dictForEachImpl(action);
+    }
+
+    private void dictForEachImpl(BiConsumer<Object, Object> action) {
+        synchronized (dictionary) {
+            dictionary.forEach(action);
         }
     }
 
