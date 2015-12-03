@@ -3,6 +3,7 @@
 Graal-Erlang is a Graal-based implementation of the Erlang,
 which uses the Truffle and runs on Java 8.
 
+[![Build Status](https://travis-ci.org/baratharon/graal-erl.svg?branch=master)](https://travis-ci.org/baratharon/graal-erl.svg?branch=master)
 
 ### How does it work?
 
