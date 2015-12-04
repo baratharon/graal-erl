@@ -1,10 +1,20 @@
-language: erlang
-otp_release:
-   - 18.0
-   - 17.5
+# can't use erlang as language, think, only one language is supported
+# language: erlang
+# otp_release:
+#    - 18.0
+#    - 17.5
 language: java
 jdk:
   - oraclejdk8
+sudo: true
+before_install:
+    # Add Erlang Solutions repository
+    - wget http://packages.erlang-solutions.com/erlang-solutions_1.0_all.deb
+    - sudo dpkg -i erlang-solutions_1.0_all.deb
+    
+    # Install Erlang
+    - sudo apt-get update -qq
+    - sudo apt-get install -qq erlang
 before_script:
     - cd erlang
     - erlc parser.erl

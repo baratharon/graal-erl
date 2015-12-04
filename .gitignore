@@ -6,9 +6,11 @@
 .settings
 nbproject
 .factorypath
+mx.graal-erl/currentAnnotationProcessors
 mx.graal-erl/eclipse-config-libs.zip
 mx.graal-erl/eclipse-config.zip
 mx.graal-erl/eclipse-launches
+mx.graal-erl/env
 mx.graal-erl/netbeans-config.zip
 workingsets.xml
 .metadata
@@ -19,3 +21,4 @@ savedDeps
 erl_crash.dump
 erlang/*.erl
 erlang/*.ast
+**/build.xml
