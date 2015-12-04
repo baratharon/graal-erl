@@ -2,4 +2,5 @@
 -export([main/0]).
 
 main() ->
-	catch 1=wont_match.
+	{'EXIT', {{badmatch, wont_match}, _}} = (catch 1=wont_match),
+	ok.
