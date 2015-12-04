@@ -46,7 +46,6 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.erl.nodes.ErlExpressionNode;
-import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.runtime.ErlTuple;
 
 /**
@@ -88,17 +87,19 @@ public final class ErlTupleNode extends ErlExpressionNode {
         CompilerAsserts.compilationConstant(elementNodes.length);
 
         if (!(match instanceof ErlTuple)) {
-            throw ErlControlException.makeBadmatch(match);
+            return null;
         }
 
         final ErlTuple tuple = (ErlTuple) match;
 
         if (elementNodes.length != tuple.getSize()) {
-            throw ErlControlException.makeBadmatch(tuple);
+            return null;
         }
 
         for (int i = 0; i < elementNodes.length; ++i) {
-            elementNodes[i].match(frame, tuple.getElement(i + 1));
+            if (null == elementNodes[i].match(frame, tuple.getElement(i + 1))) {
+                return null;
+            }
         }
 
         return tuple;

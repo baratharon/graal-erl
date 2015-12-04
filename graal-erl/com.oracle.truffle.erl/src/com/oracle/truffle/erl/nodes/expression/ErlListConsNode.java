@@ -44,7 +44,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.erl.nodes.ErlExpressionNode;
-import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.runtime.ErlList;
 
 /**
@@ -75,17 +74,22 @@ public final class ErlListConsNode extends ErlExpressionNode {
     public Object match(VirtualFrame frame, Object match) {
 
         if (!(match instanceof ErlList)) {
-            throw ErlControlException.makeBadmatch(match);
+            return null;
         }
 
         final ErlList list = (ErlList) match;
 
         if (ErlList.NIL == list) {
-            throw ErlControlException.makeBadmatch(list);
+            return null;
         }
 
-        headNode.match(frame, list.getHead());
-        tailNode.match(frame, list.getTail());
+        if (null == headNode.match(frame, list.getHead())) {
+            return null;
+        }
+
+        if (null == tailNode.match(frame, list.getTail())) {
+            return null;
+        }
 
         return list;
     }

@@ -100,10 +100,9 @@ public final class ErlClauseSelectorNode extends ErlExpressionNode {
         CompilerAsserts.compilationConstant(clauseNodes.length);
 
         for (ErlClauseNode clause : clauseNodes) {
-            try {
-                return clause.doWith(frame, args);
-            } catch (ErlNoClauseMatchedException ex) {
-                // ignore
+            final Object result = clause.doWith(frame, args);
+            if (null != result) {
+                return result;
             }
         }
 

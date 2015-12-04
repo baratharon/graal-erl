@@ -119,22 +119,14 @@ public final class ErlBinGeneratorNode extends ErlExpressionNode {
             return false;
         }
 
-        try {
-            matchNode.match(frame, new ErlBinaryView(genState.bin, genState.bitOffset, genState.bitSize), genState.tmpArray);
+        if (null != matchNode.match(frame, new ErlBinaryView(genState.bin, genState.bitOffset, genState.bitSize), genState.tmpArray)) {
             genState.bitOffset += genState.tmpArray[0];
             genState.bitSize -= genState.tmpArray[0];
             return true;
-        } catch (ErlControlException ex) {
-
-            if (ex.getSpecialTag() == ErlControlException.SpecialTag.BADMATCH) {
-
-                genState.bitOffset -= genState.bitSize;
-                genState.bitSize = 0;
-                return false;
-
-            } else {
-                throw ex;
-            }
+        } else {
+            genState.bitOffset -= genState.bitSize;
+            genState.bitSize = 0;
+            return false;
         }
     }
 }

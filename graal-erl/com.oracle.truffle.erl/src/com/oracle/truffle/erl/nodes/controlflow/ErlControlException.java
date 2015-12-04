@@ -98,7 +98,9 @@ public final class ErlControlException extends ControlFlowException {
     }
 
     private static ErlControlException createError(Object desc, SpecialTag specialTag) {
-        return new ErlControlException(new ErlTuple(ErlAtom._EXIT, new ErlTuple(desc, ErlProcess.buildBackTraceAsList())), specialTag);
+        return new ErlControlException(new ErlTuple(ErlAtom._EXIT, new ErlTuple(desc, ErlList.NIL)), specialTag);
+        // return new ErlControlException(new ErlTuple(ErlAtom._EXIT, new ErlTuple(desc,
+        // ErlProcess.buildBackTraceAsList())), specialTag);
     }
 
     public static ErlControlException createExit(Object desc) {

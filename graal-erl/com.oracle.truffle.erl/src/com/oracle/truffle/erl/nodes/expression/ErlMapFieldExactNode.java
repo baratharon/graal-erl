@@ -44,7 +44,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.erl.nodes.ErlExpressionNode;
-import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.runtime.ErlMap;
 
 /**
@@ -78,6 +77,6 @@ public final class ErlMapFieldExactNode extends ErlExpressionNode {
             return valueNode.match(frame, value);
         }
 
-        throw ErlControlException.makeBadmatch(match);
+        return null;
     }
 }

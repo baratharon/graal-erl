@@ -44,7 +44,6 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.erl.nodes.ErlExpressionNode;
-import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.runtime.ErlList;
 
 /**
@@ -70,23 +69,25 @@ public class ErlListAddNode extends ErlExpressionNode {
     public Object match(VirtualFrame frame, Object match) {
 
         if (!(match instanceof ErlList)) {
-            throw ErlControlException.makeBadmatch(match);
+            return null;
         }
 
         final ErlList list = (ErlList) match;
 
         if (ErlList.NIL == list) {
-            throw ErlControlException.makeBadmatch(list);
+            return null;
         }
 
         Object lhs = lhsNode.executeGeneric(frame);
 
         if (!(lhs instanceof ErlList) || !list.startsWith(((ErlList) lhs), true)) {
-            throw ErlControlException.makeBadmatch(list);
+            return null;
         }
 
-        Object tail = list.nthTail(((ErlList) lhs).length());
-        rhsNode.match(frame, tail);
+        final Object tail = list.nthTail(((ErlList) lhs).length());
+        if (null == rhsNode.match(frame, tail)) {
+            return null;
+        }
         return list;
     }
 }

@@ -457,6 +457,9 @@ public final class ErlBinElementNode extends ErlExpressionNode {
                 }
 
                 bytes = bin.extractLeft(0, size);
+                if (null == bytes) {
+                    throw ErlControlException.makeBadmatch(bin);
+                }
 
             } else {
 
@@ -530,7 +533,7 @@ public final class ErlBinElementNode extends ErlExpressionNode {
     public int match(VirtualFrame frame, ErlBinary bin, int bitOffset, int bitSize) {
 
         if (alwaysBadarg) {
-            throw ErlControlException.makeBadmatch(bin);
+            return -1;
         }
 
         if (null != decoder) {
@@ -551,7 +554,7 @@ public final class ErlBinElementNode extends ErlExpressionNode {
 
         } else {
 
-            throw ErlControlException.makeBadmatch(bin);
+            return -1;
         }
     }
 
@@ -561,14 +564,20 @@ public final class ErlBinElementNode extends ErlExpressionNode {
         final int size = currentUnitSize * ((null == sizeExprNode) ? DEFAULT_INTEGER_SIZE : evaluateSizeAsInt(frame));
 
         if (size > bitSize) {
-            throw ErlControlException.makeBadmatch(bin);
+            return -1;
         }
 
         byte[] bytes = bin.extract(bitOffset, size, needByteOrderSwap);
+        if (null == bytes) {
+            return -1;
+        }
 
         if (bytes.length == 0) {
 
-            valueExprNode.match(frame, (long) 0);
+            if (null == valueExprNode.match(frame, (long) 0)) {
+                return -1;
+            }
+
             return size;
 
         }
@@ -608,7 +617,9 @@ public final class ErlBinElementNode extends ErlExpressionNode {
 
             final long number = byteBufferFrom(bytes, Long.SIZE / Byte.SIZE, padByte).getLong(0);
 
-            valueExprNode.match(frame, number);
+            if (null == valueExprNode.match(frame, number)) {
+                return -1;
+            }
 
         } else {
 
@@ -628,7 +639,9 @@ public final class ErlBinElementNode extends ErlExpressionNode {
                 number = new BigInteger(1, bytes);
             }
 
-            valueExprNode.match(frame, number);
+            if (null == valueExprNode.match(frame, number)) {
+                return -1;
+            }
         }
 
         return size;
@@ -644,21 +657,26 @@ public final class ErlBinElementNode extends ErlExpressionNode {
 
             do {
                 if (size > bitSize2) {
-                    throw ErlControlException.makeBadmatch(bin);
+                    return -1;
                 }
 
                 byte[] bytes = bin.extractLeft(bitOffset + size, ErlBinary.BITS_PER_BYTE);
+                if (null == bytes) {
+                    return -1;
+                }
                 decoder.feed(bytes[0]);
                 size += ErlBinary.BITS_PER_BYTE;
 
             } while (!decoder.isComplete());
 
-            valueExprNode.match(frame, (long) decoder.getCodepoint());
+            if (null == valueExprNode.match(frame, (long) decoder.getCodepoint())) {
+                return -1;
+            }
 
             return size;
 
         } catch (DecodeFailedException ex) {
-            throw ErlControlException.makeBadmatch(bin);
+            return -1;
         }
     }
 
@@ -668,31 +686,41 @@ public final class ErlBinElementNode extends ErlExpressionNode {
         final int size = currentUnitSize * ((null == sizeExprNode) ? DEFAULT_DOUBLE_SIZE : evaluateSizeAsInt(frame));
 
         if (size > bitSize) {
-            throw ErlControlException.makeBadmatch(bin);
+            return -1;
         }
 
         byte[] bytes = bin.extractRight(bitOffset, size);
+        if (null == bytes) {
+            return -1;
+        }
 
         if (bytes.length == 0) {
 
-            valueExprNode.match(frame, (double) 0);
+            if (null == valueExprNode.match(frame, (double) 0)) {
+                return -1;
+            }
+
             return size;
 
         } else if (bytes.length == Double.SIZE / Byte.SIZE) {
 
             final double number = byteBufferFrom(bytes, Double.SIZE / Byte.SIZE).getDouble(0);
 
-            valueExprNode.match(frame, number);
+            if (null == valueExprNode.match(frame, number)) {
+                return -1;
+            }
 
         } else if (bytes.length == Float.SIZE / Byte.SIZE) {
 
             final float number = byteBufferFrom(bytes, Float.SIZE / Byte.SIZE).getFloat(0);
 
-            valueExprNode.match(frame, (double) number);
+            if (null == valueExprNode.match(frame, (double) number)) {
+                return -1;
+            }
 
         } else {
 
-            throw ErlControlException.makeBadmatch(bin);
+            return -1;
         }
 
         return size;
@@ -711,20 +739,25 @@ public final class ErlBinElementNode extends ErlExpressionNode {
         final int size = (null == sizeExprNode) ? bitSize : (currentUnitSize * evaluateSizeAsInt(frame));
 
         if (size > bitSize) {
-            throw ErlControlException.makeBadmatch(bin);
+            return -1;
         }
 
         if (0 != (size % currentUnitSize)) {
-            throw ErlControlException.makeBadarg();
+            return -1;
         }
 
         final int usedBits = (size & (ErlBinary.BITS_PER_BYTE - 1));
         final int unusedBits = (0 == usedBits) ? 0 : (ErlBinary.BITS_PER_BYTE - usedBits);
 
         byte[] bytes = bin.extractLeft(bitOffset, size);
+        if (null == bytes) {
+            return -1;
+        }
 
         ErlBinary part = ErlBinary.fromArray(unusedBits, bytes);
-        valueExprNode.match(frame, part);
+        if (null == valueExprNode.match(frame, part)) {
+            return -1;
+        }
 
         return size;
     }

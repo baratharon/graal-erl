@@ -108,19 +108,9 @@ public final class ErlListGeneratorNode extends ErlExpressionNode {
             if (newTail instanceof ErlList) {
 
                 genState.list = (ErlList) newTail;
-                try {
-
-                    matchNode.match(frame, result);
+                if (null != matchNode.match(frame, result)) {
                     return true;
-
-                } catch (ErlControlException ex) {
-                    if (ErlControlException.SpecialTag.BADMATCH == ex.getSpecialTag()) {
-                        // ignore, go to next element
-                    } else {
-                        throw ex;
-                    }
                 }
-
             } else {
 
                 throw ErlControlException.makeBadGenerator(newTail);

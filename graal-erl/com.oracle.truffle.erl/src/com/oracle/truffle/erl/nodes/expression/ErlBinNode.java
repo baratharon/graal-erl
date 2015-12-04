@@ -105,7 +105,7 @@ public final class ErlBinNode extends ErlExpressionNode {
             return result;
         }
 
-        throw ErlControlException.makeBadmatch(match);
+        return null;
     }
 
     @ExplodeLoop
@@ -136,7 +136,7 @@ public final class ErlBinNode extends ErlExpressionNode {
         } else {
 
             if (!(obj instanceof ErlBinary)) {
-                throw ErlControlException.makeBadmatch(match);
+                return null;
             }
 
             bin = (ErlBinary) obj;
@@ -151,6 +151,11 @@ public final class ErlBinNode extends ErlExpressionNode {
         for (int i = 0; i < elementNodes.length; ++i) {
 
             final int size = elementNodes[i].match(frame, bin, bitOffset, bitSize);
+
+            if (size < 0) {
+                return null;
+            }
+
             bitInfo[0] += size;
             bitOffset += size;
             bitSize -= size;

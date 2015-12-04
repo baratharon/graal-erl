@@ -108,13 +108,15 @@ public final class ErlMapNode extends ErlExpressionNode {
         CompilerAsserts.compilationConstant(elementNodes.length);
 
         if (!(match instanceof ErlMap)) {
-            throw ErlControlException.makeBadmatch(match);
+            return null;
         }
 
         final ErlMap map = (ErlMap) match;
 
         for (int i = 0; i < elementNodes.length; ++i) {
-            elementNodes[i].match(frame, map);
+            if (null == elementNodes[i].match(frame, map)) {
+                return null;
+            }
         }
 
         return map;

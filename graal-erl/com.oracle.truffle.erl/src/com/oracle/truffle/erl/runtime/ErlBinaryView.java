@@ -42,6 +42,7 @@ package com.oracle.truffle.erl.runtime;
 
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.interop.TruffleObject;
+import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 
 /**
  * The Erlang binaries and bit strings are represented as array of bytes.
@@ -68,6 +69,11 @@ public final class ErlBinaryView implements TruffleObject {
         if (null == concreteBinary) {
 
             byte[] bytes = viewedBinary.extractLeft(bitOffset, bitSize);
+
+            if (null == bytes) {
+                throw ErlControlException.makeBadmatch(viewedBinary);
+            }
+
             final int usedBits = bitSize & (ErlBinary.BITS_PER_BYTE - 1);
             final int unusedBits = (0 == usedBits) ? 0 : (ErlBinary.BITS_PER_BYTE - usedBits);
             concreteBinary = ErlBinary.fromArray(unusedBits, bytes);

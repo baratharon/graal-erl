@@ -44,6 +44,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.erl.nodes.ErlExpressionNode;
+import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 
 @NodeInfo(shortName = "match", description = "The node that controls the matching mechanism.")
 public final class ErlMatchNode extends ErlExpressionNode {
@@ -67,8 +68,12 @@ public final class ErlMatchNode extends ErlExpressionNode {
         // needs the matched value. The scheme is easy: get the value from the right-hand side, and
         // match it with the left-hand side.
 
-        final Object match = rightNode.executeGeneric(frame);
-        return leftNode.match(frame, match);
+        final Object rhs = rightNode.executeGeneric(frame);
+        final Object lhs = leftNode.match(frame, rhs);
+        if (null == lhs) {
+            throw ErlControlException.makeBadmatch(rhs);
+        }
+        return lhs;
     }
 
     @Override
@@ -77,8 +82,9 @@ public final class ErlMatchNode extends ErlExpressionNode {
         // If a match() is called on an ErlMatchNode means it was called from an other ErlMatchNode.
         // In this case both leftNode and rightNode must be matched, and return the match value.
 
-        leftNode.match(frame, match);
-        rightNode.match(frame, match);
+        if (null == leftNode.match(frame, match) || null == rightNode.match(frame, match)) {
+            return null;
+        }
 
         return match;
     }

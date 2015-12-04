@@ -242,6 +242,7 @@ public final class ErlAtom implements TruffleObject {
         return escapeAtom(value);
     }
 
+    @TruffleBoundary
     public static String escapeAtom(String str) {
 
         StringBuilder sb = new StringBuilder();
@@ -296,6 +297,7 @@ public final class ErlAtom implements TruffleObject {
         throw new RuntimeException("This is not a hexadecimal character: \'" + ch + "\'");
     }
 
+    @TruffleBoundary
     public static String unescapeAtom(String str) {
 
         if ('\'' != str.charAt(0)) {
@@ -375,6 +377,11 @@ public final class ErlAtom implements TruffleObject {
 
     @Override
     public boolean equals(Object rhs) {
+
+        if (this == rhs) {
+            return true;
+        }
+
         if (rhs instanceof ErlAtom) {
 
             // not equal atoms are filtered out quickly

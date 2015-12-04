@@ -226,7 +226,7 @@ public final class ErlBinary implements TruffleObject {
         }
 
         if ((bitOffset + bitSize) > binaryBitSize) {
-            throw ErlControlException.makeBadmatch(this);
+            return null;
         }
 
         if (0 == bitSize) {
@@ -317,7 +317,7 @@ public final class ErlBinary implements TruffleObject {
         }
 
         if ((bitOffset + bitSize) > binaryBitSize) {
-            throw ErlControlException.makeBadmatch(this);
+            return null;
         }
 
         if (0 == bitSize) {

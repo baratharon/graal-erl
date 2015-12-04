@@ -110,7 +110,7 @@ public final class ErlClauseNode extends ErlExpressionNode {
     }
 
     @ExplodeLoop
-    public Object doWith(VirtualFrame frame, Object arguments[]) {
+    private boolean match(VirtualFrame frame, Object arguments[]) {
 
         CompilerAsserts.compilationConstant(matchNodes.length);
 
@@ -119,21 +119,19 @@ public final class ErlClauseNode extends ErlExpressionNode {
         }
 
         for (int i = 0; i < matchNodes.length; ++i) {
-            try {
-
-                matchNodes[i].match(frame, arguments[i]);
-
-            } catch (ErlControlException ex) {
-
-                if (ErlControlException.SpecialTag.BADMATCH == ex.getSpecialTag()) {
-
-                    throw ErlNoClauseMatchedException.SINGLETON;
-
-                } else {
-
-                    throw ex;
-                }
+            if (null == matchNodes[i].match(frame, arguments[i])) {
+                return false;
             }
+        }
+
+        return true;
+    }
+
+    @ExplodeLoop
+    public Object doWith(VirtualFrame frame, Object arguments[]) {
+
+        if (!match(frame, arguments)) {
+            return null;
         }
 
         /*
@@ -141,7 +139,7 @@ public final class ErlClauseNode extends ErlExpressionNode {
          * which outcome.
          */
         if (!condition.profile(evaluateCondition(frame))) {
-            throw ErlNoClauseMatchedException.SINGLETON;
+            return null;
         }
 
         /*
