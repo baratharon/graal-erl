@@ -130,6 +130,7 @@ import com.oracle.truffle.erl.builtins.erlang.ListToFloatBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.ListToInteger1BuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.ListToInteger2BuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.ListToTupleBuiltinFactory;
+import com.oracle.truffle.erl.builtins.erlang.LoadedBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.LocaltimeBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.LocaltimeToUniversaltimeBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.MakeFunBuiltinFactory;
@@ -372,6 +373,7 @@ public final class ErlangBuiltins {
         context.installBuiltin(GetStacktraceBuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(GarbageCollect0BuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(ModuleLoadedBuiltinFactory.getInstance(), registerRootNodes);
+        context.installBuiltin(LoadedBuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(PreLoadedBuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(DtSpreadTagBuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(DtAppendVmTagDataBuiltinFactory.getInstance(), registerRootNodes);

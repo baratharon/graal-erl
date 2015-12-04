@@ -57,6 +57,18 @@ public class ErlModuleImpl implements ErlModule {
         return moduleName;
     }
 
+    public ErlAtom getModuleNameAtom() {
+        if (null == cachedModuleNameAtom) {
+            synchronized (this) {
+                if (null == cachedModuleNameAtom) {
+                    cachedModuleNameAtom = new ErlAtom(moduleName);
+                }
+            }
+        }
+
+        return cachedModuleNameAtom;
+    }
+
     public boolean isPreLoaded() {
         return preLoaded;
     }
@@ -182,15 +194,7 @@ public class ErlModuleImpl implements ErlModule {
 
         switch (item) {
             case MODULE: {
-                if (null == cachedModuleNameAtom) {
-                    synchronized (this) {
-                        if (null == cachedModuleNameAtom) {
-                            cachedModuleNameAtom = new ErlAtom(moduleName);
-                        }
-                    }
-                }
-
-                return cachedModuleNameAtom;
+                return getModuleNameAtom();
             }
 
             case FUNCTIONS:
