@@ -196,36 +196,39 @@ public final class ErlBinElementNode extends ErlExpressionNode {
 
     public static final class TypeSpecifier {
 
-        public static final TypeSpecifier LITTLE = new TypeSpecifier();
-        public static final TypeSpecifier BIG = new TypeSpecifier();
-        public static final TypeSpecifier NATIVE = new TypeSpecifier();
-        public static final TypeSpecifier SIGNED = new TypeSpecifier();
-        public static final TypeSpecifier UNSIGNED = new TypeSpecifier();
-        public static final TypeSpecifier INTEGER = new TypeSpecifier();
-        public static final TypeSpecifier FLOAT = new TypeSpecifier();
-        public static final TypeSpecifier BINARY = new TypeSpecifier();
-        public static final TypeSpecifier BITSTRING = new TypeSpecifier();
-        public static final TypeSpecifier UTF8 = new TypeSpecifier();
-        public static final TypeSpecifier UTF16 = new TypeSpecifier();
-        public static final TypeSpecifier UTF32 = new TypeSpecifier();
+        public static final TypeSpecifier LITTLE = new TypeSpecifier("little");
+        public static final TypeSpecifier BIG = new TypeSpecifier("big");
+        public static final TypeSpecifier NATIVE = new TypeSpecifier("native");
+        public static final TypeSpecifier SIGNED = new TypeSpecifier("signed");
+        public static final TypeSpecifier UNSIGNED = new TypeSpecifier("unsigned");
+        public static final TypeSpecifier INTEGER = new TypeSpecifier("integer");
+        public static final TypeSpecifier FLOAT = new TypeSpecifier("float");
+        public static final TypeSpecifier BINARY = new TypeSpecifier("binary");
+        public static final TypeSpecifier BITSTRING = new TypeSpecifier("bitstring");
+        public static final TypeSpecifier UTF8 = new TypeSpecifier("utf8");
+        public static final TypeSpecifier UTF16 = new TypeSpecifier("utf16");
+        public static final TypeSpecifier UTF32 = new TypeSpecifier("utf32");
 
         public static final int MIN_UNIT_SIZE = 1;
         public static final int MAX_UNIT_SIZE = 256;
 
-        private int unitSize;
+        private final String id;
+        private final int unitSize;
 
-        private TypeSpecifier() {
+        private TypeSpecifier(String id) {
+            this.id = id;
             this.unitSize = 0;
         }
 
-        private TypeSpecifier(int unitSize) {
+        private TypeSpecifier(String id, int unitSize) {
+            this.id = id;
             this.unitSize = unitSize;
         }
 
         public static TypeSpecifier unit(final int size) {
 
             if (MIN_UNIT_SIZE <= size && size <= MAX_UNIT_SIZE) {
-                return new TypeSpecifier(size);
+                return new TypeSpecifier("unit", size);
             }
 
             throw ErlControlException.makeBadarg();
@@ -233,6 +236,14 @@ public final class ErlBinElementNode extends ErlExpressionNode {
 
         public int getUnitSize() {
             return unitSize;
+        }
+
+        @Override
+        public String toString() {
+            if (0 == unitSize) {
+                return id;
+            }
+            return id + ":" + unitSize;
         }
     }
 
@@ -423,7 +434,6 @@ public final class ErlBinElementNode extends ErlExpressionNode {
             if (value instanceof ErlBinary) {
 
                 ErlBinary bin = (ErlBinary) value;
-                final boolean isBitString = bin.hasByteFragment();
                 int currentUnitSize;
 
                 if (TypeSpecifier.BITSTRING == typeSpec) {
@@ -432,10 +442,6 @@ public final class ErlBinElementNode extends ErlExpressionNode {
                     size = currentUnitSize * ((null != sizeExprNode) ? evaluateSizeAsInt(frame) : bin.getBitSize());
 
                 } else if (TypeSpecifier.BINARY == typeSpec) {
-
-                    if (isBitString) {
-                        throw ErlControlException.makeBadarg();
-                    }
 
                     currentUnitSize = (0 == unitSize) ? DEFAULT_BINARY_UNIT : unitSize;
                     size = currentUnitSize * ((null != sizeExprNode) ? evaluateSizeAsInt(frame) : bin.getByteSize());

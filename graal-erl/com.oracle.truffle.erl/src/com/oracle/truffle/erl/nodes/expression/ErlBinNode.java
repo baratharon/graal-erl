@@ -97,12 +97,19 @@ public final class ErlBinNode extends ErlExpressionNode {
 
     @Override
     public Object match(VirtualFrame frame, Object match) {
-        int[] usedBytes = new int[]{0};
-        return match(frame, match, usedBytes);
+
+        int[] bitInfo = new int[2];
+        final Object result = match(frame, match, bitInfo);
+
+        if (bitInfo[0] == bitInfo[1]) {
+            return result;
+        }
+
+        throw ErlControlException.makeBadmatch(match);
     }
 
     @ExplodeLoop
-    public Object match(VirtualFrame frame, Object match, int[] usedBytes) {
+    public Object match(VirtualFrame frame, Object match, int[] bitInfo) {
         /*
          * This assertion illustrates that the array length is really a constant during compilation.
          */
@@ -136,14 +143,15 @@ public final class ErlBinNode extends ErlExpressionNode {
             bitSize = bin.getBitSize();
         }
 
-        usedBytes[0] = 0;
+        bitInfo[0] = 0;
+        bitInfo[1] = bitSize;
 
         // System.out.println("MATCH " + bin);
 
         for (int i = 0; i < elementNodes.length; ++i) {
 
             final int size = elementNodes[i].match(frame, bin, bitOffset, bitSize);
-            usedBytes[0] += size;
+            bitInfo[0] += size;
             bitOffset += size;
             bitSize -= size;
         }

@@ -82,7 +82,7 @@ public final class ErlBinGeneratorNode extends ErlExpressionNode {
         private ErlBinary bin;
         private int bitOffset;
         private int bitSize;
-        private int[] tmpArray = new int[1];
+        private int[] tmpArray = new int[2];
 
         private GenState(ErlBinary bin) {
             this.bin = bin;
