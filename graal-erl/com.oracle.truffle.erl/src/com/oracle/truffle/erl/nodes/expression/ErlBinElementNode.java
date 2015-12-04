@@ -439,15 +439,19 @@ public final class ErlBinElementNode extends ErlExpressionNode {
                 if (TypeSpecifier.BITSTRING == typeSpec) {
 
                     currentUnitSize = (0 == unitSize) ? DEFAULT_BITSTRING_UNIT : unitSize;
-                    size = currentUnitSize * ((null != sizeExprNode) ? evaluateSizeAsInt(frame) : bin.getBitSize());
+                    size = ((null != sizeExprNode) ? (currentUnitSize * evaluateSizeAsInt(frame)) : bin.getBitSize());
 
                 } else if (TypeSpecifier.BINARY == typeSpec) {
 
                     currentUnitSize = (0 == unitSize) ? DEFAULT_BINARY_UNIT : unitSize;
-                    size = currentUnitSize * ((null != sizeExprNode) ? evaluateSizeAsInt(frame) : bin.getByteSize());
+                    size = ((null != sizeExprNode) ? (currentUnitSize * evaluateSizeAsInt(frame)) : bin.getBitSize());
 
                 } else {
 
+                    throw ErlControlException.makeBadarg();
+                }
+
+                if (0 != (size % currentUnitSize)) {
                     throw ErlControlException.makeBadarg();
                 }
 
