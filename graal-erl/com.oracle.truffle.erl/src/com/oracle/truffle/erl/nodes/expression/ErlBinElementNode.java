@@ -384,7 +384,7 @@ public final class ErlBinElementNode extends ErlExpressionNode {
 
                 if (TypeSpecifier.INTEGER == typeSpec) {
                     currentUnitSize = (0 == unitSize) ? DEFAULT_INTEGER_UNIT : unitSize;
-                    size = currentUnitSize * ((null != sizeExprNode) ? evaluateSizeAsInt(frame) : DEFAULT_INTEGER_SIZE);
+                    size = currentUnitSize * ((null == sizeExprNode) ? DEFAULT_INTEGER_SIZE : evaluateSizeAsInt(frame));
                 } else {
                     throw ErlControlException.makeBadarg();
                 }
@@ -412,7 +412,7 @@ public final class ErlBinElementNode extends ErlExpressionNode {
             }
 
             int currentUnitSize = (0 == unitSize) ? DEFAULT_DOUBLE_UNIT : unitSize;
-            size = currentUnitSize * ((null != sizeExprNode) ? evaluateSizeAsInt(frame) : DEFAULT_DOUBLE_SIZE);
+            size = currentUnitSize * ((null == sizeExprNode) ? DEFAULT_DOUBLE_SIZE : evaluateSizeAsInt(frame));
             numBytes = (size + ErlBinary.BITS_PER_BYTE - 1) / ErlBinary.BITS_PER_BYTE;
 
             if (Double.SIZE == size) {
@@ -434,22 +434,17 @@ public final class ErlBinElementNode extends ErlExpressionNode {
             if (value instanceof ErlBinary) {
 
                 ErlBinary bin = (ErlBinary) value;
-                int currentUnitSize;
+                final int currentUnitSize;
 
                 if (TypeSpecifier.BITSTRING == typeSpec) {
-
                     currentUnitSize = (0 == unitSize) ? DEFAULT_BITSTRING_UNIT : unitSize;
-                    size = ((null != sizeExprNode) ? (currentUnitSize * evaluateSizeAsInt(frame)) : bin.getBitSize());
-
                 } else if (TypeSpecifier.BINARY == typeSpec) {
-
                     currentUnitSize = (0 == unitSize) ? DEFAULT_BINARY_UNIT : unitSize;
-                    size = ((null != sizeExprNode) ? (currentUnitSize * evaluateSizeAsInt(frame)) : bin.getBitSize());
-
                 } else {
-
                     throw ErlControlException.makeBadarg();
                 }
+
+                size = (null == sizeExprNode) ? bin.getBitSize() : (currentUnitSize * evaluateSizeAsInt(frame));
 
                 if (0 != (size % currentUnitSize)) {
                     throw ErlControlException.makeBadarg();
@@ -563,7 +558,7 @@ public final class ErlBinElementNode extends ErlExpressionNode {
     private int matchInteger(VirtualFrame frame, ErlBinary bin, int bitOffset, int bitSize) {
 
         final int currentUnitSize = (0 == unitSize) ? DEFAULT_INTEGER_UNIT : unitSize;
-        final int size = currentUnitSize * ((null != sizeExprNode) ? evaluateSizeAsInt(frame) : DEFAULT_INTEGER_SIZE);
+        final int size = currentUnitSize * ((null == sizeExprNode) ? DEFAULT_INTEGER_SIZE : evaluateSizeAsInt(frame));
 
         if (size > bitSize) {
             throw ErlControlException.makeBadmatch(bin);
@@ -670,7 +665,7 @@ public final class ErlBinElementNode extends ErlExpressionNode {
     private int matchFloat(VirtualFrame frame, ErlBinary bin, int bitOffset, int bitSize) {
 
         final int currentUnitSize = (0 == unitSize) ? DEFAULT_DOUBLE_UNIT : unitSize;
-        final int size = currentUnitSize * ((null != sizeExprNode) ? evaluateSizeAsInt(frame) : DEFAULT_DOUBLE_SIZE);
+        final int size = currentUnitSize * ((null == sizeExprNode) ? DEFAULT_DOUBLE_SIZE : evaluateSizeAsInt(frame));
 
         if (size > bitSize) {
             throw ErlControlException.makeBadmatch(bin);
@@ -705,26 +700,22 @@ public final class ErlBinElementNode extends ErlExpressionNode {
 
     private int matchBinary(VirtualFrame frame, ErlBinary bin, int bitOffset, int bitSize, boolean isBitString) {
 
-        int currentUnitSize;
-        int size;
+        final int currentUnitSize;
 
         if (isBitString) {
-
             currentUnitSize = (0 == unitSize) ? DEFAULT_BITSTRING_UNIT : unitSize;
-            size = currentUnitSize * ((null != sizeExprNode) ? evaluateSizeAsInt(frame) : bitSize);
-
         } else {
-
-            if (0 != (bitSize & (ErlBinary.BITS_PER_BYTE - 1))) {
-                throw ErlControlException.makeBadarg();
-            }
-
             currentUnitSize = (0 == unitSize) ? DEFAULT_BINARY_UNIT : unitSize;
-            size = currentUnitSize * ((null != sizeExprNode) ? evaluateSizeAsInt(frame) : (bitSize / ErlBinary.BITS_PER_BYTE));
         }
+
+        final int size = (null == sizeExprNode) ? bitSize : (currentUnitSize * evaluateSizeAsInt(frame));
 
         if (size > bitSize) {
             throw ErlControlException.makeBadmatch(bin);
+        }
+
+        if (0 != (size % currentUnitSize)) {
+            throw ErlControlException.makeBadarg();
         }
 
         final int usedBits = (size & (ErlBinary.BITS_PER_BYTE - 1));

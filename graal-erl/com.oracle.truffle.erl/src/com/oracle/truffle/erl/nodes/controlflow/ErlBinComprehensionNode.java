@@ -48,6 +48,7 @@ import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.erl.nodes.ErlExpressionNode;
 import com.oracle.truffle.erl.runtime.ErlBinary;
+import com.oracle.truffle.erl.runtime.ErlBinaryView;
 import com.oracle.truffle.erl.runtime.ErlLazyBinary;
 
 /**
@@ -76,7 +77,7 @@ public final class ErlBinComprehensionNode extends ErlListComprehensionNode {
 
                 Object obj = elements.get(0);
 
-                if (!(obj instanceof ErlBinary) && !(obj instanceof ErlLazyBinary)) {
+                if (!(obj instanceof ErlBinary) && !(obj instanceof ErlLazyBinary) && !(obj instanceof ErlBinaryView)) {
                     throw ErlControlException.makeBadarg();
                 }
 
