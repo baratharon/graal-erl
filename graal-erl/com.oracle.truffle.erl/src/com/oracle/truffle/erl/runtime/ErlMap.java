@@ -46,6 +46,7 @@ import java.util.Comparator;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
@@ -209,6 +210,7 @@ public final class ErlMap implements TruffleObject {
         return mapping.size();
     }
 
+    @TruffleBoundary
     public int compare(ErlMap rhs, boolean exact) {
 
         final ErlMap lhs = this;

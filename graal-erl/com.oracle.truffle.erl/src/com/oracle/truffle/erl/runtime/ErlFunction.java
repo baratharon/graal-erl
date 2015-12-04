@@ -42,6 +42,7 @@ package com.oracle.truffle.erl.runtime;
 
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.RootCallTarget;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
@@ -180,6 +181,7 @@ public class ErlFunction implements TruffleObject {
         return "#Fun<" + module + "." + name + "." + arity + ">";
     }
 
+    @TruffleBoundary
     public int compare(ErlFunction rhs) {
 
         int res;

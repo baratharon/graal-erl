@@ -45,6 +45,7 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
@@ -217,6 +218,7 @@ public final class ErlAtom implements TruffleObject {
         throw ErlControlException.makeBadarg();
     }
 
+    @TruffleBoundary
     public ErlAtom(String value) {
         this.value = value;
         this.hvalue = calcHashValue(value);
@@ -350,6 +352,7 @@ public final class ErlAtom implements TruffleObject {
 
     }
 
+    @TruffleBoundary
     public static int compare(Object lhs, Object rhs) {
 
         if (lhs == rhs) {

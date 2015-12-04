@@ -55,6 +55,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import com.oracle.truffle.api.ExecutionContext;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.nodes.NodeInfo;
@@ -589,6 +590,7 @@ public final class ErlContext extends ExecutionContext {
         throw new RuntimeException("Cannot determine term rank for: \"" + obj + "\"");
     }
 
+    @TruffleBoundary // TODO
     public static int compareTerms(Object lhs, Object rhs, boolean exact) {
 
         final TermRank lhsRank = getTermRank(lhs);
@@ -641,6 +643,7 @@ public final class ErlContext extends ExecutionContext {
         throw new RuntimeException("Cannot compare " + lhsRank);
     }
 
+    @TruffleBoundary // TODO
     public static int compareNumbers(Object lhs, Object rhs, boolean exact) {
 
         final NumberKind lhsKind = getNumberKind(lhs);

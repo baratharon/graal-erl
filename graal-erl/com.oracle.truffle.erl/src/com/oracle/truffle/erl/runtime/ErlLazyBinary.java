@@ -43,6 +43,7 @@ package com.oracle.truffle.erl.runtime;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.interop.TruffleObject;
 
@@ -75,6 +76,7 @@ public final class ErlLazyBinary implements TruffleObject {
         return null != concreteBinary;
     }
 
+    @TruffleBoundary
     public ErlBinary construct() {
 
         if (null == concreteBinary) {

@@ -43,6 +43,7 @@ package com.oracle.truffle.erl.runtime;
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
@@ -168,6 +169,7 @@ public final class ErlTuple implements TruffleObject {
         throw ErlControlException.makeBadarg();
     }
 
+    @TruffleBoundary
     public int compare(ErlTuple rhs, boolean exact) {
 
         final ErlTuple lhs = this;
