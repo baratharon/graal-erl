@@ -55,9 +55,9 @@ import com.oracle.truffle.erl.runtime.ErlList;
  * Returns a list of integers which correspond to the bytes of Binary.
  */
 @NodeInfo(shortName = "binaryToList")
-public abstract class BinaryToListBuiltin extends ErlBuiltinNode {
+public abstract class BinaryToList1Builtin extends ErlBuiltinNode {
 
-    public BinaryToListBuiltin() {
+    public BinaryToList1Builtin() {
         super(SourceSection.createUnavailable("Erlang builtin", "binary_to_list"));
     }
 
