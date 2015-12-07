@@ -40,6 +40,7 @@
  */
 package com.oracle.truffle.erl.parser;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
@@ -111,6 +112,10 @@ class StackableSet<T> {
         }
 
         return result;
+    }
+
+    public void addAll(Collection<? extends T> collection) {
+        current.addAll(collection);
     }
 
     public void push() {

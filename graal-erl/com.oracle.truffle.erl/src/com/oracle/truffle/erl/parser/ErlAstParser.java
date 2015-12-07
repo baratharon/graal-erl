@@ -906,11 +906,15 @@ class ErlAstParser {
                 parseInteger(); // ignore line number
                 accept(',');
 
+                boundVariables.push();
                 boundVariables.pushAcceptAll();
                 final ErlExpressionNode leftNode = parseExpression(fd);
                 boundVariables.popAcceptAll();
+                final Set<String> changes = boundVariables.getChangeSet();
+                boundVariables.pop();
                 accept(',');
                 final ErlExpressionNode rightNode = parseExpression(fd);
+                boundVariables.addAll(changes);
 
                 expr = new ErlMatchNode(null, leftNode, rightNode);
                 break;
