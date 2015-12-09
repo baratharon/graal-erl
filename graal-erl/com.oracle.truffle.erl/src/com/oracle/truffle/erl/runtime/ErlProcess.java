@@ -805,6 +805,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
      * @param consumer the consumer that decides the message is needed or not
      * @return the transformed value by the consumer
      */
+    @TruffleBoundary
     public static Object receiveMessage(long timeoutMsec, MessageConsumer consumer) {
 
         ErlProcess proc = ProcessManager.getCurrentProcess();

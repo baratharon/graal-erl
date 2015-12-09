@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.runtime.ErlAtom;
 import com.oracle.truffle.erl.runtime.ErlContext;
@@ -100,6 +101,7 @@ public abstract class ErlTable {
         return (ErlProcess.getSelfPid().getId() << 17) | (nextTableID++);
     }
 
+    @TruffleBoundary
     public static ErlTable createTable(ErlAtom name, TableOptions options) {
 
         Object tableID;
@@ -128,23 +130,27 @@ public abstract class ErlTable {
         }
     }
 
+    @TruffleBoundary
     public static ErlTable findTable(Object tid) {
         synchronized (TABLES) {
             return TABLES.get(tid);
         }
     }
 
+    @TruffleBoundary
     public void forget() {
         synchronized (TABLES) {
             TABLES.remove(tableID);
         }
     }
 
+    @TruffleBoundary
     public synchronized boolean insert(ErlTuple tuple) {
         checkWriteAccess();
         return insertTuple(tuple);
     }
 
+    @TruffleBoundary
     public synchronized boolean insert(ErlList list) {
         checkWriteAccess();
 
@@ -155,11 +161,13 @@ public abstract class ErlTable {
         return true;
     }
 
+    @TruffleBoundary
     public synchronized List<ErlTuple> lookup(Object key) {
         checkReadAccess();
         return lookupTuples(key);
     }
 
+    @TruffleBoundary
     public synchronized ErlTuple slot(long index) {
         checkReadAccess();
         if (0 <= index && index <= Integer.MAX_VALUE) {
@@ -168,6 +176,7 @@ public abstract class ErlTable {
         return null;
     }
 
+    @TruffleBoundary
     public synchronized void deleteWithKey(Object key) {
 
         checkWriteAccess();
@@ -177,6 +186,7 @@ public abstract class ErlTable {
         }
     }
 
+    @TruffleBoundary
     public synchronized long selectDelete(ErlList matchSpec) {
 
         checkWriteAccess();
@@ -205,6 +215,7 @@ public abstract class ErlTable {
         return deleted;
     }
 
+    @TruffleBoundary
     public synchronized ErlList match(Object matchPattern) {
 
         checkWriteAccess();

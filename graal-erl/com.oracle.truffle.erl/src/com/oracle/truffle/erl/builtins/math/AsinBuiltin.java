@@ -42,6 +42,7 @@ package com.oracle.truffle.erl.builtins.math;
 
 import java.math.BigInteger;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
@@ -70,6 +71,7 @@ public abstract class AsinBuiltin extends ErlBuiltinNode {
     }
 
     @Specialization
+    @TruffleBoundary
     public double asin(BigInteger number) {
         return Math.asin(number.doubleValue());
     }

@@ -43,6 +43,7 @@ package com.oracle.truffle.erl.runtime.misc;
 import java.math.BigInteger;
 import java.util.LinkedList;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.runtime.ErlBinary;
 import com.oracle.truffle.erl.runtime.ErlBinaryView;
@@ -87,6 +88,7 @@ public abstract class IODataVisitor {
     public IODataVisitor() {
     }
 
+    @TruffleBoundary
     public IODataVisitor accept(Object data) {
 
         if (!(data instanceof ErlList) && !(data instanceof ErlBinary) && !(data instanceof ErlLazyBinary) && !(data instanceof ErlBinaryView)) {

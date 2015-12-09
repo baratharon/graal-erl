@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.runtime.ErlAtom;
 import com.oracle.truffle.erl.runtime.ErlBinary;
@@ -105,6 +106,7 @@ public final class CompiledRegex {
         return new CompiledRegex(Pattern.compile(regex, flags), options, ro);
     }
 
+    @TruffleBoundary
     public static CompiledRegex lookup(ErlTuple tuple) {
 
         CompiledRegex cre;
@@ -136,6 +138,7 @@ public final class CompiledRegex {
         return doCompile(re, options, ro);
     }
 
+    @TruffleBoundary
     public static Object run(Object subject, Object re, ErlList options) {
 
         final RegexOptions ro = RegexOptions.parse(options, false);
@@ -190,6 +193,7 @@ public final class CompiledRegex {
                         (tuple.getElement(4) instanceof ErlBinary) && (tuple.getElement(5) instanceof ErlList);
     }
 
+    @TruffleBoundary
     public ErlTuple toTuple() {
 
         if (null == cachedTuple) {

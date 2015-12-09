@@ -40,6 +40,7 @@
  */
 package com.oracle.truffle.erl.builtins.prim_file;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
@@ -70,6 +71,7 @@ public abstract class InternalNative2NameBuiltin extends ErlBuiltinNode {
     }
 
     @Specialization
+    @TruffleBoundary
     public Object internal_native2name(ErlBinary bin) {
 
         if (bin.hasByteFragment()) {

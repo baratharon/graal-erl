@@ -42,6 +42,7 @@ package com.oracle.truffle.erl.builtins.math;
 
 import java.math.BigInteger;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
@@ -70,6 +71,7 @@ public abstract class Atan2Builtin extends ErlBuiltinNode {
     }
 
     @Specialization
+    @TruffleBoundary
     public double atan2(BigInteger a, long b) {
         return Math.atan2(a.doubleValue(), b);
     }
@@ -80,16 +82,19 @@ public abstract class Atan2Builtin extends ErlBuiltinNode {
     }
 
     @Specialization
+    @TruffleBoundary
     public double atan2(long a, BigInteger b) {
         return Math.atan2(a, b.doubleValue());
     }
 
     @Specialization
+    @TruffleBoundary
     public double atan2(BigInteger a, BigInteger b) {
         return Math.atan2(a.doubleValue(), b.doubleValue());
     }
 
     @Specialization
+    @TruffleBoundary
     public double atan2(double a, BigInteger b) {
         return Math.atan2(a, b.doubleValue());
     }
@@ -100,6 +105,7 @@ public abstract class Atan2Builtin extends ErlBuiltinNode {
     }
 
     @Specialization
+    @TruffleBoundary
     public double atan2(BigInteger a, double b) {
         return Math.atan2(a.doubleValue(), b);
     }

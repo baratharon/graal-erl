@@ -47,6 +47,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.util.ArrayList;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.runtime.ErlList;
 import com.oracle.truffle.erl.runtime.ErlPid;
@@ -69,6 +70,7 @@ public final class UdpInet extends Driver {
     }
 
     @Override
+    @TruffleBoundary
     protected void closeDriver() {
         if (null != channel) {
             try {
@@ -78,6 +80,7 @@ public final class UdpInet extends Driver {
         }
     }
 
+    @TruffleBoundary
     public static UdpInet create(@SuppressWarnings("unused") String command, PortOptions po) {
         if (po.isBinary()) {
             return new UdpInet();
@@ -87,6 +90,7 @@ public final class UdpInet extends Driver {
     }
 
     @Override
+    @TruffleBoundary
     protected AsyncAction parseCommand(byte[] data) {
 
         switch (data[0]) {
@@ -97,6 +101,7 @@ public final class UdpInet extends Driver {
     }
 
     @Override
+    @TruffleBoundary
     protected Object doControl(int operation, byte[] data) {
 
         switch (operation) {

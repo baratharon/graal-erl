@@ -72,7 +72,7 @@ public final class ErlCaptureNode extends ErlExpressionNode {
 
             final Object[] args = new Object[captureNodes.length];
 
-            for (int i = 0; i < args.length; ++i) {
+            for (int i = 0; i < captureNodes.length; ++i) {
                 args[i] = captureNodes[i].executeGeneric(frame);
             }
 

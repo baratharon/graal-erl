@@ -40,6 +40,8 @@
  */
 package com.oracle.truffle.erl.runtime.misc;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+
 /**
  * CRC-32 helper.
  * <p>
@@ -56,17 +58,20 @@ public final class CRC32 {
         private long size = 0;
 
         @Override
+        @TruffleBoundary
         protected void visit(byte b) {
             ++size;
             crc.update(b);
         }
 
         @Override
+        @TruffleBoundary
         protected void visit(final byte[] bs) {
             size += bs.length;
             crc.update(bs);
         }
 
+        @TruffleBoundary
         public long getValue() {
             return crc.getValue();
         }

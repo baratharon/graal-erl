@@ -42,6 +42,7 @@ package com.oracle.truffle.erl.builtins.os;
 
 import java.util.function.BiConsumer;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
@@ -70,6 +71,7 @@ public abstract class Getenv0Builtin extends ErlBuiltinNode {
     }
 
     @Specialization
+    @TruffleBoundary
     public ErlList getenv() {
 
         final ErlList[] ref = new ErlList[]{ErlList.NIL};

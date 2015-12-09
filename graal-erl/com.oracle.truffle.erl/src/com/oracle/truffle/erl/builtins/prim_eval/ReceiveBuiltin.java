@@ -40,6 +40,7 @@
  */
 package com.oracle.truffle.erl.builtins.prim_eval;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
@@ -68,6 +69,7 @@ public abstract class ReceiveBuiltin extends ErlBuiltinNode {
     }
 
     @Specialization
+    @TruffleBoundary
     public Object receive(ErlFunction fun, Object timeoutTerm) {
 
         if (1 != fun.getArity()) {

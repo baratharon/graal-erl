@@ -40,6 +40,7 @@
  */
 package com.oracle.truffle.erl.builtins.os;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
@@ -67,6 +68,7 @@ public abstract class Getenv1Builtin extends ErlBuiltinNode {
     }
 
     @Specialization
+    @TruffleBoundary
     public Object getenv(ErlList name) {
 
         final String value = System.getenv(name.toString());

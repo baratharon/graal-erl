@@ -42,6 +42,7 @@ package com.oracle.truffle.erl.builtins.math;
 
 import java.math.BigInteger;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
@@ -70,6 +71,7 @@ public abstract class AcosBuiltin extends ErlBuiltinNode {
     }
 
     @Specialization
+    @TruffleBoundary
     public double acos(BigInteger number) {
         return Math.acos(number.doubleValue());
     }

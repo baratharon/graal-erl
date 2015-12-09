@@ -151,6 +151,7 @@ public final class ErlMap implements TruffleObject {
         }
     }
 
+    @TruffleBoundary
     public ErlMap makeUpdated(Assoc... assocs) {
 
         ErlMap result = new ErlMap();
@@ -168,6 +169,7 @@ public final class ErlMap implements TruffleObject {
         return result;
     }
 
+    @TruffleBoundary
     public ErlMap makeRemoved(Object... keys) {
 
         ErlMap result = new ErlMap();
@@ -181,18 +183,22 @@ public final class ErlMap implements TruffleObject {
         return result;
     }
 
+    @TruffleBoundary
     public Object find(Object key) {
         return mapping.get(key);
     }
 
+    @TruffleBoundary
     public boolean isKey(Object key) {
         return null != mapping.get(key);
     }
 
+    @TruffleBoundary
     public Object[] getKeyArray() {
         return mapping.keySet().toArray();
     }
 
+    @TruffleBoundary
     public Object[] getValueArray() {
         return mapping.values().toArray();
     }
@@ -209,6 +215,7 @@ public final class ErlMap implements TruffleObject {
         return sb.toString();
     }
 
+    @TruffleBoundary
     public int getSize() {
         return mapping.size();
     }

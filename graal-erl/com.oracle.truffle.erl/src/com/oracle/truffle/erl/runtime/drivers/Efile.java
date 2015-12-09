@@ -86,6 +86,7 @@ public final class Efile extends Driver {
     public static final FilenameFilter READDIR_FILTER = new FilenameFilter() {
 
         @Override
+        @TruffleBoundary
         public boolean accept(File dir, String name) {
             return !".".equals(name) && !"..".equals(name);
         }
@@ -96,6 +97,7 @@ public final class Efile extends Driver {
      * same time. In order to protect ourself from keeping garbage (file descriptors that are
      * unaccessible from Erlang), we simply close the previous file.
      */
+    @TruffleBoundary
     public void registerOpenedFile(FDFile file) {
 
         if (null != openedFile) {

@@ -40,6 +40,7 @@
  */
 package com.oracle.truffle.erl.builtins.truffle;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.nodes.NodeUtil;
@@ -67,6 +68,7 @@ public abstract class PrintAstBuiltin extends ErlBuiltinNode {
     }
 
     @Specialization
+    @TruffleBoundary
     public ErlAtom printAst(ErlFunction func) {
         NodeUtil.printTree(ErlProcess.getContext().getOutput(), func.getCallTarget().getRootNode());
         return ErlAtom.OK;

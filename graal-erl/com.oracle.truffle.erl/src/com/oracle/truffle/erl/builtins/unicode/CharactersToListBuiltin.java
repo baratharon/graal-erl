@@ -42,6 +42,7 @@ package com.oracle.truffle.erl.builtins.unicode;
 
 import java.util.ArrayList;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
@@ -72,12 +73,14 @@ public abstract class CharactersToListBuiltin extends ErlBuiltinNode {
 
         ArrayList<Long> cps = new ArrayList<>();
 
+        @TruffleBoundary
         public void codepoint(int codepoint) {
             cps.add((long) codepoint);
         }
     }
 
     @Specialization
+    @TruffleBoundary
     public Object charactersToList(Object data, Object inEncoding) {
 
         Callback cb = new Callback();

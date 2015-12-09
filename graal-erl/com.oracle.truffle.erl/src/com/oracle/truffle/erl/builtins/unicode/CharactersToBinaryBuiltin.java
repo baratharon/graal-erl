@@ -42,6 +42,7 @@ package com.oracle.truffle.erl.builtins.unicode;
 
 import java.util.ArrayList;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
@@ -82,6 +83,7 @@ public abstract class CharactersToBinaryBuiltin extends ErlBuiltinNode {
             }
         }
 
+        @TruffleBoundary
         byte[] toArray() {
             byte[] arr = new byte[bytes.size()];
             int i = 0;
@@ -93,6 +95,7 @@ public abstract class CharactersToBinaryBuiltin extends ErlBuiltinNode {
     }
 
     @Specialization
+    @TruffleBoundary
     public Object charactersToBinary(Object data, Object inEncoding) {
 
         Callback cb = new Callback();
