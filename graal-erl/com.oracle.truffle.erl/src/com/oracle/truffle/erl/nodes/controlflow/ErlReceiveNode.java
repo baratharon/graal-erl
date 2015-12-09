@@ -97,12 +97,7 @@ public final class ErlReceiveNode extends ErlExpressionNode {
             final Object term = ErlProcess.receiveMessage(timeout, new MessageConsumer() {
 
                 public Object accept(Object msg) {
-                    try {
-                        return clauseSelector.doSelect(frame, new Object[]{msg});
-                    } catch (ErlNoClauseMatchedException ex) {
-                        // received message did not matched
-                        return null;
-                    }
+                    return clauseSelector.doSelect(frame, new Object[]{msg});
                 }
             });
 

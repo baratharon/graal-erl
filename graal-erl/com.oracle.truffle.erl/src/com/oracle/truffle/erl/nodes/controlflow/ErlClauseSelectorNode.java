@@ -50,9 +50,8 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.erl.nodes.ErlExpressionNode;
 
 /**
- * Clause selector node which execute the right clause. Will throw a
- * {@link ErlNoClauseMatchedException} when no clause was matched. Note that, the
- * {@link ErlControlException}s will passed unaltered.
+ * Clause selector node which execute the right clause. Will return null when no clause was matched.
+ * Note that, the {@link ErlControlException}s will passed unaltered.
  */
 @NodeInfo(shortName = "clauseSelector", description = "Executes the right clause.")
 public final class ErlClauseSelectorNode extends ErlExpressionNode {
@@ -107,7 +106,7 @@ public final class ErlClauseSelectorNode extends ErlExpressionNode {
         }
 
         // no clause was matched
-        throw ErlNoClauseMatchedException.SINGLETON;
+        return null;
     }
 
     @Override

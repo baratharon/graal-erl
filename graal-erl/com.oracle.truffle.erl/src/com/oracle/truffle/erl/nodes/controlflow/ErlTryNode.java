@@ -111,12 +111,9 @@ public final class ErlTryNode extends ErlExpressionNode {
                 value = valueNode.executeGeneric(frame);
 
                 if (null != clauseSelector) {
-                    try {
+                    value = clauseSelector.doSelect(frame, new Object[]{value});
 
-                        value = clauseSelector.doSelect(frame, new Object[]{value});
-
-                    } catch (ErlNoClauseMatchedException ex) {
-
+                    if (null == value) {
                         throw ErlControlException.makeTryClause(value);
                     }
                 }
@@ -141,18 +138,13 @@ public final class ErlTryNode extends ErlExpressionNode {
                     }
                 }
 
-                try {
+                final Object exResult = exceptionSelector.doSelect(frame, new Object[]{exceptionData});
 
-                    if (null != exceptionSelector) {
-                        return exceptionSelector.doSelect(frame, new Object[]{exceptionData});
-                    } else {
-                        throw ex;
-                    }
-
-                } catch (ErlNoClauseMatchedException ex2) {
-
-                    throw ex;
+                if (null != exResult) {
+                    return exResult;
                 }
+
+                throw ex;
             }
         } finally {
             if (null != afterNode) {

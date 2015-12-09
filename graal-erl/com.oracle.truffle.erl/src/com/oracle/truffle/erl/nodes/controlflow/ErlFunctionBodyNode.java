@@ -80,14 +80,13 @@ public final class ErlFunctionBodyNode extends ErlExpressionNode {
             preludeNode.executeGeneric(frame);
         }
 
-        try {
+        final Object result = exprNode.executeGeneric(frame);
 
-            return exprNode.executeGeneric(frame);
-
-        } catch (ErlNoClauseMatchedException ex) {
-
-            throw ErlControlException.makeFunctionClause();
+        if (null != result) {
+            return result;
         }
+
+        throw ErlControlException.makeFunctionClause();
     }
 
     @Override

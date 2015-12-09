@@ -74,17 +74,13 @@ public final class ErlIfNode extends ErlExpressionNode {
     @Override
     public Object executeGeneric(VirtualFrame frame) {
 
-        try {
+        final Object result = clauseSelector.doSelect(frame, EMPTY_ARRAY);
 
-            // since the 'if' statement does not have any "arguments", passing an empty array of
-            // Object is good enough
-
-            return clauseSelector.doSelect(frame, EMPTY_ARRAY);
-
-        } catch (ErlNoClauseMatchedException ex) {
-
-            throw ErlControlException.makeIfClause();
+        if (null != result) {
+            return result;
         }
+
+        throw ErlControlException.makeIfClause();
     }
 
     @Override

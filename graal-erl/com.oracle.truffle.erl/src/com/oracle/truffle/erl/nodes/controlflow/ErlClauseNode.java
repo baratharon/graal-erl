@@ -67,7 +67,7 @@ public final class ErlClauseNode extends ErlExpressionNode {
 
     /**
      * This node is used to evaluate all the guards attached to the current clause. When the
-     * condition is false, an {@link ErlNoClauseMatchedException} will be thrown.
+     * condition is false, null will be returned.
      */
     @Child private ErlExpressionNode conditionNode;
 

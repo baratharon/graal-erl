@@ -75,15 +75,13 @@ public final class ErlCaseNode extends ErlExpressionNode {
     public Object executeGeneric(VirtualFrame frame) {
 
         final Object value = valueNode.executeGeneric(frame);
+        final Object result = clauseSelector.doSelect(frame, new Object[]{value});
 
-        try {
-
-            return clauseSelector.doSelect(frame, new Object[]{value});
-
-        } catch (ErlNoClauseMatchedException ex) {
-
-            throw ErlControlException.makeCaseClause(value);
+        if (null != result) {
+            return result;
         }
+
+        throw ErlControlException.makeCaseClause(value);
     }
 
     @Override
