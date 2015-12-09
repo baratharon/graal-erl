@@ -10,6 +10,7 @@ import java.util.concurrent.Future;
 
 import com.oracle.truffle.api.RootCallTarget;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.erl.ErlModule;
 import com.oracle.truffle.erl.FA;
 import com.oracle.truffle.erl.MFA;
@@ -190,6 +191,7 @@ public class ErlModuleImpl implements ErlModule {
         return function;
     }
 
+    @TruffleBoundary
     public Object getInfo(ModuleInfoItem item) {
 
         switch (item) {

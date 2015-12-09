@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.RootCallTarget;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.erl.ErlModule;
@@ -49,6 +50,7 @@ public final class ErlModuleRegistry {
     /**
      * Register the module in the module registry.
      */
+    @TruffleBoundary
     public boolean register(ErlModuleImpl module) {
 
         synchronized (this) {
@@ -84,6 +86,7 @@ public final class ErlModuleRegistry {
      * The function takes care about "real" modules, and the stand-alone BIFs are not considered as
      * module.
      */
+    @TruffleBoundary
     public synchronized boolean isModuleLoaded(String module) {
         return modules.containsKey(module);
     }
@@ -94,6 +97,7 @@ public final class ErlModuleRegistry {
      * @param moduleName name of the module
      * @return module or <code>null</code>
      */
+    @TruffleBoundary
     public synchronized ErlModule getModule(String moduleName) {
         return modules.get(moduleName);
     }
@@ -101,6 +105,7 @@ public final class ErlModuleRegistry {
     /**
      * Returns the canonical {@link ErlFunction} object for the given name.
      */
+    @TruffleBoundary
     public synchronized ErlFunction functionLookup(MFA mfa) {
 
         // faster branch first: is module loaded?
@@ -141,6 +146,7 @@ public final class ErlModuleRegistry {
     /**
      * Returns an unmodifiable set of the pre-loaded module names.
      */
+    @TruffleBoundary
     public synchronized Set<String> getPreLoadedModuleNames() {
 
         HashSet<String> set = new HashSet<>();
@@ -157,6 +163,7 @@ public final class ErlModuleRegistry {
     /**
      * Returns an unmodifiable set of loaded module names.
      */
+    @TruffleBoundary
     public synchronized Set<String> getModuleNames() {
         return Collections.unmodifiableSet(modules.keySet());
     }
@@ -164,6 +171,7 @@ public final class ErlModuleRegistry {
     /**
      * Returns an unmodifiable set of loaded modules.
      */
+    @TruffleBoundary
     public synchronized Collection<ErlModuleImpl> getModules() {
         return Collections.unmodifiableCollection(modules.values());
     }
@@ -171,6 +179,7 @@ public final class ErlModuleRegistry {
     /**
      * Returns the sorted list of all functions, for printing purposes only.
      */
+    @TruffleBoundary
     public synchronized List<ErlFunction> getFunctions() {
 
         HashSet<ErlFunction> set = new HashSet<>();

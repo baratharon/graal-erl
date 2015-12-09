@@ -42,6 +42,7 @@ package com.oracle.truffle.erl.builtins.erlang;
 
 import java.math.BigInteger;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
@@ -71,6 +72,7 @@ public abstract class RoundBuiltin extends ErlBuiltinNode {
     }
 
     @Specialization
+    @TruffleBoundary
     public Object round(double value) {
 
         double offset = 0.5;

@@ -42,6 +42,7 @@ package com.oracle.truffle.erl.builtins.erlang;
 
 import java.util.Calendar;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
@@ -66,6 +67,7 @@ public abstract class UniversaltimeToLocaltimeBuiltin extends ErlBuiltinNode {
     }
 
     @Specialization
+    @TruffleBoundary
     public ErlTuple universaltimeToLocaltime(ErlTuple pair) {
         Calendar cal = Time.parseDateTimeTuple(pair, Time.UTC_TIMEZONE);
         cal.setTimeZone(Time.LOCAL_TIMEZONE);

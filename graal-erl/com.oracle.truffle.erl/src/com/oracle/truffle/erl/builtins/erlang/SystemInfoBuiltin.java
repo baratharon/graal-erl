@@ -40,6 +40,7 @@
  */
 package com.oracle.truffle.erl.builtins.erlang;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
@@ -68,6 +69,7 @@ public abstract class SystemInfoBuiltin extends ErlBuiltinNode {
     }
 
     @Specialization
+    @TruffleBoundary
     public Object systemInfo(ErlAtom item) {
 
         if (ErlAtom.THREADS.equals(item)) {

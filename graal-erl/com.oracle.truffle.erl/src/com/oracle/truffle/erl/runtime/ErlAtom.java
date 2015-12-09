@@ -375,6 +375,11 @@ public final class ErlAtom implements TruffleObject {
         return hvalue;
     }
 
+    @TruffleBoundary
+    private boolean valueEquals(ErlAtom rhs) {
+        return value.equals(rhs.value);
+    }
+
     @Override
     public boolean equals(Object rhs) {
 
@@ -389,7 +394,7 @@ public final class ErlAtom implements TruffleObject {
                 return false;
             }
 
-            return value.equals(((ErlAtom) rhs).value);
+            return valueEquals((ErlAtom) rhs);
         }
 
         if (rhs instanceof Boolean) {
@@ -403,6 +408,7 @@ public final class ErlAtom implements TruffleObject {
         return false;
     }
 
+    @TruffleBoundary
     public static int calcHashValue(String str) {
         long h = 0, g;
 

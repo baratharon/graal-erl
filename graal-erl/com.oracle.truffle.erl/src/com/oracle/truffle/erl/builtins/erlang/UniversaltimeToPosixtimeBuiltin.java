@@ -40,6 +40,7 @@
  */
 package com.oracle.truffle.erl.builtins.erlang;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
@@ -64,6 +65,7 @@ public abstract class UniversaltimeToPosixtimeBuiltin extends ErlBuiltinNode {
     }
 
     @Specialization
+    @TruffleBoundary
     public long universaltimeToPosixtime(ErlTuple pair) {
         return Time.parseDateTimeTuple(pair).getTimeInMillis() / 1000;
     }

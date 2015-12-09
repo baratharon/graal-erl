@@ -42,6 +42,7 @@ package com.oracle.truffle.erl.builtins.erlang;
 
 import java.util.Calendar;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
@@ -68,6 +69,7 @@ public abstract class TimeBuiltin extends ErlBuiltinNode {
     }
 
     @Specialization
+    @TruffleBoundary
     public ErlTuple time() {
         return Time.calendarToTime(Calendar.getInstance());
     }

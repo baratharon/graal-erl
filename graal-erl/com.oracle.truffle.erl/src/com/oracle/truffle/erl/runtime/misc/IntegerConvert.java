@@ -42,6 +42,7 @@ package com.oracle.truffle.erl.runtime.misc;
 
 import java.math.BigInteger;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.runtime.ErlContext;
 import com.oracle.truffle.erl.runtime.ErlList;
@@ -52,6 +53,7 @@ public final class IntegerConvert {
     private IntegerConvert() {
     }
 
+    @TruffleBoundary
     public static Object listToInteger(ErlList list_, final BigInteger biBase, final long lBase) {
 
         if (lBase < 2 || lBase > 36) {
@@ -111,11 +113,13 @@ public final class IntegerConvert {
         }
     }
 
+    @TruffleBoundary
     public static ErlList integerToList(final long numToConvert, final BigInteger biBase, final long lBase) {
         // TODO: the first approach is to use the BigInteger version; can be changed later in need
         return integerToList(BigInteger.valueOf(numToConvert), biBase, lBase);
     }
 
+    @TruffleBoundary
     public static ErlList integerToList(final BigInteger numToConvert, final BigInteger biBase, final long lBase) {
 
         if (lBase < 2 || lBase > 36) {

@@ -44,6 +44,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.nio.ByteBuffer;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.erl.runtime.drivers.efile.CloseAction;
 import com.oracle.truffle.erl.runtime.drivers.efile.FstatAction;
 import com.oracle.truffle.erl.runtime.drivers.efile.OpenAction;
@@ -105,6 +106,7 @@ public final class Efile extends Driver {
     }
 
     @Override
+    @TruffleBoundary
     protected AsyncAction parseCommand(byte[] data) {
 
         switch (data[0]) {

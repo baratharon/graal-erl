@@ -109,7 +109,6 @@ public final class ErlClauseNode extends ErlExpressionNode {
         throw ErlControlException.makeUndef();
     }
 
-    @ExplodeLoop
     private boolean match(VirtualFrame frame, Object arguments[]) {
 
         CompilerAsserts.compilationConstant(matchNodes.length);
@@ -118,6 +117,13 @@ public final class ErlClauseNode extends ErlExpressionNode {
             throw ErlControlException.makeFunctionClause();
         }
 
+        return asfa(frame, arguments);
+
+        // return true;
+    }
+
+    @ExplodeLoop
+    private boolean asfa(VirtualFrame frame, Object[] arguments) {
         for (int i = 0; i < matchNodes.length; ++i) {
             if (null == matchNodes[i].match(frame, arguments[i])) {
                 return false;

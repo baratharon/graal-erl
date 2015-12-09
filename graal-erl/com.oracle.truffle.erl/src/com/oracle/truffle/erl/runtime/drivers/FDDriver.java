@@ -47,6 +47,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.runtime.ErlAtom;
 import com.oracle.truffle.erl.runtime.ErlBinary;
@@ -87,23 +88,22 @@ public final class FDDriver extends ErlPort {
                 try {
                     int num = in.read(buf);
 
-                    if (-1 == num) {
-                        // TODO: EOF
-                        return;
-                    }
-
                     final ErlTuple inner = new ErlTuple(ErlAtom.DATA, ErlBinary.fromChars(buf, num, ErlContext.UTF8_CHARSET));
                     final ErlTuple msg = new ErlTuple(driver, inner);
 
                     process.send(pid, msg, false, true);
 
+                } catch (InterruptedException ex) {
+                    return;
                 } catch (IOException ex) {
+                    // TODO: EOF
                     return;
                 }
             }
         }
     }
 
+    @TruffleBoundary
     private FDDriver(UnifiedInput in, UnifiedOutput out, boolean eof) {
         super("fd");
         this.in = in;
@@ -117,6 +117,7 @@ public final class FDDriver extends ErlPort {
         }
     }
 
+    @TruffleBoundary
     public static FDDriver create(int fdIn, int fdOut, PortOptions po) {
 
         UnifiedInput in = null;
@@ -160,6 +161,7 @@ public final class FDDriver extends ErlPort {
     }
 
     @Override
+    @TruffleBoundary
     protected void closeUnderlying() {
 
         if (null != future) {
@@ -187,6 +189,7 @@ public final class FDDriver extends ErlPort {
     }
 
     @Override
+    @TruffleBoundary
     public boolean command(ErlPid sender, byte[] data, boolean nosuspend) {
 
         if (null == out) {
@@ -199,6 +202,7 @@ public final class FDDriver extends ErlPort {
     }
 
     @Override
+    @TruffleBoundary
     public Object control(int operation, byte[] data) {
         if (Driver.CTRL_OP_GET_WINSIZE == operation) {
 

@@ -294,6 +294,7 @@ public final class ErlContext extends ExecutionContext {
      * @param moduleName name of the module to load
      * @return <code>true</code> when successfully loaded, <code>false</code> otherwise
      */
+    @TruffleBoundary
     public boolean loadModule(String moduleName) {
 
         if (null == codeGetPath) {
@@ -359,14 +360,17 @@ public final class ErlContext extends ExecutionContext {
         processManager.waitForTerminateAll();
     }
 
+    @TruffleBoundary
     public static boolean isWindows() {
         return (OS_NAME_LOWER.indexOf("win") >= 0);
     }
 
+    @TruffleBoundary
     public static boolean isUnix() {
         return (OS_NAME_LOWER.indexOf("nix") >= 0 || OS_NAME_LOWER.indexOf("nux") >= 0 || OS_NAME_LOWER.indexOf("aix") > 0);
     }
 
+    @TruffleBoundary
     public static boolean isMac() {
         return (OS_NAME_LOWER.indexOf("mac") >= 0);
     }
@@ -401,6 +405,7 @@ public final class ErlContext extends ExecutionContext {
         keywords.add("xor");
     }
 
+    @TruffleBoundary
     public static boolean isKeyword(final String str) {
         return keywords.contains(str);
     }
@@ -440,6 +445,7 @@ public final class ErlContext extends ExecutionContext {
         throw ErlControlException.makeBadarg();
     }
 
+    @TruffleBoundary
     public static double toDouble(Object obj) {
 
         if (obj instanceof Double) {
@@ -458,6 +464,7 @@ public final class ErlContext extends ExecutionContext {
         throw ErlControlException.makeBadarg();
     }
 
+    @TruffleBoundary
     public static long decodeLong(Object obj) {
 
         if (obj instanceof Long) {
@@ -476,6 +483,7 @@ public final class ErlContext extends ExecutionContext {
         throw ErlControlException.makeBadarg();
     }
 
+    @TruffleBoundary
     public static int decodeInt(Object obj) {
 
         if (obj instanceof Long) {
@@ -590,8 +598,11 @@ public final class ErlContext extends ExecutionContext {
         throw new RuntimeException("Cannot determine term rank for: \"" + obj + "\"");
     }
 
-    @TruffleBoundary // TODO
     public static int compareTerms(Object lhs, Object rhs, boolean exact) {
+
+        if (lhs == rhs) {
+            return 0;
+        }
 
         final TermRank lhsRank = getTermRank(lhs);
         final TermRank rhsRank = getTermRank(rhs);
@@ -707,6 +718,7 @@ public final class ErlContext extends ExecutionContext {
         return isByte(obj, null);
     }
 
+    @TruffleBoundary
     public static boolean isByte(Object obj, byte[] refByte) {
 
         if (obj instanceof Long) {
@@ -781,6 +793,7 @@ public final class ErlContext extends ExecutionContext {
     public static final Charset LATIN1_CHARSET = Charset.forName("ISO-8859-1");
     public static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
 
+    @TruffleBoundary
     public static String stringifyPrintableCharacter(final char ch) {
         switch (ch) {
             case 8:
@@ -900,6 +913,7 @@ public final class ErlContext extends ExecutionContext {
         }
     }
 
+    @TruffleBoundary
     public static void notImplemented() {
 
         System.err.println("**** NOT IMPLEMENTED ****");

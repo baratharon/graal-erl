@@ -40,6 +40,7 @@
  */
 package com.oracle.truffle.erl.runtime.misc;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.runtime.ErlAtom;
 import com.oracle.truffle.erl.runtime.ErlContext;
@@ -52,6 +53,7 @@ public final class FloatConvert {
     private FloatConvert() {
     }
 
+    @TruffleBoundary
     public static ErlList toList(double value, ErlList options) {
 
         boolean sci = true;

@@ -47,6 +47,7 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.erl.runtime.ErlAtom;
 import com.oracle.truffle.erl.runtime.ErlContext;
 import com.oracle.truffle.erl.runtime.ErlList;
@@ -93,6 +94,7 @@ public final class ExternalTerm {
         return toBinary(term, minorVersion, compressed ? DEFAULT_COMPRESSION_LEVEL : NO_COMPRESSION);
     }
 
+    @TruffleBoundary
     public static byte[] toBinary(Object term, final int minorVersion, final int compressLevel) {
 
         if (NO_COMPRESSION == compressLevel) {

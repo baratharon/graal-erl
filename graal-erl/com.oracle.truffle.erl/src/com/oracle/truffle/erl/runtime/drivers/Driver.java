@@ -42,6 +42,7 @@ package com.oracle.truffle.erl.runtime.drivers;
 
 import java.util.ArrayList;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.erl.runtime.ErlAtom;
 import com.oracle.truffle.erl.runtime.ErlList;
@@ -91,6 +92,7 @@ public abstract class Driver extends ErlPort {
     }
 
     @Override
+    @TruffleBoundary
     protected void step() {
         if (!actions.isEmpty()) {
             AsyncAction action = actions.remove(actions.size() - 1);
@@ -134,6 +136,7 @@ public abstract class Driver extends ErlPort {
     }
 
     @Override
+    @TruffleBoundary
     public Object control(int operation, byte[] data) {
 
         if (!isOpen) {
@@ -143,6 +146,7 @@ public abstract class Driver extends ErlPort {
         return doControl(operation, data);
     }
 
+    @TruffleBoundary
     private boolean perform(AsyncAction action, boolean nosuspend) {
 
         AsyncAction.Result result = action.async();
@@ -206,6 +210,7 @@ public abstract class Driver extends ErlPort {
         return acc;
     }
 
+    @ExplodeLoop
     protected static long extractLongMSB(final byte[] data, final int offset) {
 
         long acc = Byte.toUnsignedLong(data[offset]);

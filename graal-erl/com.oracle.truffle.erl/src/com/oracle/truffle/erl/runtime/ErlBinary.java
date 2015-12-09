@@ -46,6 +46,7 @@ import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
@@ -69,11 +70,13 @@ public final class ErlBinary implements TruffleObject {
         assert null != bytes;
     }
 
+    @TruffleBoundary
     public static ErlBinary fromString(final String str, Charset charset) {
         ByteBuffer bb = charset.encode(str);
         return new ErlBinary(0, Arrays.copyOf(bb.array(), bb.limit()));
     }
 
+    @TruffleBoundary
     public static ErlBinary fromChars(final char[] chars, int length, Charset charset) {
         ByteBuffer bb = charset.encode(CharBuffer.wrap(chars, 0, length));
         return new ErlBinary(0, Arrays.copyOf(bb.array(), bb.limit()));
@@ -468,6 +471,7 @@ public final class ErlBinary implements TruffleObject {
         return unusedBits;
     }
 
+    @TruffleBoundary
     public int compare(ErlBinary rhs) {
 
         final ErlBinary lhs = this;

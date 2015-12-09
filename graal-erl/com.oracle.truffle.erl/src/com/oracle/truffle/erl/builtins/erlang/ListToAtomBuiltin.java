@@ -40,6 +40,7 @@
  */
 package com.oracle.truffle.erl.builtins.erlang;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
@@ -71,6 +72,7 @@ public abstract class ListToAtomBuiltin extends ErlBuiltinNode {
     }
 
     @Specialization
+    @TruffleBoundary
     public ErlAtom listToAtom(ErlList list_) {
 
         StringBuilder sb = new StringBuilder();

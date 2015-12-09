@@ -60,6 +60,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.erl.MFA;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
@@ -103,6 +104,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
             close(null);
         }
 
+        @TruffleBoundary
         void close(final ErlProcess excludedProcess) {
             synchronized (processes) {
 
@@ -136,6 +138,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
             threadPool.shutdown();
         }
 
+        @TruffleBoundary
         public Future<Object> put(ErlProcess proc) {
             synchronized (processes) {
                 processes.put(proc.pid, proc);
@@ -143,18 +146,21 @@ public final class ErlProcess implements Callable<Object>, Registrable {
             return threadPool.submit(proc);
         }
 
+        @TruffleBoundary
         public ErlProcess findProcess(ErlPid pid) {
             synchronized (processes) {
                 return processes.get(pid);
             }
         }
 
+        @TruffleBoundary
         public Registrable findRegisteredName(String name) {
             synchronized (processes) {
                 return registry.get(name);
             }
         }
 
+        @TruffleBoundary
         public <T> T findRegisteredName(Class<T> registrable, String name) {
             synchronized (processes) {
                 Registrable obj = registry.get(name);
@@ -165,16 +171,19 @@ public final class ErlProcess implements Callable<Object>, Registrable {
             }
         }
 
+        @TruffleBoundary
         public Set<ErlPid> getAllPid() {
             synchronized (processes) {
                 return Collections.unmodifiableSet(new HashSet<>(processes.keySet()));
             }
         }
 
+        @TruffleBoundary
         public static void processEntry(ErlProcess proc) {
             currentProcess.set(proc);
         }
 
+        @TruffleBoundary
         public void processExit(ErlProcess proc, Object exitReason) {
             currentProcess.set(null);
 
@@ -207,10 +216,12 @@ public final class ErlProcess implements Callable<Object>, Registrable {
             }
         }
 
+        @TruffleBoundary
         public static ErlProcess getCurrentProcess() {
             return currentProcess.get();
         }
 
+        @TruffleBoundary
         public boolean register(String name, Registrable reg) {
 
             if (null != reg.getRegisteredName()) {
@@ -229,6 +240,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
             return true;
         }
 
+        @TruffleBoundary
         public boolean unregister(String name) {
 
             synchronized (processes) {
@@ -246,6 +258,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
             }
         }
 
+        @TruffleBoundary
         public Set<String> getRegisteredNames() {
             synchronized (processes) {
                 return Collections.unmodifiableSet(new HashSet<>(registry.keySet()));
@@ -393,6 +406,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         }
     }
 
+    @TruffleBoundary
     public static ErlPid getSelfPid() {
         return ProcessManager.getCurrentProcess().pid;
     }
@@ -405,6 +419,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         return ProcessManager.getCurrentProcess().context;
     }
 
+    @TruffleBoundary
     public static void yield() {
         try {
             ((Callable<Object>) ProcessManager.getCurrentProcess()).wait(1);
@@ -494,6 +509,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         }
     }
 
+    @TruffleBoundary
     private void link(ErlProcess other) {
         synchronized (processManager.processes) {
 
@@ -515,6 +531,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         }
     }
 
+    @TruffleBoundary
     private void unlink(ErlProcess other) {
         synchronized (processManager.processes) {
 
@@ -565,6 +582,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         }
     }
 
+    @TruffleBoundary
     public static ErlRef sendAfter(long timeout, ErlPid destPid, Object msg) {
 
         SendAfter sa = new SendAfter(timeout, destPid, msg);
@@ -589,6 +607,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         return sendAfter(timeout, destPid, msg);
     }
 
+    @TruffleBoundary
     public static Long cancelTimer(ErlRef ref) {
         final ProcessManager pm = getCurrentProcess().processManager;
         synchronized (pm.processes) {
@@ -603,6 +622,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         }
     }
 
+    @TruffleBoundary
     public ErlTuple getInfo(ProcInfoItem item) {
 
         final Object value;
@@ -720,6 +740,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         sendMessage(new ErlTuple(ErlAtom._DOWN, ref, ErlAtom.PROCESS, sender, reason), false);
     }
 
+    @TruffleBoundary
     private boolean sendMessage(Object msg, boolean nosuspend) {
         try {
             // System.err.println("" + pid + " ** got a message: " + msg);
@@ -853,6 +874,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         ProcessManager.getCurrentProcess().forEachMessagesImpl(action);
     }
 
+    @TruffleBoundary
     private void forEachMessagesImpl(Consumer<Object> action) {
 
         if (!messageQueueIn.isEmpty()) {
@@ -869,10 +891,12 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         }
     }
 
+    @TruffleBoundary
     public static void forEachLink(Consumer<Object> action) {
         ProcessManager.getCurrentProcess().forEachLinkImpl(action);
     }
 
+    @TruffleBoundary
     private void forEachLinkImpl(Consumer<Object> action) {
 
         for (Iterator<ErlProcess> iter = links.iterator(); iter.hasNext();) {
@@ -880,6 +904,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         }
     }
 
+    @TruffleBoundary
     public static Object dictPut(Object key, Object value) {
         ErlProcess proc = ProcessManager.getCurrentProcess();
         synchronized (proc.dictionary) {
@@ -887,6 +912,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         }
     }
 
+    @TruffleBoundary
     public static Object dictGet(Object key) {
         ErlProcess proc = ProcessManager.getCurrentProcess();
         synchronized (proc.dictionary) {
@@ -894,6 +920,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         }
     }
 
+    @TruffleBoundary
     public static Object dictErase(Object key) {
         ErlProcess proc = ProcessManager.getCurrentProcess();
         synchronized (proc.dictionary) {
@@ -901,6 +928,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         }
     }
 
+    @TruffleBoundary
     public static void dictEraseAll(BiConsumer<Object, Object> action) {
         ErlProcess proc = ProcessManager.getCurrentProcess();
         synchronized (proc.dictionary) {
@@ -909,16 +937,19 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         }
     }
 
+    @TruffleBoundary
     public static void dictForEach(BiConsumer<Object, Object> action) {
         ProcessManager.getCurrentProcess().dictForEachImpl(action);
     }
 
+    @TruffleBoundary
     private void dictForEachImpl(BiConsumer<Object, Object> action) {
         synchronized (dictionary) {
             dictionary.forEach(action);
         }
     }
 
+    @TruffleBoundary
     public Object processFlag(ErlAtom flag, Object value) {
 
         if (getCurrentProcess() == this) {
@@ -951,6 +982,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         throw ErlControlException.makeBadarg();
     }
 
+    @TruffleBoundary
     public static ErlRef monitor(ErlPid item) {
 
         ErlProcess curr = getCurrentProcess();
@@ -970,6 +1002,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         return ref;
     }
 
+    @TruffleBoundary
     public static boolean demonitor(ErlRef ref, boolean flush, boolean info) {
 
         ErlProcess curr = getCurrentProcess();
@@ -1025,6 +1058,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         return true;
     }
 
+    @TruffleBoundary
     public static void kill(ErlPid pid, Object reason) {
 
         final ErlProcess proc = findProcess(pid);
@@ -1034,6 +1068,7 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         }
     }
 
+    @TruffleBoundary
     protected void killProcess(ErlPid sender, Object reason) {
 
         exitReason = reason;

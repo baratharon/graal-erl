@@ -109,6 +109,7 @@ public final class ErlMap implements TruffleObject {
     private static final KeyComparator KEY_COMPARATOR = new KeyComparator();
     public static final ErlMap EMPTY = ErlMap.fromArray(new Assoc[]{});
 
+    @TruffleBoundary
     public ErlMap(Assoc... elements) {
 
         assert null != elements;
@@ -139,6 +140,7 @@ public final class ErlMap implements TruffleObject {
             this.sep = "";
         }
 
+        @TruffleBoundary
         public void accept(Object key, Object value) {
 
             sb.append(sep);
@@ -196,6 +198,7 @@ public final class ErlMap implements TruffleObject {
     }
 
     @Override
+    @TruffleBoundary
     public String toString() {
 
         StringBuilder sb = new StringBuilder();
@@ -270,12 +273,14 @@ public final class ErlMap implements TruffleObject {
             this.encoder = encoder;
         }
 
+        @TruffleBoundary
         public void accept(Object key, Object value) {
             ok = ok && encoder.encode(key);
             ok = ok && encoder.encode(value);
         }
     }
 
+    @TruffleBoundary
     public boolean encode(ByteArrayOutputStream out, ExternalTerm.Encoder encoder) {
 
         out.write(ExternalTerm.MAP_EXT);

@@ -50,9 +50,7 @@ public abstract class UnifiedInput {
 
     public abstract boolean eof();
 
-    public abstract int read() throws IOException;
-
-    public abstract int read(char[] buf) throws IOException;
+    public abstract int read(char[] buf) throws IOException, InterruptedException;
 
     private static class InputStreamWrap extends UnifiedInput {
         final InputStream stream;
@@ -63,14 +61,12 @@ public abstract class UnifiedInput {
         }
 
         @Override
-        public int read() throws IOException {
-            return stream.read();
-        }
-
-        @Override
-        public int read(char[] buf) throws IOException {
+        public int read(char[] buf) throws IOException, InterruptedException {
             if (temp.length < buf.length) {
                 temp = new byte[buf.length];
+            }
+            while (0 == stream.available()) {
+                Thread.sleep(10);
             }
             final int num = stream.read(temp, 0, buf.length);
             for (int i = 0; i < num; ++i) {
@@ -101,12 +97,10 @@ public abstract class UnifiedInput {
         }
 
         @Override
-        public int read() throws IOException {
-            return reader.read();
-        }
-
-        @Override
-        public int read(char[] buf) throws IOException {
+        public int read(char[] buf) throws IOException, InterruptedException {
+            while (!reader.ready()) {
+                Thread.sleep(10);
+            }
             return reader.read(buf, 0, buf.length);
         }
 

@@ -45,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
@@ -130,6 +131,7 @@ public final class ErlList implements TruffleObject {
     }
 
     @Deprecated
+    @TruffleBoundary
     public static ErlList fromString(final String str) {
 
         ErlList result = NIL;
@@ -231,6 +233,7 @@ public final class ErlList implements TruffleObject {
         return result;
     }
 
+    @TruffleBoundary
     public Object[] toArray() {
 
         if (NIL == this) {
@@ -355,6 +358,7 @@ public final class ErlList implements TruffleObject {
         throw ErlControlException.makeBadarg();
     }
 
+    @TruffleBoundary
     public int compare(ErlList rhs, boolean exact) {
 
         final ErlList lhs = this;

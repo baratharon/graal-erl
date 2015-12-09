@@ -42,6 +42,7 @@ package com.oracle.truffle.erl.runtime.misc;
 
 import java.util.ArrayList;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.erl.runtime.ErlBinary;
 import com.oracle.truffle.erl.runtime.misc.IODataVisitor;
 
@@ -89,18 +90,21 @@ public final class IoList {
         }
     }
 
+    @TruffleBoundary
     public static long size(Object data) {
         SizeVisitor sv = new SizeVisitor();
         sv.accept(data);
         return sv.size;
     }
 
+    @TruffleBoundary
     public static byte[] toArray(Object data) {
         ToBinaryVisitor vis = new ToBinaryVisitor();
         vis.accept(data);
         return vis.array();
     }
 
+    @TruffleBoundary
     public static ErlBinary toBinary(Object data) {
         ToBinaryVisitor vis = new ToBinaryVisitor();
         vis.accept(data);
