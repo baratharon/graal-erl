@@ -47,7 +47,6 @@ import com.oracle.truffle.erl.nodes.ErlExpressionNode;
 import com.oracle.truffle.erl.runtime.ErlAtom;
 import com.oracle.truffle.erl.runtime.ErlContext;
 import com.oracle.truffle.erl.runtime.ErlProcess;
-import com.oracle.truffle.erl.runtime.ErlProcess.MessageConsumer;
 
 /**
  * The node that implements the <code>receive</code> construction in Erlang.
@@ -94,15 +93,26 @@ public final class ErlReceiveNode extends ErlExpressionNode {
 
         if (null != clauseSelector) {
 
-            final Object term = ErlProcess.receiveMessage(timeout, new MessageConsumer() {
+            final ErlProcess.MessageReceiver receiver = ErlProcess.createMessageReceiver(timeout);
 
-                public Object accept(Object msg) {
-                    return clauseSelector.doSelect(frame, new Object[]{msg});
+            for (;;) {
+                final Object msg = receiver.receiveNext();
+
+                if (null != msg) {
+                    try {
+                        final Object result = clauseSelector.doSelect(frame, new Object[]{msg});
+
+                        if (null != result) {
+                            receiver.removeMessage();
+                            return result;
+                        }
+                    } catch (ErlTailCallException tailCallException) {
+                        receiver.removeMessage();
+                        throw tailCallException;
+                    }
+                } else {
+                    break;
                 }
-            });
-
-            if (null != term) {
-                return term;
             }
         } else {
             try {
@@ -117,7 +127,12 @@ public final class ErlReceiveNode extends ErlExpressionNode {
 
         assert 0 <= timeout;
         assert null != afterNode;
-        return afterNode.executeGeneric(frame);
+
+        if (null != afterNode) {
+            return afterNode.executeGeneric(frame);
+        } else {
+            throw ErlControlException.makeBadarg();
+        }
     }
 
     private long evalTimeout(VirtualFrame frame) {

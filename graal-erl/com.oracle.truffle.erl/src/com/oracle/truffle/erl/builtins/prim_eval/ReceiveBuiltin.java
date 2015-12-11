@@ -87,7 +87,7 @@ public abstract class ReceiveBuiltin extends ErlBuiltinNode {
             }
         }
 
-        final Object result = ErlProcess.receiveMessage(timeout, new MessageConsumer() {
+        final Object result = ErlProcess.createMessageReceiver(timeout).receiveBlocking(new MessageConsumer() {
 
             public Object accept(Object msg) {
                 final Object term = ErlProcess.evaluate(fun, msg);

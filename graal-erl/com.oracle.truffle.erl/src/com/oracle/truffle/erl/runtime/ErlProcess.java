@@ -798,77 +798,119 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         public Object accept(Object msg);
     }
 
+    public static final class MessageReceiver {
+
+        private final ErlProcess proc;
+        private final long startTime;
+        private final long timeoutMsec;
+        private final long timeoutNanos;
+        private Message msg = null;
+        private Iterator<Message> iter;
+
+        MessageReceiver(ErlProcess proc, long timeoutMsec) {
+            this.proc = proc;
+            this.startTime = System.nanoTime();
+            this.timeoutMsec = timeoutMsec;
+            this.timeoutNanos = TimeUnit.MILLISECONDS.toNanos(timeoutMsec);
+
+            if (!proc.messageQueueIn.isEmpty()) {
+                while (null != proc.receiveMessage(0)) {
+                    // just move the freshly received messages into the permanent queue
+                }
+            }
+
+            this.iter = proc.messageQueue.iterator();
+        }
+
+        @TruffleBoundary
+        public Object receiveNext() {
+
+            if (null != msg) {
+                msg.present = true;
+                msg = null;
+            }
+
+            if (null != iter) {
+
+                while (iter.hasNext()) {
+                    msg = iter.next();
+
+                    if (msg.present) {
+                        msg.present = false;
+                        return msg.term;
+                    }
+                }
+
+                iter = null;
+            }
+
+            while (timeoutMsec < 0 || (System.nanoTime() - startTime) <= timeoutNanos) {
+
+                if (timeoutMsec < 0) {
+                    msg = proc.receiveMessage();
+                } else {
+                    msg = proc.receiveMessage(TimeUnit.NANOSECONDS.toMillis(startTime + timeoutNanos - System.nanoTime()));
+                }
+
+                if (null == msg) {
+                    continue;
+                }
+
+                msg.present = false;
+                return msg.term;
+            }
+
+            return null;
+        }
+
+        @TruffleBoundary
+        public void removeMessage() {
+            if (null != msg) {
+                msg.present = true;
+                proc.messageQueue.remove(msg);
+                msg = null;
+            }
+        }
+
+        /**
+         * Receives a message. Can wait for the desired timeout.
+         *
+         * @param consumer the consumer that decides the message is needed or not
+         * @return the transformed value by the consumer
+         */
+        @TruffleBoundary
+        public Object receiveBlocking(final MessageConsumer consumer) {
+
+            for (;;) {
+                try {
+                    final Object term = receiveNext();
+
+                    if (null != term) {
+                        final Object result = consumer.accept(term);
+
+                        if (null != result) {
+                            removeMessage();
+                            return result;
+                        }
+                    } else {
+                        return null;
+                    }
+                } catch (ErlTailCallException tailCallException) {
+                    removeMessage();
+                    throw tailCallException;
+                }
+            }
+        }
+    }
+
     /**
-     * Receives a message. Can wait for the desired timeout.
+     * Create a message receiver.
      *
-     * @param timeoutMsec timeout value in milliseconds; -1 if infinity
-     * @param consumer the consumer that decides the message is needed or not
+     * @param timeoutMsec timeout value in milliseconds; negative means infinity
      * @return the transformed value by the consumer
      */
-    @TruffleBoundary
-    public static Object receiveMessage(long timeoutMsec, MessageConsumer consumer) {
-
-        ErlProcess proc = ProcessManager.getCurrentProcess();
-
-        if (!proc.messageQueueIn.isEmpty()) {
-            while (null != proc.receiveMessage(0)) {
-                // just move the freshly received messages into the permanent queue
-            }
-        }
-
-        for (Iterator<Message> iter = proc.messageQueue.iterator(); iter.hasNext();) {
-            final Message msg = iter.next();
-            if (msg.present) {
-                msg.present = false;
-                try {
-                    final Object result = consumer.accept(msg.term);
-                    if (null != result) {
-                        proc.messageQueue.remove(msg);
-                        return result;
-                    } else {
-                        msg.present = true;
-                    }
-                } catch (ErlTailCallException ex) {
-                    proc.messageQueue.remove(msg);
-                    throw ex;
-                }
-            }
-        }
-
-        final long startTime = System.nanoTime();
-        final long timeoutNanos = TimeUnit.MILLISECONDS.toNanos(timeoutMsec);
-
-        while (timeoutMsec < 0 || (System.nanoTime() - startTime) <= timeoutNanos) {
-
-            final Message msg;
-
-            if (timeoutMsec < 0) {
-                msg = proc.receiveMessage();
-            } else {
-                msg = proc.receiveMessage(TimeUnit.NANOSECONDS.toMillis(startTime + timeoutNanos - System.nanoTime()));
-            }
-
-            if (null == msg) {
-                continue;
-            }
-
-            msg.present = false;
-
-            try {
-                final Object result = consumer.accept(msg.term);
-                if (null != result) {
-                    proc.messageQueue.remove(msg);
-                    return result;
-                } else {
-                    msg.present = true;
-                }
-            } catch (ErlTailCallException ex) {
-                proc.messageQueue.remove(msg);
-                throw ex;
-            }
-        }
-
-        return null;
+    public static MessageReceiver createMessageReceiver(long timeoutMsec) {
+        return new MessageReceiver(ProcessManager.getCurrentProcess(), timeoutMsec);
     }
 
     public static void forEachMessages(Consumer<Object> action) {
