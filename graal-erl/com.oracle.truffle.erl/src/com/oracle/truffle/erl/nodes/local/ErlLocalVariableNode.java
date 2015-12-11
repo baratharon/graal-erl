@@ -88,19 +88,21 @@ public abstract class ErlLocalVariableNode extends ErlExpressionNode {
         assert null != match;
 
         if (!isBound) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-
-            if (match instanceof Long) {
-                getSlot().setKind(FrameSlotKind.Long);
-                frame.setLong(getSlot(), (long) match);
-            } else if (match instanceof Boolean) {
-                getSlot().setKind(FrameSlotKind.Boolean);
-                frame.setBoolean(getSlot(), (boolean) match);
-            } else if (match instanceof Double) {
-                getSlot().setKind(FrameSlotKind.Double);
-                frame.setDouble(getSlot(), (double) match);
+            if (getSlot().getKind() != FrameSlotKind.Object) {
+                if (match instanceof Long) {
+                    getSlot().setKind(FrameSlotKind.Long);
+                    frame.setLong(getSlot(), (long) match);
+                } else if (match instanceof Boolean) {
+                    getSlot().setKind(FrameSlotKind.Boolean);
+                    frame.setBoolean(getSlot(), (boolean) match);
+                } else if (match instanceof Double) {
+                    getSlot().setKind(FrameSlotKind.Double);
+                    frame.setDouble(getSlot(), (double) match);
+                } else {
+                    getSlot().setKind(FrameSlotKind.Object);
+                    frame.setObject(getSlot(), match);
+                }
             } else {
-                getSlot().setKind(FrameSlotKind.Object);
                 frame.setObject(getSlot(), match);
             }
 
@@ -121,6 +123,11 @@ public abstract class ErlLocalVariableNode extends ErlExpressionNode {
     }
 
     @Specialization(rewriteOn = FrameSlotTypeException.class)
+    protected Object readDouble(VirtualFrame frame) throws FrameSlotTypeException {
+        return frame.getDouble(getSlot());
+    }
+
+    @Specialization(rewriteOn = FrameSlotTypeException.class)
     protected Object readObject(VirtualFrame frame) throws FrameSlotTypeException {
         return frame.getObject(getSlot());
     }
@@ -129,7 +136,7 @@ public abstract class ErlLocalVariableNode extends ErlExpressionNode {
      * This is the generic case that always succeeds. Since we already have another specialization
      * with the same signature above, we need to order them explicitly with the order attribute.
      */
-    @Specialization(contains = {"readLong", "readBoolean", "readObject"})
+    @Specialization(contains = {"readLong", "readBoolean", "readDouble", "readObject"})
     protected Object read(VirtualFrame frame) {
         return frame.getValue(getSlot());
     }
