@@ -56,7 +56,7 @@ import com.oracle.truffle.erl.runtime.ErlProcess;
  * builtin functions, the {@link #bodyNode} is a subclass of {@link ErlBuiltinNode}.
  */
 @NodeInfo(language = "Erlang", description = "The root of all Erlang execution trees")
-public final class ErlRootNode extends RootNode {
+public class ErlRootNode extends RootNode {
 
     /** The function body that is executed, and specialized during execution. */
     @Child private ErlExpressionNode bodyNode;

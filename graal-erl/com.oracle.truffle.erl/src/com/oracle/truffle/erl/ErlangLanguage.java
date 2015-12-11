@@ -47,6 +47,7 @@ import com.oracle.truffle.api.TruffleLanguage;
 import com.oracle.truffle.api.dsl.NodeFactory;
 import com.oracle.truffle.api.dsl.UnsupportedSpecializationException;
 import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.instrument.Visualizer;
 import com.oracle.truffle.api.instrument.WrapperNode;
 import com.oracle.truffle.api.nodes.GraphPrintVisitor;
@@ -58,6 +59,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.vm.PolyglotEngine;
 import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
 import com.oracle.truffle.erl.nodes.ErlExpressionNode;
+import com.oracle.truffle.erl.nodes.ErlRootNode;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.nodes.instrument.ErlDefaultVisualizer;
 import com.oracle.truffle.erl.nodes.instrument.ErlExpressionWrapperNode;
@@ -103,6 +105,8 @@ import java.util.stream.Stream;
 public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
     private static List<NodeFactory<? extends ErlBuiltinNode>> builtins = Collections.emptyList();
     private static Visualizer visualizer = new ErlDefaultVisualizer();
+    private static final Source GET_GLOBAL_OBJECT = Source.fromText("this", "<get global object>").withMimeType(ErlangLanguage.ERL_MIME_TYPE);
+    protected final CallTarget getGlobalObjectCallTarget = createGetGlobalObjectCallTarget();
 
     private ErlangLanguage() {
     }
@@ -205,9 +209,10 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
 
     public static ErlContext getContext(PolyglotEngine engine) {
         try {
-            return engine.getLanguages().get(ERL_MIME_TYPE).getGlobalObject().as(ErlContext.class);
+            return engine.eval(GET_GLOBAL_OBJECT).as(ErlContext.class);
         } catch (IOException e) {
-            return null;
+            // This should never happen
+            throw new RuntimeException(e);
         }
     }
 
@@ -461,32 +466,49 @@ public final class ErlangLanguage extends TruffleLanguage<ErlContext> {
 
     @Override
     protected CallTarget parse(Source code, Node node, String... argumentNames) throws IOException {
-        final ErlContext c = new ErlContext(this);
-        final ErlModuleImpl[] loadedModule = {null};
 
-        final Exception[] failed = {null};
-        try {
-            loadedModule[0] = c.evalSource(code);
-            failed[0] = null;
-        } catch (Exception e) {
-            failed[0] = e;
-        }
-        return new CallTarget() {
-            @Override
-            public Object call(Object... arguments) {
-                if (failed[0] instanceof RuntimeException) {
-                    throw (RuntimeException) failed[0];
-                }
-                if (failed[0] != null) {
-                    throw new IllegalStateException(failed[0]);
-                }
-                Node n = createFindContextNode();
-                ErlContext fillIn = findContext(n);
-                final ErlModuleRegistry moduleRegistry = fillIn.getModuleRegistry();
-                moduleRegistry.register(loadedModule[0]);
-                return loadedModule[0];
+        if (code == GET_GLOBAL_OBJECT) {
+            return getGlobalObjectCallTarget;
+        } else {
+
+            final ErlContext c = new ErlContext(this);
+            final ErlModuleImpl[] loadedModule = {null};
+
+            final Exception[] failed = {null};
+            try {
+                loadedModule[0] = c.evalSource(code);
+                failed[0] = null;
+            } catch (Exception e) {
+                failed[0] = e;
             }
-        };
+            return new CallTarget() {
+                @Override
+                public Object call(Object... arguments) {
+                    if (failed[0] instanceof RuntimeException) {
+                        throw (RuntimeException) failed[0];
+                    }
+                    if (failed[0] != null) {
+                        throw new IllegalStateException(failed[0]);
+                    }
+                    Node n = createFindContextNode();
+                    ErlContext fillIn = findContext(n);
+                    final ErlModuleRegistry moduleRegistry = fillIn.getModuleRegistry();
+                    moduleRegistry.register(loadedModule[0]);
+                    return loadedModule[0];
+                }
+            };
+        }
+    }
+
+    private CallTarget createGetGlobalObjectCallTarget() {
+        return Truffle.getRuntime().createCallTarget(new ErlRootNode(null, null, new MFA("\0", "find_context", 0)) {
+            @Child private Node findContextNode = createFindContextNode();
+
+            @Override
+            public Object execute(VirtualFrame frame) {
+                return findContext(findContextNode);
+            }
+        });
     }
 
     @Override
