@@ -136,7 +136,7 @@ public final class ErlControlException extends ControlFlowException {
     }
 
     public static ErlControlException makeUndef() {
-        return createError(new ErlAtom("undef"), SpecialTag.UNDEF);
+        return createError(ErlAtom.UNDEF, SpecialTag.UNDEF);
     }
 
     public static ErlControlException makeFunctionClause() {

@@ -46,58 +46,33 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.erl.MFA;
 import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
-import com.oracle.truffle.erl.runtime.ErlContext;
-import com.oracle.truffle.erl.runtime.ErlPid;
-import com.oracle.truffle.erl.runtime.ErlPort;
-import com.oracle.truffle.erl.runtime.ErlProcess;
+import com.oracle.truffle.erl.runtime.ErlAtom;
 
 /**
- * Sends an exit signal with exit reason Reason to the process or port identified by Pid.
+ * Removes old code for Module. Before this BIF is used, erlang:check_process_code/2 should be
+ * called to check that no processes are executing old code in the module.
  * <p>
- * The following behavior apply if Reason is any term except normal or kill:
- * <p>
- * If Pid is not trapping exits, Pid itself will exit with exit reason Reason. If Pid is trapping
- * exits, the exit signal is transformed into a message {'EXIT', From, Reason} and delivered to the
- * message queue of Pid. From is the pid of the process which sent the exit signal. See also
- * process_flag/2.
- * <p>
- * If Reason is the atom normal, Pid will not exit. If it is trapping exits, the exit signal is
- * transformed into a message {'EXIT', From, normal} and delivered to its message queue.
- * <p>
- * If Reason is the atom kill, that is if exit(Pid, kill) is called, an untrappable exit signal is
- * sent to Pid which will unconditionally exit with exit reason killed.
+ * TODO: this implementation does not support "old code" feature
  */
-@NodeInfo(shortName = "exit")
-public abstract class Exit2Builtin extends ErlBuiltinNode {
+@NodeInfo(shortName = "purgeModule")
+public abstract class PurgeModuleBuiltin extends ErlBuiltinNode {
 
-    public Exit2Builtin() {
-        super(SourceSection.createUnavailable("Erlang builtin", "exit"));
+    public PurgeModuleBuiltin() {
+        super(SourceSection.createUnavailable("Erlang builtin", "purge_module"));
     }
 
     @Override
     public MFA getName() {
-        return new MFA("erlang", "exit", 2);
+        return new MFA("erlang", "purge_module", 1);
     }
 
     @Specialization
-    public boolean exit(ErlPid pid, Object reason) {
-        ErlProcess.kill(pid, reason);
-        return true;
+    public boolean purgeModule(@SuppressWarnings("unused") ErlAtom module) {
+        throw ErlControlException.makeBadarg();
     }
 
     @Specialization
-    public boolean exit(ErlPort port, Object reason) {
-        port.closeAsync(ErlProcess.getSelfPid());
-        return true;
-    }
-
-    @Specialization
-    public boolean exit(Object arg1, Object arg2) {
-
-        if (arg1 instanceof ErlPid) {
-            return exit((ErlPid) arg1, arg2);
-        }
-
-        return exit(ErlPort.fromObject(arg1), arg2);
+    public boolean purgeModule(Object arg1) {
+        return purgeModule(ErlAtom.fromObject(arg1));
     }
 }

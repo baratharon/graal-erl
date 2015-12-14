@@ -63,6 +63,7 @@ import com.oracle.truffle.erl.builtins.erlang.Crc2BuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.CrcCombineBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.DateBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.DeleteElementBuiltinFactory;
+import com.oracle.truffle.erl.builtins.erlang.DeleteModuleBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.Demonitor1BuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.Demonitor2BuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.DisplayBuiltinFactory;
@@ -168,6 +169,7 @@ import com.oracle.truffle.erl.builtins.erlang.ProcessFlag3BuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.ProcessInfo1BuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.ProcessInfo2BuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.ProcessesBuiltinFactory;
+import com.oracle.truffle.erl.builtins.erlang.PurgeModuleBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.PutBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.RegisterBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.RegisteredBuiltinFactory;
@@ -390,6 +392,8 @@ public final class ErlangBuiltins {
         context.installBuiltin(PortsBuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(PortInfo1BuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(PortInfo2BuiltinFactory.getInstance(), registerRootNodes);
+        context.installBuiltin(PurgeModuleBuiltinFactory.getInstance(), registerRootNodes);
+        context.installBuiltin(DeleteModuleBuiltinFactory.getInstance(), registerRootNodes);
 
         final SourceSection src = SourceSection.createUnavailable("Erlang builtin", "wrapped operator");
 

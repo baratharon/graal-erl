@@ -74,6 +74,7 @@ public class ErlModuleImpl implements ErlModule {
         return preLoaded;
     }
 
+    @TruffleBoundary
     public boolean functionExists(String functionName, int arity) {
         return functions.containsKey(new FA(functionName, arity));
     }
@@ -93,6 +94,7 @@ public class ErlModuleImpl implements ErlModule {
         return null;
     }
 
+    @TruffleBoundary
     public Object call(final ErlContext context, String functionName, Object... args0) {
 
         if (null == ErlProcess.getCurrentProcess() || context != ErlProcess.getContext()) {
@@ -139,10 +141,12 @@ public class ErlModuleImpl implements ErlModule {
         }
     }
 
+    @TruffleBoundary
     public void addOnLoadFunction(FA fa) {
         onLoadFuntions.add(fa);
     }
 
+    @TruffleBoundary
     public boolean tryRegisterModule(ErlContext context) {
 
         for (FA fa : onLoadFuntions) {
@@ -163,19 +167,28 @@ public class ErlModuleImpl implements ErlModule {
         return true;
     }
 
+    @TruffleBoundary
+    public void onDeregisterModule() {
+        functions.clear();
+    }
+
+    @TruffleBoundary
     public ErlFunction lookup(FA fa) {
         return functions.get(fa);
     }
 
+    @TruffleBoundary
     public Collection<ErlFunction> getFunctionSet() {
         return Collections.unmodifiableCollection(functions.values());
     }
 
+    @TruffleBoundary
     public synchronized ErlFunction register(final FA fa, final ErlFunction func) {
         functions.put(fa, func);
         return func;
     }
 
+    @TruffleBoundary
     public synchronized ErlFunction register(String name, int arity, ErlRootNode rootNode, ErlFunction.Origin origin) {
 
         final FA fa = new FA(name, arity);

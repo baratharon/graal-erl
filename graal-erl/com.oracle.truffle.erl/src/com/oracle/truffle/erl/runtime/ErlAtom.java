@@ -79,6 +79,7 @@ public final class ErlAtom implements TruffleObject {
     public static final ErlAtom WARNING = new ErlAtom("warning");
     public static final ErlAtom THROW = new ErlAtom("throw");
     public static final ErlAtom BADMATCH = new ErlAtom("badmatch");
+    public static final ErlAtom UNDEF = new ErlAtom("undef");
     public static final ErlAtom BAD_GENERATOR = new ErlAtom("bad_generator");
     public static final ErlAtom BAD_FILTER = new ErlAtom("bad_filter");
     public static final ErlAtom BADKEY = new ErlAtom("badkey");

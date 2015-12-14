@@ -102,6 +102,14 @@ public final class ErlModuleRegistry {
         return modules.get(moduleName);
     }
 
+    @TruffleBoundary
+    public void deregister(ErlModuleImpl module) {
+        module.onDeregisterModule();
+        synchronized (this) {
+            modules.remove(module.getModuleName());
+        }
+    }
+
     /**
      * Returns the canonical {@link ErlFunction} object for the given name.
      */

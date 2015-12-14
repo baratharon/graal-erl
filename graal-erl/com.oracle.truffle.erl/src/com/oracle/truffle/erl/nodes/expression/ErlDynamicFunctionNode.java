@@ -92,7 +92,11 @@ public final class ErlDynamicFunctionNode extends ErlExpressionNode {
 
             final ErlModuleRegistry moduleRegistry = context.getModuleRegistry();
 
-            if (!moduleRegistry.isModuleLoaded(moduleName)) {
+            final ErlFunction func = moduleRegistry.functionLookup(moduleName, funcName, (int) arity);
+
+            // this workaround is used to filter out requests for BIFs in already deregistered
+            // modules (such as 'erlang' during the shutdown)
+            if (null == func && !moduleRegistry.isModuleLoaded(moduleName)) {
                 context.loadModule(moduleName);
             }
 
