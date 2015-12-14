@@ -44,6 +44,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.erl.nodes.ErlBinaryNode;
+import com.oracle.truffle.erl.runtime.ErlContext;
 
 import java.math.BigInteger;
 
@@ -65,11 +66,6 @@ public abstract class ErlBitwiseOrNode extends ErlBinaryNode {
     @Specialization
     protected Object or(BigInteger left, BigInteger right) {
         BigInteger result = left.or(right);
-
-        try {
-            return result.longValueExact();
-        } catch (ArithmeticException ex) {
-            return result;
-        }
+        return ErlContext.returnSimplifiedInteger(result);
     }
 }
