@@ -179,6 +179,13 @@ public final class ErlProcess implements Callable<Object>, Registrable {
         }
 
         @TruffleBoundary
+        public Set<ErlPort> getAllPort() {
+            synchronized (processes) {
+                return Collections.unmodifiableSet(new HashSet<>(ports));
+            }
+        }
+
+        @TruffleBoundary
         public static void processEntry(ErlProcess proc) {
             currentProcess.set(proc);
         }
@@ -482,6 +489,10 @@ public final class ErlProcess implements Callable<Object>, Registrable {
 
     public static Set<ErlPid> getAllPid() {
         return getCurrentProcess().processManager.getAllPid();
+    }
+
+    public static Set<ErlPort> getAllPort() {
+        return getCurrentProcess().processManager.getAllPort();
     }
 
     public boolean isDone() {

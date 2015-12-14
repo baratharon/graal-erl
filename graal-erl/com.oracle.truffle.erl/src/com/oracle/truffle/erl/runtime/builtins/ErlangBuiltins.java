@@ -158,6 +158,7 @@ import com.oracle.truffle.erl.builtins.erlang.PortCommand2BuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.PortCommand3BuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.PortControlBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.PortToListBuiltinFactory;
+import com.oracle.truffle.erl.builtins.erlang.PortsBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.PosixtimeToUniversaltimeBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.PreLoadedBuiltinFactory;
 import com.oracle.truffle.erl.builtins.erlang.ProcessFlag2BuiltinFactory;
@@ -384,6 +385,7 @@ public final class ErlangBuiltins {
         context.installBuiltin(PortCommand3BuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(PortControlBuiltinFactory.getInstance(), registerRootNodes);
         context.installBuiltin(PortCloseBuiltinFactory.getInstance(), registerRootNodes);
+        context.installBuiltin(PortsBuiltinFactory.getInstance(), registerRootNodes);
 
         final SourceSection src = SourceSection.createUnavailable("Erlang builtin", "wrapped operator");
 
