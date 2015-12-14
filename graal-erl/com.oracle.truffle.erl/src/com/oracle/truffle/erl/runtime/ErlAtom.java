@@ -160,6 +160,11 @@ public final class ErlAtom implements TruffleObject {
     public static final ErlAtom BINARY = new ErlAtom("binary");
     public static final ErlAtom INDEX = new ErlAtom("index");
     public static final ErlAtom LIST = new ErlAtom("list");
+    public static final ErlAtom CONNECTED = new ErlAtom("connected");
+    public static final ErlAtom ID = new ErlAtom("id");
+    public static final ErlAtom OS_PID = new ErlAtom("os_pid");
+    public static final ErlAtom INPUT = new ErlAtom("input");
+    public static final ErlAtom OUTPUT = new ErlAtom("output");
     public static final ErlAtom IN = new ErlAtom("in");
     public static final ErlAtom OUT = new ErlAtom("out");
     public static final ErlAtom EOF = new ErlAtom("eof");

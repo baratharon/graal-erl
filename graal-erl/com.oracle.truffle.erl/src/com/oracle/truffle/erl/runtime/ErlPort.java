@@ -45,6 +45,7 @@ import java.util.HashSet;
 import com.oracle.truffle.api.interop.ForeignAccess;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
+import com.oracle.truffle.erl.runtime.misc.PortInfoItem;
 import com.oracle.truffle.erl.runtime.misc.Registrable;
 
 /**
@@ -55,6 +56,7 @@ public abstract class ErlPort implements TruffleObject, Registrable {
 
     private final long id;
     private final String portName;
+    private ErlList cachedNameList = null;
     private String registeredName = null;
     private ErlPid ownerPid;
     private ErlPid sendClosedTo;
@@ -107,6 +109,14 @@ public abstract class ErlPort implements TruffleObject, Registrable {
     @Override
     public void onUnregistered() {
         registeredName = null;
+    }
+
+    public ErlAtom getRegisteredNameAtom() {
+        if (null != registeredName) {
+            return new ErlAtom(registeredName);
+        }
+
+        throw ErlControlException.makeBadarg();
     }
 
     @Override
@@ -173,6 +183,50 @@ public abstract class ErlPort implements TruffleObject, Registrable {
         cleanup();
     }
 
+    public Object getInfo(PortInfoItem item) {
+        switch (item) {
+            case NAME: {
+                if (null == cachedNameList) {
+                    cachedNameList = ErlList.fromString(portName);
+                }
+
+                return cachedNameList;
+            }
+
+            case CONNECTED: {
+                return ownerPid;
+            }
+
+            case ID: {
+                return id;
+            }
+
+            case INPUT: {
+                // TODO: accumulate traffic
+                return 0l;
+            }
+
+            case OUTPUT: {
+                // TODO: accumulate traffic
+                return 0l;
+            }
+
+            case OS_PID: {
+                return getOSPid();
+            }
+
+            case LINKS: {
+                return ErlList.fromIterator(links.iterator());
+            }
+
+            default: {
+                assert false;
+            }
+        }
+
+        throw ErlControlException.makeBadarg();
+    }
+
     protected abstract void step();
 
     public abstract void flush();
@@ -184,4 +238,8 @@ public abstract class ErlPort implements TruffleObject, Registrable {
     public abstract boolean command(final ErlPid sender, final byte[] data, boolean nosuspend);
 
     public abstract Object control(int operation, byte[] data);
+
+    protected long getOSPid() {
+        return 0l;
+    }
 }
