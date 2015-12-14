@@ -77,7 +77,7 @@ public abstract class PortInfo1Builtin extends ErlBuiltinNode {
             ErlList result = ErlList.NIL;
 
             for (PortInfoItem item : PortInfoItem.values()) {
-                result = new ErlList(port.getInfo(item), result);
+                result = new ErlList(new ErlTuple(item.atom, port.getInfo(item)), result);
             }
 
             if (null != port.getRegisteredName()) {
