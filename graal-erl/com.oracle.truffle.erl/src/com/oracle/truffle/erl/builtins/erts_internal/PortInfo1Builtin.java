@@ -38,18 +38,54 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.oracle.truffle.erl.runtime.builtins;
+package com.oracle.truffle.erl.builtins.erts_internal;
 
-import com.oracle.truffle.erl.builtins.erts_internal.IsSystemProcessBuiltinFactory;
-import com.oracle.truffle.erl.builtins.erts_internal.PortInfo1BuiltinFactory;
-import com.oracle.truffle.erl.builtins.erts_internal.PortInfo2BuiltinFactory;
-import com.oracle.truffle.erl.runtime.ErlContext;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.nodes.NodeInfo;
+import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.erl.MFA;
+import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
+import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
+import com.oracle.truffle.erl.runtime.ErlAtom;
+import com.oracle.truffle.erl.runtime.ErlPort;
+import com.oracle.truffle.erl.runtime.ErlProcess;
 
-public final class ErtsInternalBuiltins {
+/**
+ * undocumented
+ */
+@NodeInfo(shortName = "portInfo")
+public abstract class PortInfo1Builtin extends ErlBuiltinNode {
 
-    public static void install(ErlContext context, final boolean registerRootNodes) {
-        context.installBuiltin(IsSystemProcessBuiltinFactory.getInstance(), registerRootNodes);
-        context.installBuiltin(PortInfo1BuiltinFactory.getInstance(), registerRootNodes);
-        context.installBuiltin(PortInfo2BuiltinFactory.getInstance(), registerRootNodes);
+    public PortInfo1Builtin() {
+        super(SourceSection.createUnavailable("Erlang builtin", "port_info"));
+    }
+
+    @Override
+    public MFA getName() {
+        return new MFA("erts_internal", "port_info", 1);
+    }
+
+    @Specialization
+    public Object portInfo(ErlPort port) {
+        return com.oracle.truffle.erl.builtins.erlang.PortInfo1Builtin.getPortInfo(port);
+    }
+
+    @Specialization
+    public Object portInfo(ErlAtom arg1) {
+        final ErlPort port = ErlProcess.findRegistered(ErlPort.class, arg1.getValue());
+        if (null != port) {
+            return portInfo(port);
+        }
+        throw ErlControlException.makeBadarg();
+    }
+
+    @Specialization
+    public Object portInfo(Object arg1) {
+
+        if (arg1 instanceof ErlAtom) {
+            return portInfo((ErlAtom) arg1);
+        }
+
+        return portInfo(ErlPort.fromObject(arg1));
     }
 }
