@@ -70,6 +70,7 @@ import com.oracle.truffle.erl.nodes.local.ErlReadArgumentNode;
 import com.oracle.truffle.erl.parser.ErlParser;
 import com.oracle.truffle.erl.runtime.builtins.ETSBuiltins;
 import com.oracle.truffle.erl.runtime.builtins.ErlangBuiltins;
+import com.oracle.truffle.erl.runtime.builtins.ErtsInternalBuiltins;
 import com.oracle.truffle.erl.runtime.builtins.FileBuiltins;
 import com.oracle.truffle.erl.runtime.builtins.IOBuiltins;
 import com.oracle.truffle.erl.runtime.builtins.ListsBuiltins;
@@ -170,6 +171,7 @@ public final class ErlContext extends ExecutionContext {
         ReBuiltins.install(this, registerRootNodes);
         MathBuiltins.install(this, registerRootNodes);
         PrimEvalBuiltins.install(this, registerRootNodes);
+        ErtsInternalBuiltins.install(this, registerRootNodes);
     }
 
     public static ErlBuiltinNode makeBuiltin(NodeFactory<? extends ErlBuiltinNode> factory) {
