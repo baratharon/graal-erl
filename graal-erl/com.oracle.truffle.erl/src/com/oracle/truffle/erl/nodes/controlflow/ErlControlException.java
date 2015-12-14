@@ -112,23 +112,23 @@ public final class ErlControlException extends ControlFlowException {
     }
 
     public static ErlControlException makeUndef(Object desc) {
-        return createError(new ErlTuple(new ErlAtom("undef"), desc), SpecialTag.UNDEF);
+        return createError(new ErlTuple(ErlAtom.UNDEF, desc), SpecialTag.UNDEF);
     }
 
     public static ErlControlException makeBadarith() {
-        return createError(new ErlAtom("badarith"), SpecialTag.BADARITH);
+        return createError(ErlAtom.BADARITH, SpecialTag.BADARITH);
     }
 
     public static ErlControlException makeBadarg() {
-        return createError(new ErlAtom("badarg"), SpecialTag.BADARG);
+        return createError(ErlAtom.BADARG, SpecialTag.BADARG);
     }
 
     public static ErlControlException makeBadfun(Object desc) {
-        return createError(new ErlTuple(new ErlAtom("badfun"), desc), SpecialTag.BADFUN);
+        return createError(new ErlTuple(ErlAtom.BADFUN, desc), SpecialTag.BADFUN);
     }
 
     public static ErlControlException makeBadarity(Object desc) {
-        return createError(new ErlTuple(new ErlAtom("badarity"), desc), SpecialTag.BADARITY);
+        return createError(new ErlTuple(ErlAtom.BADARITY, desc), SpecialTag.BADARITY);
     }
 
     public static ErlControlException makeBadmatch(Object desc) {
@@ -140,23 +140,23 @@ public final class ErlControlException extends ControlFlowException {
     }
 
     public static ErlControlException makeFunctionClause() {
-        return createError(new ErlAtom("function_clause"), SpecialTag.FUNCTION_CLAUSE);
+        return createError(ErlAtom.FUNCTION_CLAUSE, SpecialTag.FUNCTION_CLAUSE);
     }
 
     public static ErlControlException makeIfClause() {
-        return createError(new ErlAtom("if_clause"), SpecialTag.IF_CLAUSE);
+        return createError(ErlAtom.IF_CLAUSE, SpecialTag.IF_CLAUSE);
     }
 
     public static ErlControlException makeCaseClause(Object desc) {
-        return createError(new ErlTuple(new ErlAtom("case_clause"), desc), SpecialTag.CASE_CLAUSE);
+        return createError(new ErlTuple(ErlAtom.CASE_CLAUSE, desc), SpecialTag.CASE_CLAUSE);
     }
 
     public static ErlControlException makeTryClause(Object desc) {
-        return createError(new ErlTuple(new ErlAtom("try_clause"), desc), SpecialTag.TRY_CLAUSE);
+        return createError(new ErlTuple(ErlAtom.TRY_CLAUSE, desc), SpecialTag.TRY_CLAUSE);
     }
 
     public static ErlControlException makeNocatch(Object desc) {
-        return createError(new ErlTuple(new ErlAtom("nocatch"), desc), SpecialTag.NOCATCH);
+        return createError(new ErlTuple(ErlAtom.NOCATCH, desc), SpecialTag.NOCATCH);
     }
 
     public static ErlControlException makeBadGenerator(Object desc) {
@@ -176,15 +176,15 @@ public final class ErlControlException extends ControlFlowException {
     }
 
     public static ErlControlException makeTimeoutValue() {
-        return createError(new ErlAtom("timeout_value"), SpecialTag.TIMEOUT_VALUE);
+        return createError(ErlAtom.TIMEOUT_VALUE, SpecialTag.TIMEOUT_VALUE);
     }
 
     public static ErlControlException makeNoproc() {
-        return createError(new ErlAtom("noproc"), SpecialTag.NOPROC);
+        return createError(ErlAtom.NOPROC, SpecialTag.NOPROC);
     }
 
     public static ErlControlException makeSystemLimit() {
-        return createError(new ErlAtom("system_limit"), SpecialTag.SYSTEM_LIMIT);
+        return createError(ErlAtom.SYSTEM_LIMIT, SpecialTag.SYSTEM_LIMIT);
     }
 
     public ErlTuple getDescribingTerm() {

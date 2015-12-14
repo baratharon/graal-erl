@@ -70,6 +70,8 @@ public final class ErlAtom implements TruffleObject {
     public static final ErlAtom CLOSED = new ErlAtom("closed");
     public static final ErlAtom UNDEFINED = new ErlAtom("undefined");
     public static final ErlAtom TIMEOUT = new ErlAtom("timeout");
+    public static final ErlAtom TIMEOUT_VALUE = new ErlAtom("timeout_value");
+    public static final ErlAtom SYSTEM_LIMIT = new ErlAtom("system_limit");
     public static final ErlAtom OK = new ErlAtom("ok");
     public static final ErlAtom NORMAL = new ErlAtom("normal");
     public static final ErlAtom LOW = new ErlAtom("low");
@@ -202,6 +204,15 @@ public final class ErlAtom implements TruffleObject {
     public static final ErlAtom GLOBAL = new ErlAtom("global");
     public static final ErlAtom LOCAL = new ErlAtom("local");
     public static final ErlAtom EXTERNAL = new ErlAtom("external");
+    public static final ErlAtom BADARG = new ErlAtom("badarg");
+    public static final ErlAtom BADARITH = new ErlAtom("badarith");
+    public static final ErlAtom BADARITY = new ErlAtom("badarity");
+    public static final ErlAtom BADFUN = new ErlAtom("badfun");
+    public static final ErlAtom NOCATCH = new ErlAtom("nocatch");
+    public static final ErlAtom FUNCTION_CLAUSE = new ErlAtom("function_clause");
+    public static final ErlAtom IF_CLAUSE = new ErlAtom("if_clause");
+    public static final ErlAtom CASE_CLAUSE = new ErlAtom("case_clause");
+    public static final ErlAtom TRY_CLAUSE = new ErlAtom("try_clause");
 
     public static ErlAtom fromBoolean(boolean value) {
         if (value) {
