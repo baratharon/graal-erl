@@ -46,6 +46,7 @@ import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.erl.nodes.ErlBinaryNode;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
+import com.oracle.truffle.erl.runtime.ErlContext;
 
 import java.math.BigInteger;
 
@@ -81,13 +82,7 @@ public abstract class ErlIntegerDivideNode extends ErlBinaryNode {
     protected Object divide(BigInteger left, BigInteger right) {
         try {
             BigInteger result = left.divide(right);
-
-            try {
-                return result.longValueExact();
-            } catch (ArithmeticException ex) {
-                return result;
-            }
-
+            return ErlContext.returnSimplifiedInteger(result);
         } catch (ArithmeticException ex) {
             throw ErlControlException.makeBadarith();
         }

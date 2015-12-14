@@ -412,6 +412,14 @@ public final class ErlContext extends ExecutionContext {
         return keywords.contains(str);
     }
 
+    public static Object returnSimplifiedInteger(final BigInteger bi) {
+        if (bi.bitLength() <= 63) {
+            return bi.longValue();
+        }
+
+        return bi;
+    }
+
     public static boolean decodeBoolean(ErlAtom value) {
 
         // fast comparisons first
