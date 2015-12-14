@@ -45,6 +45,7 @@ import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.erl.MFA;
 import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
+import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
 import com.oracle.truffle.erl.runtime.ErlAtom;
 import com.oracle.truffle.erl.runtime.ErlContext;
 import com.oracle.truffle.erl.runtime.ErlList;
@@ -79,7 +80,11 @@ public abstract class PortCommand3Builtin extends ErlBuiltinNode {
 
     @Specialization
     public boolean portCommand(ErlAtom arg1, Object data, Object opts) {
-        return portCommand(ErlProcess.findRegistered(ErlPort.class, arg1.getValue()), data, opts);
+        final ErlPort port = ErlProcess.findRegistered(ErlPort.class, arg1.getValue());
+        if (null != port) {
+            return portCommand(port, data, opts);
+        }
+        throw ErlControlException.makeBadarg();
     }
 
     @Specialization

@@ -100,7 +100,11 @@ public abstract class PortCommand2Builtin extends ErlBuiltinNode {
 
     @Specialization
     public boolean portCommand(ErlAtom arg1, Object data) {
-        return portCommand(ErlProcess.findRegistered(ErlPort.class, arg1.getValue()), data);
+        final ErlPort port = ErlProcess.findRegistered(ErlPort.class, arg1.getValue());
+        if (null != port) {
+            return portCommand(port, data);
+        }
+        throw ErlControlException.makeBadarg();
     }
 
     @Specialization

@@ -89,7 +89,11 @@ public abstract class PortControlBuiltin extends ErlBuiltinNode {
 
     @Specialization
     public Object portControl(ErlAtom arg1, long operation, Object data) {
-        return portControl(ErlProcess.findRegistered(ErlPort.class, arg1.getValue()), operation, data);
+        final ErlPort port = ErlProcess.findRegistered(ErlPort.class, arg1.getValue());
+        if (null != port) {
+            return portControl(port, operation, data);
+        }
+        throw ErlControlException.makeBadarg();
     }
 
     @Specialization
