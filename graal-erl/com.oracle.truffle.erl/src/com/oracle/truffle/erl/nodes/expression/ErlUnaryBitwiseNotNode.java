@@ -48,6 +48,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.erl.nodes.ErlExpressionNode;
+import com.oracle.truffle.erl.runtime.ErlContext;
 
 /**
  * Example of a simple unary node that uses type specialization. See {@link ErlAddNode} for
@@ -75,11 +76,6 @@ public abstract class ErlUnaryBitwiseNotNode extends ErlExpressionNode {
     @Specialization
     protected Object doBigInteger(BigInteger value) {
         BigInteger result = value.not();
-
-        try {
-            return result.longValueExact();
-        } catch (ArithmeticException ex) {
-            return result;
-        }
+        return ErlContext.returnSimplifiedInteger(result);
     }
 }
