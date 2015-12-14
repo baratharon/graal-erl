@@ -48,6 +48,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.erl.MFA;
 import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
+import com.oracle.truffle.erl.runtime.ErlContext;
 
 /**
  * Determines the size of a tuple.
@@ -74,13 +75,7 @@ public abstract class TruncBuiltin extends ErlBuiltinNode {
     public Object trunc(double value) {
 
         final BigInteger big = java.math.BigDecimal.valueOf(value).toBigInteger();
-
-        try {
-            // try to simplify
-            return big.longValueExact();
-        } catch (ArithmeticException ex) {
-            return big;
-        }
+        return ErlContext.returnSimplifiedInteger(big);
     }
 
     @Specialization

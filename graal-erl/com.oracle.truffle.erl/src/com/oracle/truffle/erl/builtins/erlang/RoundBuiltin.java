@@ -49,6 +49,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.erl.MFA;
 import com.oracle.truffle.erl.builtins.ErlBuiltinNode;
 import com.oracle.truffle.erl.nodes.controlflow.ErlControlException;
+import com.oracle.truffle.erl.runtime.ErlContext;
 
 /**
  * Returns an integer by rounding Number.
@@ -82,13 +83,7 @@ public abstract class RoundBuiltin extends ErlBuiltinNode {
         }
 
         final BigInteger big = java.math.BigDecimal.valueOf(value + offset).toBigInteger();
-
-        try {
-            // try to simplify
-            return big.longValueExact();
-        } catch (ArithmeticException ex) {
-            return big;
-        }
+        return ErlContext.returnSimplifiedInteger(big);
     }
 
     @Specialization

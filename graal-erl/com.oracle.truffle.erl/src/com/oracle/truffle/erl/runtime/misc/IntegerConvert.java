@@ -105,12 +105,7 @@ public final class IntegerConvert {
             bi = bi.negate();
         }
 
-        // try to simplify the BigInteger to long
-        try {
-            return bi.longValueExact();
-        } catch (ArithmeticException ex) {
-            return bi;
-        }
+        return ErlContext.returnSimplifiedInteger(bi);
     }
 
     @TruffleBoundary
